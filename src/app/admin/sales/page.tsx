@@ -1,7 +1,27 @@
 import React from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { prisma } from "@/lib/prisma";
 
-export default function Sales() {
+export const revalidate = 0; // Don't cache admin pages
+
+export default async function Sales() {
+  const orders = await prisma.order.findMany({
+    include: {
+      customer: true
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  });
+
+  const totalSales = orders
+    .filter(o => o.status !== 'CANCELED')
+    .reduce((acc, order) => acc + Number(order.totalAmount), 0);
+
+  const pendingCount = orders.filter(o => o.status === 'PENDING').length;
+
+  const ticketMedio = orders.length > 0 ? totalSales / orders.filter(o => o.status !== 'CANCELED').length : 0;
+
   return (
     <AdminLayout>
       <div className="flex-1">
@@ -20,26 +40,26 @@ export default function Sales() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-primary/10 shadow-sm hover:border-primary/20 transition-colors">
             <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Total de Vendas</p>
-            <h3 className="text-2xl font-bold mt-1 text-slate-900 dark:text-white">R$ 45.230,00</h3>
+            <h3 className="text-2xl font-bold mt-1 text-slate-900 dark:text-white">R$ {totalSales.toFixed(2).replace('.', ',')}</h3>
             <p className="text-xs text-emerald-600 mt-2 flex items-center gap-1 font-semibold dark:text-emerald-400">
-              <span className="material-symbols-outlined text-xs">trending_up</span> +12% vs mês anterior
+              <span className="material-symbols-outlined text-xs">trending_up</span> Base Real
             </p>
           </div>
           <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-primary/10 shadow-sm hover:border-primary/20 transition-colors">
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Pedidos Hoje</p>
-            <h3 className="text-2xl font-bold mt-1 text-slate-900 dark:text-white">24</h3>
-            <p className="text-xs text-emerald-600 mt-2 flex items-center gap-1 font-semibold dark:text-emerald-400">
-              <span className="material-symbols-outlined text-xs">trending_up</span> +5% vs ontem
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Total Pedidos</p>
+            <h3 className="text-2xl font-bold mt-1 text-slate-900 dark:text-white">{orders.length}</h3>
+            <p className="text-xs text-slate-400 mt-2 flex items-center gap-1 font-semibold">
+              <span className="material-symbols-outlined text-xs">inventory_2</span> Lifetime
             </p>
           </div>
           <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-primary/10 shadow-sm hover:border-primary/20 transition-colors">
             <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Ticket Médio</p>
-            <h3 className="text-2xl font-bold mt-1 text-slate-900 dark:text-white">R$ 1.884,58</h3>
-            <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">Estável no período</p>
+            <h3 className="text-2xl font-bold mt-1 text-slate-900 dark:text-white">R$ {ticketMedio.toFixed(2).replace('.', ',')}</h3>
+            <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">Base Real</p>
           </div>
           <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-primary/10 shadow-sm hover:border-primary/20 transition-colors">
             <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Pendente</p>
-            <h3 className="text-2xl font-bold mt-1 text-slate-900 dark:text-white">08</h3>
+            <h3 className="text-2xl font-bold mt-1 text-slate-900 dark:text-white">{pendingCount}</h3>
             <p className="text-xs text-amber-600 mt-2 flex items-center gap-1 font-semibold dark:text-amber-400">
               Aguardando pagamento
             </p>
@@ -92,32 +112,45 @@ export default function Sales() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-primary/5">
-                {[
-                  { id: "#8821", name: "Ana Silva", initials: "AS", date: "12 Out 2023, 14:30", value: "R$ 250,00", method: "Cartão de Crédito", status: "Pago", color: "green" },
-                  { id: "#8822", name: "Marcos Souza", initials: "MS", date: "12 Out 2023, 11:15", value: "R$ 1.120,50", method: "Pix", status: "Pendente", color: "orange" },
-                  { id: "#8823", name: "Carla Dias", initials: "CD", date: "11 Out 2023, 18:45", value: "R$ 89,90", method: "Boleto Bancário", status: "Cancelado", color: "red" },
-                  { id: "#8824", name: "Roberto Lima", initials: "RL", date: "11 Out 2023, 10:20", value: "R$ 450,00", method: "Cartão de Crédito", status: "Enviado", color: "blue" },
-                  { id: "#8825", name: "Julia Costa", initials: "JC", date: "10 Out 2023, 22:10", value: "R$ 125,00", method: "Pix", status: "Entregue", color: "slate" },
-                ].map((row, i) => (
-                  <tr key={i} className="hover:bg-slate-50/80 dark:hover:bg-white/5 transition-colors group">
-                    <td className="px-6 py-4 text-sm font-semibold text-primary dark:text-primary/90">{row.id}</td>
+                {orders.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-8 text-center text-sm text-slate-500">Nenhum pedido encontrado no banco de dados.</td>
+                  </tr>
+                ) : orders.map((order, i) => {
+                  
+                  let statusColor = 'slate';
+                  let statusText = 'Desconhecido';
+
+                  switch(order.status) {
+                    case 'PAID': statusColor = 'green'; statusText = 'Pago'; break;
+                    case 'PENDING': statusColor = 'orange'; statusText = 'Pendente'; break;
+                    case 'CANCELED': statusColor = 'red'; statusText = 'Cancelado'; break;
+                    case 'SHIPPED': statusColor = 'blue'; statusText = 'Enviado'; break;
+                    case 'DELIVERED': statusColor = 'slate'; statusText = 'Entregue'; break;
+                  }
+
+                  const initials = order.customer.name.split(' ').map((n: string) => n[0]).join('').substring(0,2).toUpperCase();
+                  
+                  return (
+                  <tr key={order.id} className="hover:bg-slate-50/80 dark:hover:bg-white/5 transition-colors group">
+                    <td className="px-6 py-4 text-sm font-semibold text-primary dark:text-primary/90">{order.orderNumber}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">{row.initials}</div>
-                        <span className="text-sm font-medium text-slate-900 dark:text-white">{row.name}</span>
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">{initials}</div>
+                        <span className="text-sm font-medium text-slate-900 dark:text-white">{order.customer.name}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{row.date}</td>
-                    <td className="px-6 py-4 text-sm font-bold text-slate-900 dark:text-white">{row.value}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{row.method}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{new Date(order.createdAt).toLocaleDateString('pt-BR')}</td>
+                    <td className="px-6 py-4 text-sm font-bold text-slate-900 dark:text-white">R$ {Number(order.totalAmount).toFixed(2).replace('.', ',')}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">Sistema</td>
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide
-                        ${row.color === 'green' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' :
-                        row.color === 'orange' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' :
-                        row.color === 'red' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400' :
-                        row.color === 'blue' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' :
+                        ${statusColor === 'green' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' :
+                        statusColor === 'orange' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' :
+                        statusColor === 'red' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400' :
+                        statusColor === 'blue' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' :
                         'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'}`}>
-                        {row.status}
+                        {statusText}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
@@ -126,7 +159,7 @@ export default function Sales() {
                       </button>
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>

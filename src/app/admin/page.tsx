@@ -1,7 +1,28 @@
 import React from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { prisma } from "@/lib/prisma";
 
-export default function Dashboard() {
+export const revalidate = 0;
+
+export default async function Dashboard() {
+  const orders = await prisma.order.findMany({
+    include: {
+      customer: true,
+      items: {
+        include: { product: true }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  const customers = await prisma.customer.count();
+
+  const totalSales = orders
+    .filter(o => o.status !== 'CANCELED')
+    .reduce((acc, order) => acc + Number(order.totalAmount), 0);
+
+  const ticketMedio = orders.length > 0 ? totalSales / orders.filter(o => o.status !== 'CANCELED').length : 0;
+
   return (
     <AdminLayout pageTitle="Visão Geral">
       {/* Summary Cards */}
@@ -11,10 +32,10 @@ export default function Dashboard() {
             <div className="size-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
               <span className="material-symbols-outlined">payments</span>
             </div>
-            <span className="text-emerald-500 text-xs font-bold flex items-center gap-0.5">+12.5% <span className="material-symbols-outlined text-[14px]">trending_up</span></span>
+            <span className="text-emerald-500 text-xs font-bold flex items-center gap-0.5">Base Real</span>
           </div>
           <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Vendas Totais</p>
-          <p className="text-2xl font-bold mt-1 tracking-tight text-slate-800 dark:text-slate-100">R$ 124.500,00</p>
+          <p className="text-2xl font-bold mt-1 tracking-tight text-slate-800 dark:text-slate-100">R$ {totalSales.toFixed(2).replace('.', ',')}</p>
         </div>
         
         <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/5 shadow-sm">
@@ -22,10 +43,10 @@ export default function Dashboard() {
             <div className="size-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
               <span className="material-symbols-outlined">shopping_cart</span>
             </div>
-            <span className="text-emerald-500 text-xs font-bold flex items-center gap-0.5">+5.2% <span className="material-symbols-outlined text-[14px]">trending_up</span></span>
+            <span className="text-emerald-500 text-xs font-bold flex items-center gap-0.5">Lifetime</span>
           </div>
           <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Pedidos</p>
-          <p className="text-2xl font-bold mt-1 tracking-tight text-slate-800 dark:text-slate-100">1.240</p>
+          <p className="text-2xl font-bold mt-1 tracking-tight text-slate-800 dark:text-slate-100">{orders.length}</p>
         </div>
         
         <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/5 shadow-sm">
@@ -33,10 +54,10 @@ export default function Dashboard() {
             <div className="size-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
               <span className="material-symbols-outlined">person_add</span>
             </div>
-            <span className="text-emerald-500 text-xs font-bold flex items-center gap-0.5">+18.1% <span className="material-symbols-outlined text-[14px]">trending_up</span></span>
+            <span className="text-emerald-500 text-xs font-bold flex items-center gap-0.5">Lifetime</span>
           </div>
-          <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Novos Clientes</p>
-          <p className="text-2xl font-bold mt-1 tracking-tight text-slate-800 dark:text-slate-100">185</p>
+          <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Clientes Geração</p>
+          <p className="text-2xl font-bold mt-1 tracking-tight text-slate-800 dark:text-slate-100">{customers}</p>
         </div>
         
         <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/5 shadow-sm">
@@ -44,10 +65,10 @@ export default function Dashboard() {
             <div className="size-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
               <span className="material-symbols-outlined">receipt_long</span>
             </div>
-            <span className="text-rose-500 text-xs font-bold flex items-center gap-0.5">-2.4% <span className="material-symbols-outlined text-[14px]">trending_down</span></span>
+            <span className="text-emerald-500 text-xs font-bold flex items-center gap-0.5">Base Real</span>
           </div>
           <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Ticket Médio</p>
-          <p className="text-2xl font-bold mt-1 tracking-tight text-slate-800 dark:text-slate-100">R$ 100,40</p>
+          <p className="text-2xl font-bold mt-1 tracking-tight text-slate-800 dark:text-slate-100">R$ {ticketMedio.toFixed(2).replace('.', ',')}</p>
         </div>
       </div>
 
@@ -115,28 +136,43 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-primary/5">
-              {[
-                { id: "#ORD-2384", client: "Ana Beatriz Silva", product: "Relógio Minimal Gold", value: "R$ 450,00", status: "ENTREGUE", color: "emerald" },
-                { id: "#ORD-2385", client: "Marcos Oliveira", product: "Cadeira Eames Wood", value: "R$ 1.290,00", status: "PROCESSANDO", color: "amber" },
-                { id: "#ORD-2386", client: "Clara Mendes", product: "Luminária Industrial Lux", value: "R$ 285,00", status: "EM ROTA", color: "blue" },
-                { id: "#ORD-2387", client: "Roberto Fontana", product: "Mesa Lateral Aurora", value: "R$ 780,00", status: "ENTREGUE", color: "emerald" },
-              ].map((order, i) => (
-                <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-medium text-slate-800 dark:text-slate-100">{order.id}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{order.client}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{order.product}</td>
-                  <td className="px-6 py-4 text-sm font-bold text-slate-800 dark:text-slate-100">{order.value}</td>
+              {orders.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-sm text-slate-500">Nenhum pedido recente.</td>
+                </tr>
+              ) : orders.slice(0, 5).map((order) => {
+                let statusColor = 'slate';
+                let statusText = 'Desconhecido';
+
+                switch(order.status) {
+                  case 'PAID': statusColor = 'emerald'; statusText = 'PAGO'; break;
+                  case 'PENDING': statusColor = 'amber'; statusText = 'PENDENTE'; break;
+                  case 'CANCELED': statusColor = 'red'; statusText = 'CANCELADO'; break;
+                  case 'SHIPPED': statusColor = 'blue'; statusText = 'ENVIADO'; break;
+                  case 'DELIVERED': statusColor = 'slate'; statusText = 'ENTREGUE'; break;
+                }
+                
+                return (
+                <tr key={order.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-medium text-slate-800 dark:text-slate-100">{order.orderNumber}</td>
+                  <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{order.customer.name}</td>
+                  <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
+                    {order.items.length > 0 ? order.items[0].product.name : 'Vários itens'}
+                    {order.items.length > 1 && ` (+${order.items.length - 1})`}
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-slate-800 dark:text-slate-100">R$ {Number(order.totalAmount).toFixed(2).replace('.', ',')}</td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded text-[10px] font-bold ${
-                      order.color === 'emerald' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                      order.color === 'amber' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                      statusColor === 'emerald' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                      statusColor === 'amber' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                      statusColor === 'red' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' :
                       'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
                     }`}>
-                      {order.status}
+                      {statusText}
                     </span>
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>

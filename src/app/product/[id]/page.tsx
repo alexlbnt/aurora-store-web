@@ -2,30 +2,51 @@ import React from "react";
 import StorefrontLayout from "@/components/storefront/StorefrontLayout";
 import Link from "next/link";
 import Image from "next/image";
+import { prisma } from "@/lib/prisma";
+import { notFound } from "next/navigation";
 
 export default async function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
   // In a real app we'd fetch product data here based on params.id
   // This is mock data
   const resolvedParams = await params;
+  
+  const dbProduct = await prisma.product.findUnique({
+    where: { id: resolvedParams.id },
+    include: {
+      category: true,
+      images: {
+        orderBy: { order: 'asc' }
+      },
+      variants: true
+    }
+  });
+
+  if (!dbProduct) {
+    notFound();
+  }
+
+  // Extrair cores únicas e tamanhos únicos das variantes
+  const colors = Array.from(new Set(dbProduct.variants.map((v: any) => v.color)));
+  const sizes = Array.from(new Set(dbProduct.variants.map((v: any) => v.size)));
+
   const product = {
-    id: resolvedParams.id,
-    name: "Conjunto Seda Pura Noturno",
-    price: "R$ 489,00",
-    installments: "em até 6x de R$ 81,50 s/ juros",
-    images: [
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBItmN9eB11w_Z6UoMv_D24Z4f-GjO55Q322H00bM5F_2Q6P5zG6I52hP8Zk9dG4B1g3J5U7c_f8U4k180u1K46R-tZ2eY56f9s6b5C8Xz85g1B7Hh8X9C_T5t8y_q7O5N34m4M_F1Z-0j-lZ0p_M-QvE93D_E_Z_A_H_A_z_oV",
-      "https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=1587&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1512496015851-a1fbaf3261a8?q=80&w=1588&auto=format&fit=crop"
-    ],
-    colors: ["Pérola", "Champagne", "Preto"],
-    sizes: ["P", "M", "G", "GG"],
-    description: "Com modelagem fluida e toque incomparavelmente macio, este conjunto foi desenhado para abraçar seu corpo. A blusa possui alças finas reguláveis e decote suave, enquanto o shorts tem cintura elástica embutida que não marca. Confeccionado em 100% seda pura de amoreira.",
+    id: dbProduct.id,
+    name: dbProduct.name,
+    price: `R$ ${Number(dbProduct.basePrice).toFixed(2).replace('.', ',')}`,
+    installments: "em até 6x s/ juros",
+    images: dbProduct.images.length > 0 
+      ? dbProduct.images.map((img: any) => img.url) 
+      : ["https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=1587&auto=format&fit=crop"],
+    colors: colors.length > 0 ? colors : ["Padrão"],
+    sizes: sizes.length > 0 ? sizes : ["Único"],
+    description: dbProduct.description,
+    categoryName: dbProduct.category.name,
+    categorySlug: dbProduct.category.slug,
     details: [
-      "100% Seda Pura de Amoreira (22 momme)",
-      "Termorregulador natural",
-      "Hipoalergênico e gentil com a pele",
-      "Modelagem soltinha e confortável"
-    ]
+      "Qualidade Premium",
+      "Modelagem confortável",
+      "Toque macio"
+    ] // Fake details as we don't have this in schema yet
   };
 
   return (
@@ -34,7 +55,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
       <nav className="flex items-center gap-2 text-xs text-primary/60 dark:text-slate-400 py-6 font-medium uppercase tracking-widest">
         <Link href="/" className="hover:text-primary dark:hover:text-slate-200 transition-colors">Home</Link>
         <span className="material-symbols-outlined text-sm">chevron_right</span>
-        <Link href="/category/conjuntos" className="hover:text-primary dark:hover:text-slate-200 transition-colors">Conjuntos</Link>
+        <Link href={`/category/${product.categorySlug}`} className="hover:text-primary dark:hover:text-slate-200 transition-colors">{product.categoryName}</Link>
         <span className="material-symbols-outlined text-sm">chevron_right</span>
         <span className="text-primary dark:text-slate-200 font-bold truncate max-w-[200px] sm:max-w-none">{product.name}</span>
       </nav>

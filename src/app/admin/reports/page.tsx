@@ -1,7 +1,43 @@
 import React from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { prisma } from "@/lib/prisma";
 
-export default function Reports() {
+export const revalidate = 0;
+
+export default async function Reports() {
+  // Fetch real data for reports
+  const orders = await prisma.order.findMany({
+    where: { status: { not: 'CANCELED' } },
+    include: { items: { include: { product: { include: { variants: true } } } } }
+  });
+
+  const totalRevenue = orders.reduce((acc, order) => acc + Number(order.totalAmount), 0);
+  const averageTicket = orders.length > 0 ? totalRevenue / orders.length : 0;
+
+  // Calculate top products
+  const productSales: Record<string, { name: string, quantity: number, revenue: number, stock: number, img: string, categoryId: string }> = {};
+  
+  orders.forEach(order => {
+    order.items.forEach(item => {
+      const pid = item.productId;
+      if (!productSales[pid]) {
+        productSales[pid] = {
+          name: item.product.name,
+          quantity: 0,
+          revenue: 0,
+          stock: item.product.variants.reduce((acc, v) => acc + v.stock, 0),
+          img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDsjWA-9jRbZBTqH41MzeOowOGtiZ1sC-BP2BT5AkrxzZqxjWTTQpu6tnukP-tVz7qiAlOeXg8lwWu4UC4BGLzczGV7EItI2THH65CaQLbZTdKUOXCCyxBvi26c-BXCeTY5T1b_xBNThB6DApdheWFQvTvmKeuF2tmeiqoOuc5_6BSb3_7qsdvEIyc61vbxpapLFGG1ICVUQcN07yJuzPt8zCzMyQYTqk1QkX-HMuKuDZRhgAm3OIUyxL38FAhuMuw2ui1IqJXkiqs", // Default image as we don't have images in schema yet
+          categoryId: item.product.categoryId
+        };
+      }
+      productSales[pid].quantity += item.quantity;
+      productSales[pid].revenue += Number(item.price) * item.quantity;
+    });
+  });
+
+  const topProducts = Object.values(productSales)
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 5);
   return (
     <AdminLayout>
       <div className="flex-1">
@@ -29,22 +65,22 @@ export default function Reports() {
           <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/10 shadow-sm">
             <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Receita Total</p>
             <div className="flex items-baseline gap-2">
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">R$ 142.580,00</h3>
-              <span className="text-emerald-600 text-xs font-bold flex items-center"><span className="material-symbols-outlined text-xs">trending_up</span> +12%</span>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">R$ {totalRevenue.toFixed(2).replace('.', ',')}</h3>
+              <span className="text-emerald-600 text-xs font-bold flex items-center"><span className="material-symbols-outlined text-xs">database</span> Tempo Real</span>
             </div>
           </div>
           <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/10 shadow-sm">
             <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Ticket Médio</p>
             <div className="flex items-baseline gap-2">
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">R$ 285,40</h3>
-              <span className="text-emerald-600 text-xs font-bold flex items-center"><span className="material-symbols-outlined text-xs">trending_up</span> +4%</span>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">R$ {averageTicket.toFixed(2).replace('.', ',')}</h3>
+              <span className="text-emerald-600 text-xs font-bold flex items-center"><span className="material-symbols-outlined text-xs">database</span> Tempo Real</span>
             </div>
           </div>
           <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/10 shadow-sm">
-            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Taxa de Conversão</p>
+            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Total Pedidos</p>
             <div className="flex items-baseline gap-2">
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">3.8%</h3>
-              <span className="text-rose-600 text-xs font-bold flex items-center"><span className="material-symbols-outlined text-xs">trending_down</span> -0.5%</span>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{orders.length}</h3>
+              <span className="text-slate-400 text-xs font-bold flex items-center">Aprovados/Pendentes</span>
             </div>
           </div>
         </div>
@@ -125,52 +161,39 @@ export default function Reports() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-primary/5">
-                  <tr className="group hover:bg-primary/5 transition-colors">
-                    <td className="py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center overflow-hidden">
-                          <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuDsjWA-9jRbZBTqH41MzeOowOGtiZ1sC-BP2BT5AkrxzZqxjWTTQpu6tnukP-tVz7qiAlOeXg8lwWu4UC4BGLzczGV7EItI2THH65CaQLbZTdKUOXCCyxBvi26c-BXCeTY5T1b_xBNThB6DApdheWFQvTvmKeuF2tmeiqoOuc5_6BSb3_7qsdvEIyc61vbxpapLFGG1ICVUQcN07yJuzPt8zCzMyQYTqk1QkX-HMuKuDZRhgAm3OIUyxL38FAhuMuw2ui1IqJXkiqs')" }}></div>
+                  {topProducts.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-sm text-slate-500">Nenhum dado de vendas disponível ainda.</td>
+                    </tr>
+                  ) : topProducts.map((product, idx) => (
+                    <tr key={idx} className="group hover:bg-primary/5 transition-colors">
+                      <td className="py-4 cursor-pointer" title={product.categoryId}>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center overflow-hidden">
+                            <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url('${product.img}')` }}></div>
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{product.name}</p>
+                            <p className="text-[10px] text-slate-500">ID Categoria: {product.categoryId.split('-')[0]}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-bold text-slate-900 dark:text-slate-100">Vela Aromática Aurora</p>
-                          <p className="text-[10px] text-slate-500">Decor &amp; Fragrância</p>
+                      </td>
+                      <td className="py-4 text-center text-sm font-medium">{product.quantity}</td>
+                      <td className="py-4 text-center text-sm">
+                        <div className="w-24 bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mx-auto overflow-hidden relative" title={`Estoque: ${product.stock}`}>
+                          <div className={`h-full rounded-full ${product.stock > 10 ? 'bg-primary' : 'bg-rose-500'}`} style={{ width: `${Math.min(100, (product.stock / 50) * 100)}%` }}></div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-4 text-center text-sm font-medium">1,240</td>
-                    <td className="py-4 text-center text-sm">
-                      <div className="w-24 bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mx-auto overflow-hidden">
-                        <div className="bg-primary h-full rounded-full" style={{ width: "85%" }}></div>
-                      </div>
-                    </td>
-                    <td className="py-4 text-right text-sm font-bold">R$ 48.360,00</td>
-                    <td className="py-4 text-right">
-                      <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold rounded uppercase tracking-wide">Em alta</span>
-                    </td>
-                  </tr>
-                  <tr className="group hover:bg-primary/5 transition-colors">
-                    <td className="py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center overflow-hidden">
-                          <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuARsyyWaxxxgUZQcYOBkF86ymWgKnfJC7elZ5Fsfkxrw0QgeumVVYF9wAbbMYemjei6zGJphJvRjlFeDBz_PfUscIIVdWVMHb6tEILPNJaEsLY-o0n_inXrGKxg4BMeBC_ClxxbRkuY5pstlpZLwZWxpDIDOTugHqHRPU5Mh5BgX0td5mJXO2e0YXsH_Kw-NcV8tWW25eONI7rFaEMNUPNigWKLguGFDA2OGMTZQmhmwLV6WDyJagNN9KoNK_c4vjiWB8sXkVDdKT8')" }}></div>
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-slate-900 dark:text-slate-100">Kit Essencial Minimalista</p>
-                          <p className="text-[10px] text-slate-500">Wellness</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 text-center text-sm font-medium">890</td>
-                    <td className="py-4 text-center text-sm">
-                      <div className="w-24 bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mx-auto overflow-hidden">
-                        <div className="bg-primary h-full rounded-full" style={{ width: "40%" }}></div>
-                      </div>
-                    </td>
-                    <td className="py-4 text-right text-sm font-bold">R$ 35.155,00</td>
-                    <td className="py-4 text-right">
-                      <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-bold rounded uppercase tracking-wide">Estoque baixo</span>
-                    </td>
-                  </tr>
+                      </td>
+                      <td className="py-4 text-right text-sm font-bold">R$ {product.revenue.toFixed(2).replace('.', ',')}</td>
+                      <td className="py-4 text-right">
+                        {product.stock > 10 ? (
+                          <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold rounded uppercase tracking-wide">Em alta</span>
+                        ) : (
+                          <span className="px-2 py-1 bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 text-[10px] font-bold rounded uppercase tracking-wide">Estoque baixo</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

@@ -1,7 +1,24 @@
 import React from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { prisma } from "@/lib/prisma";
 
-export default function Customers() {
+export const revalidate = 0;
+
+export default async function Customers() {
+  const customers = await prisma.customer.findMany({
+    include: {
+      orders: {
+        where: { status: { not: 'CANCELED' } },
+        orderBy: { createdAt: 'desc' }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  const totalSpentByCustomer = customers.map(c => {
+    return c.orders.reduce((acc, order) => acc + Number(order.totalAmount), 0);
+  });
+
   return (
     <AdminLayout>
       <div className="flex-1">
@@ -54,33 +71,36 @@ export default function Customers() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-primary/5">
-                {[
-                  { id: "#C-2930", initials: "AS", name: "Ana Silva", email: "ana.silva@email.com", orders: "12", spent: "R$ 1.250,00", lastOrder: "12 Out 2023" },
-                  { id: "#C-1045", initials: "BC", name: "Bruno Costa", email: "bruno.c@email.com", orders: "5", spent: "R$ 450,20", lastOrder: "05 Out 2023" },
-                  { id: "#C-8821", initials: "CS", name: "Carla Souza", email: "carla.souza@email.com", orders: "28", spent: "R$ 4.100,00", lastOrder: "14 Out 2023" },
-                  { id: "#C-4552", initials: "DL", name: "Diego Lima", email: "diego.lima@email.com", orders: "1", spent: "R$ 89,90", lastOrder: "01 Set 2023" },
-                  { id: "#C-1298", initials: "MS", name: "Mariana Santos", email: "m.santos@email.com", orders: "7", spent: "R$ 842,00", lastOrder: "28 Set 2023" },
-                ].map((customer, i) => (
-                  <tr key={i} className="hover:bg-primary/5 dark:hover:bg-white/5 transition-colors group">
+                {customers.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-sm text-slate-500">Nenhum cliente cadastrado no banco de dados.</td>
+                  </tr>
+                ) : customers.map((customer, i) => {
+                  const spent = totalSpentByCustomer[i];
+                  const lastOrder = customer.orders.length > 0 ? new Date(customer.orders[0].createdAt).toLocaleDateString('pt-BR') : 'N/A';
+                  const initials = customer.name.split(' ').map((n: string) => n[0]).join('').substring(0,2).toUpperCase();
+
+                  return (
+                  <tr key={customer.id} className="hover:bg-primary/5 dark:hover:bg-white/5 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs uppercase shadow-inner">
-                          {customer.initials}
+                          {initials}
                         </div>
                         <div>
                           <p className="font-semibold text-slate-900 dark:text-white text-sm">{customer.name}</p>
-                          <p className="text-xs text-slate-500">ID: {customer.id}</p>
+                          <p className="text-xs text-slate-500">ID: {customer.id.split('-')[0]}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{customer.email}</td>
                     <td className="px-6 py-4 text-center">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                        {customer.orders}
+                        {customer.orders.length}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-white">{customer.spent}</td>
-                    <td className="px-6 py-4 text-sm text-slate-500">{customer.lastOrder}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-white">R$ {spent.toFixed(2).replace('.', ',')}</td>
+                    <td className="px-6 py-4 text-sm text-slate-500">{lastOrder}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button className="p-1.5 hover:bg-primary/10 rounded text-slate-400 hover:text-primary transition-colors" title="Editar">
@@ -95,7 +115,7 @@ export default function Customers() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>
@@ -122,27 +142,29 @@ export default function Customers() {
         {/* Summary Cards Footer */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
           <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-primary/10 shadow-sm">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Novos Clientes (Mês)</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Clientes Base</p>
             <div className="flex items-end justify-between mt-2">
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">+124</h3>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{customers.length}</h3>
               <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-1 rounded flex items-center">
-                <span className="material-symbols-outlined text-sm">trending_up</span> 14%
+                <span className="material-symbols-outlined text-sm">database</span> Base Real
               </span>
             </div>
           </div>
           <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-primary/10 shadow-sm">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ticket Médio</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">LTV Médio (Life Time Value)</p>
             <div className="flex items-end justify-between mt-2">
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">R$ 284,50</h3>
-              <span className="text-xs font-bold text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded">Estável</span>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                R$ {customers.length > 0 ? (totalSpentByCustomer.reduce((acc, curr) => acc + curr, 0) / customers.length).toFixed(2).replace('.', ',') : '0,00'}
+              </h3>
+              <span className="text-xs font-bold text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded">Base Real</span>
             </div>
           </div>
           <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-primary/10 shadow-sm">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Taxa de Retenção</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Clientes Ativos</p>
             <div className="flex items-end justify-between mt-2">
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">72.4%</h3>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{customers.filter(c => c.orders.length > 0).length}</h3>
               <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-1 rounded flex items-center">
-                <span className="material-symbols-outlined text-sm">trending_up</span> 3.2%
+                <span className="material-symbols-outlined text-sm">person_check</span> Compras
               </span>
             </div>
           </div>

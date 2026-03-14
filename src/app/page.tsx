@@ -2,73 +2,46 @@ import React from "react";
 import StorefrontLayout from "@/components/storefront/StorefrontLayout";
 import ProductCard from "@/components/storefront/ProductCard";
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 
-export default function Home() {
-  const trendingProducts = [
-    {
-      id: "1",
-      name: "Conjunto Seda Pura Noturno",
-      price: "R$ 489,00",
-      category: "Conjuntos",
-      imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuBItmN9eB11w_Z6UoMv_D24Z4f-GjO55Q322H00bM5F_2Q6P5zG6I52hP8Zk9dG4B1g3J5U7c_f8U4k180u1K46R-tZ2eY56f9s6b5C8Xz85g1B7Hh8X9C_T5t8y_q7O5N34m4M_F1Z-0j-lZ0p_M-QvE93D_E_Z_A_H_A_z_oV",
-      isNew: true
-    },
-    {
-      id: "2",
-      name: "Camisola Aurora Clássica",
-      price: "R$ 359,00",
-      category: "Camisolas",
-      imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuAnI1QWbV9rD-wD4k-K6M-w1p1T8e7w9L_Tz2p8K8dZk1e1Vn5V_n8M5c8x8S9eU8k1Z4y8M-QvE93D_e_Z_E_z_X5Z_H_Z_T_n_Y5T_F_V_p_9s_3Y_q7O5N_S_K8s_C2",
-      isNew: false
-    },
-    {
-      id: "3",
-      name: "Roupão Aveludado Premium",
-      price: "R$ 529,00",
-      category: "Roupões",
-      imageUrl: "https://images.unsplash.com/photo-1588665796035-1a3b90f55e5b?q=80&w=1587&auto=format&fit=crop",
-      isNew: false
-    },
-    {
-      id: "4",
-      name: "Conjunto Linho Leveza",
-      price: "R$ 419,00",
-      category: "Conjuntos",
-      imageUrl: "https://images.unsplash.com/photo-1582239634283-a4e99f6b9ea7?q=80&w=1587&auto=format&fit=crop",
-      isNew: true
-    }
-  ];
+export const revalidate = 60; // Revalidate page every 60 seconds
 
-  const essentialsProducts = [
-    {
-      id: "5",
-      name: "Camisola Básica Algodão",
-      price: "R$ 189,00",
-      category: "Camisolas",
-      imageUrl: "https://images.unsplash.com/photo-1584985223403-f11de75bbedd?q=80&w=1587&auto=format&fit=crop",
-    },
-    {
-      id: "6",
-      name: "Pijama Curto Conforto",
-      price: "R$ 229,00",
-      category: "Conjuntos",
-      imageUrl: "https://images.unsplash.com/photo-1621217730953-adcb615fd9ce?q=80&w=1587&auto=format&fit=crop",
-    },
-    {
-      id: "7",
-      name: "Calça Pantalona Sleep",
-      price: "R$ 259,00",
-      category: "Calças",
-      imageUrl: "https://images.unsplash.com/photo-1583095697334-71be9fbff0ea?q=80&w=1587&auto=format&fit=crop",
-    },
-    {
-      id: "8",
-      name: "Robe Kimono Verão",
-      price: "R$ 319,00",
-      category: "Robes",
-      imageUrl: "https://images.unsplash.com/photo-1592657421946-f9f3022efef6?q=80&w=1587&auto=format&fit=crop",
+export default async function Home() {
+  const dbTrendingProducts = await prisma.product.findMany({
+    where: { isFeatured: true },
+    take: 4,
+    include: {
+      category: true,
+      images: {
+        where: { isDisplay: true },
+        take: 1
+      }
     }
-  ];
+  });
+
+  const dbEssentialsProducts = await prisma.product.findMany({
+    where: { isFeatured: false },
+    take: 4,
+    include: {
+      category: true,
+      images: {
+        where: { isDisplay: true },
+        take: 1
+      }
+    }
+  });
+
+  const mapProductToCard = (p: any) => ({
+    id: p.id,
+    name: p.name,
+    price: `R$ ${Number(p.basePrice).toFixed(2).replace('.', ',')}`,
+    category: p.category.name,
+    imageUrl: p.images[0]?.url || "https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=1587&auto=format&fit=crop",
+    isNew: p.isNew
+  });
+
+  const trendingProducts = dbTrendingProducts.map(mapProductToCard);
+  const essentialsProducts = dbEssentialsProducts.map(mapProductToCard);
 
   return (
     <StorefrontLayout>
