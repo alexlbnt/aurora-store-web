@@ -1,7 +1,10 @@
 import Link from "next/link";
-import Image from "next/image";
+import { auth } from "@/auth";
+import { logout } from "./actions";
 
-export default function Sidebar() {
+export default async function Sidebar() {
+  const session = await auth();
+  
   return (
     <aside className="w-64 bg-background-dark text-slate-100 flex flex-col border-r border-primary/20 shrink-0 h-full">
       <div className="p-6 flex items-center gap-3">
@@ -22,7 +25,7 @@ export default function Sidebar() {
           <span className="material-symbols-outlined">shopping_cart</span>
           <span className="text-sm font-medium">Vendas</span>
         </Link>
-        <Link href="/admin/products/new" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-primary/20 hover:text-white transition-colors">
+        <Link href="/admin/products" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-primary/20 hover:text-white transition-colors">
           <span className="material-symbols-outlined">inventory_2</span>
           <span className="text-sm font-medium">Produtos</span>
         </Link>
@@ -40,15 +43,21 @@ export default function Sidebar() {
           <span className="material-symbols-outlined">settings</span>
           <span className="text-sm font-medium">Configurações</span>
         </Link>
-        <div className="mt-4 flex items-center gap-3 px-3 py-2">
-          <div className="size-8 rounded-full bg-primary/30 flex items-center justify-center overflow-hidden">
-            {/* Fallback to simple icon since we might not have the avatar image URL easily available in next/image */}
-            <span className="material-symbols-outlined text-sm">person</span>
+        <div className="mt-4 flex items-center justify-between px-3 py-2 bg-slate-800/50 rounded-lg">
+          <div className="flex items-center gap-3">
+            <div className="size-8 rounded-full bg-primary/30 flex items-center justify-center overflow-hidden">
+              <span className="material-symbols-outlined text-sm">person</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-slate-100">{session?.user?.name || "Administrador"}</span>
+              <span className="text-[10px] text-slate-500 uppercase">{session?.user?.email || "admin@aurora.com"}</span>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <span className="text-xs font-bold text-slate-100">Admin Aurora</span>
-            <span className="text-[10px] text-slate-500 uppercase">admin@aurora.com</span>
-          </div>
+          <form action={logout}>
+            <button className="p-1.5 hover:bg-slate-700 rounded text-slate-400 hover:text-rose-400 transition-colors" title="Sair do painel">
+              <span className="material-symbols-outlined text-lg">logout</span>
+            </button>
+          </form>
         </div>
       </div>
     </aside>

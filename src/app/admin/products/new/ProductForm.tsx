@@ -4,13 +4,21 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { createProduct } from "./actions";
 
-export default function ProductForm({ categories }: { categories: any[] }) {
+export default function ProductForm({ categories, initialData }: { categories: any[], initialData?: any }) {
+  const isEditing = !!initialData;
   const [isPending, setIsPending] = useState(false);
-  const [hasVariants, setHasVariants] = useState(true);
+  const [hasVariants, setHasVariants] = useState(initialData ? initialData.variants.length > 0 : true);
 
-  // Simplified state for variants
-  const [sizes, setSizes] = useState<string[]>(['P', 'M', 'G']);
-  const [colors, setColors] = useState<string[]>(['Padrão']);
+  // Derive initial unique sizes and colors from variants if editing
+  const initialSizes = initialData 
+    ? Array.from(new Set(initialData.variants.map((v: any) => v.size))) as string[]
+    : ['P', 'M', 'G'];
+  const initialColors = initialData
+    ? Array.from(new Set(initialData.variants.map((v: any) => v.color))) as string[]
+    : ['Padrão'];
+
+  const [sizes, setSizes] = useState<string[]>(initialSizes);
+  const [colors, setColors] = useState<string[]>(initialColors);
   const [newSize, setNewSize] = useState("");
   const [newColor, setNewColor] = useState("");
 
@@ -55,8 +63,14 @@ export default function ProductForm({ categories }: { categories: any[] }) {
     formData.append('hasVariants', String(hasVariants));
     
     try {
-      await createProduct(formData);
-      // Redirect or show success message (handled in action currently or we can do here)
+      if (isEditing) {
+        // Fetch dynamically from imported actions to avoid circular deps with new/actions.ts
+        const { editProduct } = await import("../actions");
+        await editProduct(initialData.id, formData);
+      } else {
+        await createProduct(formData);
+      }
+      // Redirect to list
       window.location.href = '/admin/products';
     } catch (error) {
       console.error("Failed to create product:", error);
@@ -74,16 +88,16 @@ export default function ProductForm({ categories }: { categories: any[] }) {
           <nav className="flex items-center gap-2 text-sm font-medium">
             <Link href="/admin" className="text-slate-500 hover:text-primary transition-colors">Dashboard</Link>
             <span className="material-symbols-outlined text-xs text-slate-400">chevron_right</span>
-            <span className="text-slate-900 dark:text-white">Novo Produto</span>
+            <span className="text-slate-900 dark:text-white">{isEditing ? 'Editar Produto' : 'Novo Produto'}</span>
           </nav>
         </div>
         <div className="flex items-center gap-4">
-          <Link href="/admin" className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
-            Descartar
+          <Link href="/admin/products" className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+            Cancelar
           </Link>
           <button type="submit" disabled={isPending} className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm transition-colors disabled:opacity-50">
             <span className="material-symbols-outlined text-sm">{isPending ? 'sync' : 'publish'}</span>
-            {isPending ? 'Salvando...' : 'Publicar Produto'}
+            {isPending ? 'Salvando...' : (isEditing ? 'Salvar Alterações' : 'Publicar Produto')}
           </button>
         </div>
       </div>
@@ -103,6 +117,7 @@ export default function ProductForm({ categories }: { categories: any[] }) {
                     type="text" 
                     name="name"
                     required
+                    defaultValue={initialData?.name}
                     placeholder="Ex: Vestido de Seda Aurora" 
                     className="w-full rounded-lg border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-white" 
                   />
@@ -113,6 +128,7 @@ export default function ProductForm({ categories }: { categories: any[] }) {
                     <textarea 
                       name="description"
                       rows={6} 
+                      defaultValue={initialData?.description}
                       placeholder="Descreva os detalhes, materiais e cuidados do produto..." 
                       className="w-full border-none focus:ring-0 dark:bg-slate-800 dark:text-white p-4 text-sm resize-y"
                     />
@@ -198,7 +214,7 @@ export default function ProductForm({ categories }: { categories: any[] }) {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Categoria</label>
-                  <select name="categoryId" className="w-full rounded-lg border-slate-200 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                  <select name="categoryId" defaultValue={initialData?.categoryId} className="w-full rounded-lg border-slate-200 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white">
                     {categories.map((cat) => (
                       <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
@@ -213,11 +229,11 @@ export default function ProductForm({ categories }: { categories: any[] }) {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Preço (R$)</label>
-                  <input type="number" step="0.01" name="price" required placeholder="0.00" className="w-full rounded-lg border-primary/20 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white placeholder:text-slate-400" />
+                  <input type="number" step="0.01" name="price" defaultValue={initialData?.basePrice} required placeholder="0.00" className="w-full rounded-lg border-primary/20 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white placeholder:text-slate-400" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Estoque Total</label>
-                  <input type="number" name="stock" required placeholder="0" className="w-full rounded-lg border-primary/20 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white placeholder:text-slate-400" />
+                  <input type="number" name="stock" defaultValue={initialData ? initialData.variants.reduce((acc: number, v: any) => acc + v.stock, 0) : undefined} required placeholder="0" className="w-full rounded-lg border-primary/20 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white placeholder:text-slate-400" />
                 </div>
               </div>
             </div>

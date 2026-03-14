@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
@@ -13,6 +14,18 @@ async function main() {
   await prisma.product.deleteMany()
   await prisma.category.deleteMany()
   await prisma.customer.deleteMany()
+  await prisma.user.deleteMany()
+  
+  // 0. Criar Usuário Admin Default
+  const hashedPassword = await bcrypt.hash('aurora2024', 10);
+  await prisma.user.create({
+    data: {
+      name: 'Administrador',
+      email: 'admin@aurora.com.br',
+      password: hashedPassword,
+      role: 'ADMIN'
+    }
+  });
 
   // 1. Criar Categorias
   const catConjuntos = await prisma.category.create({

@@ -47,5 +47,8 @@ export async function createProduct(formData: FormData) {
   revalidatePath("/admin/products");
   revalidatePath("/admin/products/new");
   
-  return product;
+  return { 
+    success: true, 
+    productId: product.id 
+  };
 }
