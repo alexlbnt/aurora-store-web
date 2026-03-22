@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import AddToCart from "@/components/storefront/AddToCart";
 
 export default async function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
   // In a real app we'd fetch product data here based on params.id
@@ -88,53 +89,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
             </div>
           </div>
 
-          <div className="space-y-6 border-b border-primary/10 pb-8">
-            {/* Cor */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-primary dark:text-slate-200 uppercase tracking-widest">Cor: <span className="text-primary/70">{product.colors[0]}</span></span>
-              </div>
-              <div className="flex gap-3">
-                {product.colors.map((c, i) => (
-                  <button key={i} className={`size-8 rounded-full border-2 p-0.5 transition-all outline-none ${i === 0 ? 'border-primary dark:border-slate-400' : 'border-transparent'}`} title={c}>
-                    <div className={`w-full h-full rounded-full border border-primary/10 ${i===0 ? 'bg-[#FAF6F0]' : i===1 ? 'bg-[#d8c8b8]' : 'bg-[#2D241D]'}`} />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Tamanho */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-primary dark:text-slate-200 uppercase tracking-widest">Tamanho</span>
-                <button className="text-xs font-bold text-primary/60 dark:text-slate-400 underline underline-offset-4 hover:text-primary transition-colors">Guia de Medidas</button>
-              </div>
-              <div className="grid grid-cols-4 gap-3">
-                {product.sizes.map((s, i) => (
-                  <button key={i} className={`py-3 rounded text-sm font-bold uppercase transition-all flex items-center justify-center ${i === 1 ? 'bg-primary text-white border border-primary' : 'border border-primary/20 text-primary dark:text-slate-300 hover:border-primary/60'}`}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Ações */}
-            <div className="pt-4 space-y-3">
-              <button className="w-full bg-primary hover:bg-primary/90 text-white dark:text-slate-100 font-bold uppercase tracking-widest py-4 rounded-full transition-all flex items-center justify-center gap-2 shadow-sm">
-                <span className="material-symbols-outlined">shopping_bag</span>
-                Adicionar à Sacola
-              </button>
-              <button className="w-full bg-transparent text-primary dark:text-slate-200 border border-primary dark:border-slate-500 font-bold uppercase tracking-widest py-4 rounded-full hover:bg-primary/5 transition-all flex items-center justify-center gap-2">
-                <span className="material-symbols-outlined text-[18px]">favorite</span>
-                Lista de Desejos
-              </button>
-            </div>
-            
-            <div className="flex items-center gap-3 pt-4 text-xs font-bold text-primary/60 dark:text-slate-400 uppercase tracking-widest">
-              <span className="material-symbols-outlined text-lg">local_shipping</span>
-              Envio em 24h úteis
-            </div>
-          </div>
+          <AddToCart product={product} />
 
           {/* Accordion Detalhes */}
           <div className="space-y-1">

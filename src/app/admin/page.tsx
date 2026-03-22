@@ -1,6 +1,7 @@
 import React from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { prisma } from "@/lib/prisma";
+import DashboardCharts from "@/components/admin/DashboardCharts";
 
 export const revalidate = 0;
 
@@ -22,6 +23,23 @@ export default async function Dashboard() {
     .reduce((acc, order) => acc + Number(order.totalAmount), 0);
 
   const ticketMedio = orders.length > 0 ? totalSales / orders.filter(o => o.status !== 'CANCELED').length : 0;
+
+  // Generate chart data for the last 7 days
+  const chartData = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    return { name: dateStr, total: 0 };
+  });
+
+  orders.forEach(order => {
+    if (order.status === 'CANCELED') return;
+    const dateStr = order.createdAt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    const dayData = chartData.find(d => d.name === dateStr);
+    if (dayData) {
+      dayData.total += Number(order.totalAmount);
+    }
+  });
 
   return (
     <AdminLayout pageTitle="Visão Geral">
@@ -86,34 +104,7 @@ export default async function Dashboard() {
             </div>
           </div>
           <div className="h-[300px] w-full relative">
-            {/* SVG Chart Placeholder */}
-            <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 800 300">
-              <defs>
-                <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#5d4a3c" stopOpacity="0.15"></stop>
-                  <stop offset="100%" stopColor="#5d4a3c" stopOpacity="0"></stop>
-                </linearGradient>
-              </defs>
-              <line stroke="#f1f1f1" strokeDasharray="4" x1="0" x2="800" y1="0" y2="0"></line>
-              <line stroke="#f1f1f1" strokeDasharray="4" x1="0" x2="800" y1="75" y2="75"></line>
-              <line stroke="#f1f1f1" strokeDasharray="4" x1="0" x2="800" y1="150" y2="150"></line>
-              <line stroke="#f1f1f1" strokeDasharray="4" x1="0" x2="800" y1="225" y2="225"></line>
-              <line stroke="#f1f1f1" x1="0" x2="800" y1="300" y2="300"></line>
-              <path d="M0,200 Q100,180 200,220 T400,150 T600,100 T800,50 V300 H0 Z" fill="url(#chartGradient)"></path>
-              <path d="M0,200 Q100,180 200,220 T400,150 T600,100 T800,50" fill="none" stroke="#5d4a3c" strokeLinecap="round" strokeWidth="3"></path>
-              <circle cx="200" cy="220" fill="white" r="4" stroke="#5d4a3c" strokeWidth="2"></circle>
-              <circle cx="400" cy="150" fill="white" r="4" stroke="#5d4a3c" strokeWidth="2"></circle>
-              <circle cx="600" cy="100" fill="white" r="4" stroke="#5d4a3c" strokeWidth="2"></circle>
-            </svg>
-            <div className="flex justify-between mt-4 px-2">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tighter">Seg</span>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tighter">Ter</span>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tighter">Qua</span>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tighter">Qui</span>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tighter">Sex</span>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tighter">Sáb</span>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tighter">Dom</span>
-            </div>
+            <DashboardCharts data={chartData} />
           </div>
         </div>
       </div>

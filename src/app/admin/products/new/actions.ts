@@ -9,13 +9,31 @@ export async function createProduct(formData: FormData) {
   const price = formData.get("price") as string;
   const stock = formData.get("stock") as string;
   const categoryId = formData.get("categoryId") as string;
+  const imagesRaw = formData.get("images") as string;
+  
+  let images: string[] = [];
+  if (imagesRaw) {
+    try { images = JSON.parse(imagesRaw); } catch(e) {}
+  }
+  if (images.length === 0) {
+    images = ["https://d2qs1z4gndokv4.cloudfront.net/Custom/Content/Products/99/65/996545_calcinha-conforto-em-tecido-canelado-sem-costura-my-lady-6229_m5_638519965223030386.jpg"];
+  }
   
   const hasVariants = formData.get("hasVariants") === "true";
-  const sizesRaw = formData.get("sizes") as string;
-  const colorsRaw = formData.get("colors") as string;
+  const variantsMatrixRaw = formData.get("variantsMatrix") as string;
   
-  const sizes = JSON.parse(sizesRaw) as string[];
-  const colors = JSON.parse(colorsRaw) as string[];
+  let variantsMatrix: any[] = [];
+  if (hasVariants && variantsMatrixRaw) {
+    variantsMatrix = JSON.parse(variantsMatrixRaw);
+  } else {
+    variantsMatrix = [{ 
+      size: 'Único', 
+      color: 'Padrão', 
+      sku: `AUR-${Math.random().toString(36).substring(7).toUpperCase()}`, 
+      price: parseFloat(price), 
+      stock: parseInt(stock, 10) || 0 
+    }];
+  }
 
   if (!name || !price || !categoryId) {
     throw new Error("Missing required fields");
@@ -29,17 +47,22 @@ export async function createProduct(formData: FormData) {
       basePrice: parseFloat(price),
       categoryId,
       isFeatured: false,
-      sku: `AUR-${Math.random().toString(36).substring(7).toUpperCase()}`, // Generate random SKU for demo
+      sku: `AUR-${Math.random().toString(36).substring(7).toUpperCase()}`,
+      images: {
+        create: images.map((url, i) => ({
+          url,
+          order: i,
+          isDisplay: i === 0
+        }))
+      },
       variants: {
-        create: sizes.flatMap(size => 
-          colors.map(color => ({
-            sku: `AUR-${size}-${color}-${Math.random().toString(36).substring(7).toUpperCase()}`,
-            price: parseFloat(price),
-            stock: Math.floor((parseInt(stock, 10) || 0) / (sizes.length * colors.length)) || 0, // Distribute stock evenly for demo
-            color,
-            size
-          }))
-        )
+        create: variantsMatrix.map((v: any) => ({
+          sku: v.sku || `AUR-${v.size}-${v.color}-${Math.random().toString(36).substring(7).toUpperCase()}`,
+          price: v.price ? parseFloat(v.price) : parseFloat(price),
+          stock: parseInt(v.stock, 10) || 0,
+          color: v.color,
+          size: v.size
+        }))
       }
     }
   });

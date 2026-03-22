@@ -9,29 +9,54 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
+      const userRole = (auth?.user as any)?.role;
       const isOnAdmin = nextUrl.pathname.startsWith('/admin');
+      const isOnAccount = nextUrl.pathname.startsWith('/account');
       
       if (isOnAdmin) {
         if (nextUrl.pathname === '/admin/login') {
-          if (isLoggedIn) {
+          if (isLoggedIn && userRole === 'ADMIN') {
              return Response.redirect(new URL('/admin', nextUrl));
+          } else if (isLoggedIn) {
+             return Response.redirect(new URL('/', nextUrl));
           }
-          return true; // Let them access the login page
+          return true; // Let unauthenticated access the login page
         }
 
         if (isLoggedIn) {
-          return true; // Let them access admin routes
+          if (userRole === 'ADMIN') return true;
+          // Logged in but not admin
+          return Response.redirect(new URL('/', nextUrl));
         }
 
         return false; // Redirect unauthenticated users to login page
-      } else if (isLoggedIn && nextUrl.pathname === '/admin/login') {
-        return Response.redirect(new URL('/admin', nextUrl));
+      } 
+      
+      if (isOnAccount) {
+        if (!isLoggedIn) return false;
+        return true;
       }
-      return true; // Let them access non-admin routes
+      
+      // Storefront login pages
+      if (nextUrl.pathname === '/login' || nextUrl.pathname === '/register') {
+         if (isLoggedIn) {
+           return Response.redirect(new URL(userRole === 'ADMIN' ? '/admin' : '/account', nextUrl));
+         }
+         return true;
+      }
+
+      return true; // Any other route is public
+    },
+    jwt({ token, user }) {
+      if (user) {
+        token.role = (user as any).role;
+      }
+      return token;
     },
     session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.sub as string;
+        (session.user as any).role = token.role;
       }
       return session;
     }

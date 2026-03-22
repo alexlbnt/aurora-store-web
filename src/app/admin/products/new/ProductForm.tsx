@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { createProduct } from "./actions";
 
@@ -21,6 +21,39 @@ export default function ProductForm({ categories, initialData }: { categories: a
   const [colors, setColors] = useState<string[]>(initialColors);
   const [newSize, setNewSize] = useState("");
   const [newColor, setNewColor] = useState("");
+
+  const initialImages = initialData?.images ? initialData.images.map((img: any) => typeof img === 'string' ? img : img.url) : [];
+  const [images, setImages] = useState<string[]>(initialImages);
+  const [newImage, setNewImage] = useState("");
+
+  const [variantMatrix, setVariantMatrix] = useState<any[]>(initialData?.variants || []);
+
+  useEffect(() => {
+    if (!hasVariants) return;
+    const newMatrix: any[] = [];
+    sizes.forEach(size => {
+      colors.forEach(color => {
+         const existingId = `${size}-${color}`;
+         const existing = variantMatrix.find(v => v._id === existingId || (v.size === size && v.color === color));
+         newMatrix.push({
+           _id: existingId,
+           size,
+           color,
+           sku: existing?.sku || `AUR-${size.substring(0,3).toUpperCase()}-${color.substring(0,3).toUpperCase()}-${Math.floor(Math.random() * 1000)}`,
+           price: existing?.price || '',
+           stock: existing?.stock || 0
+         });
+      });
+    });
+    // Only update if dimensions changed to avoid losing input focus
+    if (newMatrix.length !== variantMatrix.length || !newMatrix.every((m, i) => m._id === variantMatrix[i]?._id)) {
+       setVariantMatrix(newMatrix);
+    }
+  }, [sizes, colors, hasVariants]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const updateVariantElement = (id: string, field: string, value: string) => {
+    setVariantMatrix(prev => prev.map(v => v._id === id ? { ...v, [field]: value } : v));
+  };
 
   const addSize = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && newSize.trim() !== "") {
@@ -51,6 +84,20 @@ export default function ProductForm({ categories, initialData }: { categories: a
     setColors(colors.filter(c => c !== color));
   };
 
+  const addImage = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && newImage.trim() !== "") {
+      e.preventDefault();
+      if (!images.includes(newImage.trim())) {
+        setImages([...images, newImage.trim()]);
+      }
+      setNewImage("");
+    }
+  };
+
+  const removeImage = (url: string) => {
+    setImages(images.filter(img => img !== url));
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsPending(true);
@@ -58,8 +105,8 @@ export default function ProductForm({ categories, initialData }: { categories: a
     const formData = new FormData(e.currentTarget);
     
     // Add variants data
-    formData.append('sizes', JSON.stringify(hasVariants ? sizes : ['Único']));
-    formData.append('colors', JSON.stringify(hasVariants ? colors : ['Padrão']));
+    formData.append('images', JSON.stringify(images));
+    formData.append('variantsMatrix', JSON.stringify(variantMatrix));
     formData.append('hasVariants', String(hasVariants));
     
     try {
@@ -137,6 +184,43 @@ export default function ProductForm({ categories, initialData }: { categories: a
               </div>
             </div>
 
+            {/* Card 2: Imagens */}
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mt-6">
+              <h3 className="text-lg font-bold mb-4 text-slate-900 dark:text-white">Imagens do Produto</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">URLs das Imagens</label>
+                  <input 
+                    type="text" 
+                    value={newImage}
+                    onChange={(e) => setNewImage(e.target.value)}
+                    onKeyDown={addImage}
+                    placeholder="Cole a URL da imagem e aperte Enter..." 
+                    className="w-full rounded-lg border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-white" 
+                  />
+                  <p className="text-xs text-slate-400 mt-2">Pressione Enter para adicionar a URL à galeria.</p>
+                </div>
+
+                {images.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                     {images.map((url, i) => (
+                       <div key={i} className="relative group rounded-xl border border-slate-200 overflow-hidden aspect-[3/4] bg-slate-50">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={url} alt={`Preview ${i}`} className="w-full h-full object-cover" />
+                          <button 
+                            type="button" 
+                            onClick={() => removeImage(url)} 
+                            className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center bg-white/90 text-rose-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-rose-500 hover:text-white"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                          </button>
+                       </div>
+                     ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Card 4: Variations */}
             <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
               <div className="flex items-center justify-between mb-6">
@@ -200,6 +284,43 @@ export default function ProductForm({ categories, initialData }: { categories: a
                       </div>
                     </div>
                   </div>
+
+                  {sizes.length > 0 && colors.length > 0 && (
+                     <div className="mt-8">
+                       <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">Matriz de Variações</h4>
+                       <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+                         <table className="w-full text-left text-sm whitespace-nowrap">
+                           <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                             <tr>
+                               <th className="px-4 py-3 font-bold text-slate-500">Tamanho</th>
+                               <th className="px-4 py-3 font-bold text-slate-500">Cor</th>
+                               <th className="px-4 py-3 font-bold text-slate-500 w-32">SKU</th>
+                               <th className="px-4 py-3 font-bold text-slate-500 w-32">Preço (+/-)</th>
+                               <th className="px-4 py-3 font-bold text-slate-500 w-24">Estoque</th>
+                             </tr>
+                           </thead>
+                           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                             {variantMatrix.map((v) => (
+                               <tr key={v._id}>
+                                 <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">{v.size}</td>
+                                 <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">{v.color}</td>
+                                 <td className="px-4 py-2">
+                                   <input type="text" value={v.sku} onChange={e => updateVariantElement(v._id, 'sku', e.target.value)} className="w-full text-xs py-1.5 px-2 rounded border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-1 focus:ring-primary" />
+                                 </td>
+                                 <td className="px-4 py-2">
+                                   <input type="number" step="0.01" value={v.price} onChange={e => updateVariantElement(v._id, 'price', e.target.value)} placeholder="Base" className="w-full text-xs py-1.5 px-2 rounded border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-1 focus:ring-primary" />
+                                 </td>
+                                 <td className="px-4 py-2">
+                                   <input type="number" value={v.stock} onChange={e => updateVariantElement(v._id, 'stock', e.target.value)} className="w-full text-xs py-1.5 px-2 rounded border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-1 focus:ring-primary" />
+                                 </td>
+                               </tr>
+                             ))}
+                           </tbody>
+                         </table>
+                       </div>
+                       <p className="text-xs text-slate-400 mt-2">Dica: Deixe o preço em branco para usar o Preço Base.</p>
+                     </div>
+                  )}
                 </div>
               )}
             </div>

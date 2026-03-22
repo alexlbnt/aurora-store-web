@@ -29,12 +29,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         );
 
         if (!isPasswordValid) return null;
-        
-        // Ensure only ADMIN users can login to the admin panel
-        if (user.role !== 'ADMIN') {
-            return null;
-        }
-
         return {
           id: user.id,
           email: user.email,

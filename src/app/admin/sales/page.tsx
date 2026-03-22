@@ -1,6 +1,7 @@
 import React from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { prisma } from "@/lib/prisma";
+import Link from "next/link";
 
 export const revalidate = 0; // Don't cache admin pages
 
@@ -29,10 +30,10 @@ export default async function Sales() {
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-xl font-bold text-primary">Vendas</h2>
           <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-primary/90 transition-all shadow-sm">
+            <Link href="/admin/sales/new" className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-primary/90 transition-all shadow-sm">
               <span className="material-symbols-outlined text-sm">add</span>
               Novo Pedido
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -154,9 +155,9 @@ export default async function Sales() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="text-slate-400 hover:text-primary transition-colors p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800">
-                        <span className="material-symbols-outlined">more_horiz</span>
-                      </button>
+                      <Link href={`/admin/sales/${order.id}`} className="text-slate-400 hover:text-primary transition-colors p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800/50 inline-block" title="Ver Detalhes">
+                        <span className="material-symbols-outlined">visibility</span>
+                      </Link>
                     </td>
                   </tr>
                 )})}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Playfair_Display, Montserrat } from "next/font/google";
 import "./globals.css";
+import { Providers } from "./providers";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta-sans",
@@ -36,9 +37,11 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${plusJakartaSans.variable} ${playfairDisplay.variable} ${montserrat.variable} antialiased`}
+        className={`${plusJakartaSans.variable} ${playfairDisplay.variable} ${montserrat.variable} antialiased text-slate-900 bg-background-light dark:bg-background-dark dark:text-slate-100 min-h-screen`}
       >
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

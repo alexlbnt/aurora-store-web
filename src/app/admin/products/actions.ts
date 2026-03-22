@@ -29,13 +29,28 @@ export async function editProduct(productId: string, formData: FormData) {
   const price = formData.get("price") as string;
   const stock = formData.get("stock") as string;
   const categoryId = formData.get("categoryId") as string;
+  const imagesRaw = formData.get("images") as string;
+  
+  let images: string[] = [];
+  if (imagesRaw) {
+    try { images = JSON.parse(imagesRaw); } catch(e) {}
+  }
   
   const hasVariants = formData.get("hasVariants") === "true";
-  const sizesRaw = formData.get("sizes") as string;
-  const colorsRaw = formData.get("colors") as string;
+  const variantsMatrixRaw = formData.get("variantsMatrix") as string;
   
-  const sizes = JSON.parse(sizesRaw) as string[];
-  const colors = JSON.parse(colorsRaw) as string[];
+  let variantsMatrix: any[] = [];
+  if (hasVariants && variantsMatrixRaw) {
+    variantsMatrix = JSON.parse(variantsMatrixRaw);
+  } else {
+    variantsMatrix = [{ 
+      size: 'Único', 
+      color: 'Padrão', 
+      sku: `AUR-${Math.random().toString(36).substring(7).toUpperCase()}`, 
+      price: parseFloat(price), 
+      stock: parseInt(stock, 10) || 0 
+    }];
+  }
 
   if (!name || !price || !categoryId) {
     throw new Error("Missing required fields");
@@ -55,16 +70,24 @@ export async function editProduct(productId: string, formData: FormData) {
         description: description || "",
         basePrice: parseFloat(price),
         categoryId,
-        variants: {
-          create: sizes.flatMap(size => 
-            colors.map(color => ({
-              sku: `AUR-${size}-${color}-${Math.random().toString(36).substring(7).toUpperCase()}`,
-              price: parseFloat(price),
-              stock: Math.floor((parseInt(stock, 10) || 0) / (sizes.length * colors.length)) || 0,
-              color,
-              size
+        ...(images.length > 0 && { 
+          images: {
+            deleteMany: {},
+            create: images.map((url, i) => ({
+              url,
+              order: i,
+              isDisplay: i === 0
             }))
-          )
+          } 
+        }),
+        variants: {
+          create: variantsMatrix.map((v: any) => ({
+            sku: v.sku || `AUR-${v.size}-${v.color}-${Math.random().toString(36).substring(7).toUpperCase()}`,
+            price: v.price ? parseFloat(v.price) : parseFloat(price),
+            stock: parseInt(v.stock, 10) || 0,
+            color: v.color,
+            size: v.size
+          }))
         }
       }
     });
