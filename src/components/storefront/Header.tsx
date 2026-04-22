@@ -43,7 +43,7 @@ export default function Header() {
           <Link href="/">AURORA</Link>
         </h1>
         <div className="flex items-center gap-1 shrink-0 relative z-50">
-          <Link href="/catalog" aria-label="Search" className="text-primary dark:text-primary/80 flex size-10 items-center justify-center hover:bg-primary/5 rounded-full transition-colors hidden sm:flex">
+          <Link href="/catalog" aria-label="Search" className="text-primary dark:text-primary/80 flex size-10 items-center justify-center hover:bg-primary/5 rounded-full transition-colors">
             <span className="material-symbols-outlined text-[24px]">search</span>
           </Link>
           <Link href="/wishlist" aria-label="Wishlist" className="text-primary dark:text-primary/80 flex size-10 items-center justify-center hover:bg-primary/5 rounded-full transition-colors hidden sm:flex">
@@ -78,22 +78,22 @@ export default function Header() {
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex flex-col h-full gap-6 p-6 overflow-y-auto">
-          <nav className="flex flex-col gap-5 w-full">
-            <Link href="/" className="text-2xl font-serif text-primary dark:text-slate-100 hover:text-primary/60 transition-colors">Início</Link>
-            <Link href="/catalog" className="text-2xl font-serif text-primary dark:text-slate-100 hover:text-primary/60 transition-colors">Catálogo</Link>
+        <div className="flex flex-col h-full gap-4 p-6 overflow-y-auto">
+          <nav className="flex flex-col gap-3 w-full">
+            <Link href="/" className="text-xl font-serif text-primary dark:text-slate-100 hover:text-primary/60 transition-colors" onClick={() => setIsMenuOpen(false)}>Início</Link>
+            <Link href="/catalog" className="text-xl font-serif text-primary dark:text-slate-100 hover:text-primary/60 transition-colors" onClick={() => setIsMenuOpen(false)}>Catálogo</Link>
             
             <div className="w-full h-px bg-primary/10 dark:bg-slate-800 my-2" />
             
             <span className="text-sm font-bold uppercase tracking-widest text-primary/40 dark:text-slate-500 mb-2">Categorias</span>
-            <Link href="/category/camisolas" className="text-lg font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors">Camisolas</Link>
-            <Link href="/category/conjuntos" className="text-lg font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors">Conjuntos</Link>
-            <Link href="/category/roupoes" className="text-lg font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors">Roupões</Link>
-            <Link href="/category/acessorios" className="text-lg font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors">Acessórios</Link>
+            <Link href="/category/camisolas" className="text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>Camisolas</Link>
+            <Link href="/category/conjuntos" className="text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>Conjuntos</Link>
+            <Link href="/category/roupoes" className="text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>Roupões</Link>
+            <Link href="/category/acessorios" className="text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>Acessórios</Link>
 
             <div className="w-full h-px bg-primary/10 dark:bg-slate-800 my-2" />
             
-            <Link href="/account" className="flex items-center gap-2 text-lg font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors">
+            <Link href="/account" className="flex items-center gap-2 text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>
               <span className="material-symbols-outlined">person</span> Minha Conta
             </Link>
           </nav>

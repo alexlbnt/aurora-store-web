@@ -12,40 +12,40 @@ model Category {
   name        String
   slug        String    @unique
   description String?
-  products    Product[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  products    Product[]
 }
 
 model Product {
-  id          String    @id @default(uuid())
+  id          String         @id @default(uuid())
   name        String
-  slug        String    @unique
+  slug        String         @unique
   description String
-  basePrice   Decimal   @db.Decimal(10, 2)
-  sku         String    @unique
+  basePrice   Decimal        @db.Decimal(10, 2)
+  sku         String         @unique
   categoryId  String
-  category    Category  @relation(fields: [categoryId], references: [id])
-  variants    Variant[]
-  images      ProductImage[]
-  isNew       Boolean   @default(false)
-  isFeatured  Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  isNew       Boolean        @default(false)
+  isFeatured  Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
   orderItems  OrderItem[]
+  category    Category       @relation(fields: [categoryId], references: [id])
+  images      ProductImage[]
+  variants    Variant[]
 }
 
 model Variant {
-  id          String   @id @default(uuid())
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  color       String
-  size        String
-  price       Decimal? @db.Decimal(10, 2) // Override basePrice se necessário
-  sku         String?  @unique
-  stock       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  productId String
+  color     String
+  size      String
+  price     Decimal? @db.Decimal(10, 2)
+  sku       String?  @unique
+  stock     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([productId, color, size])
 }
@@ -53,12 +53,12 @@ model Variant {
 model ProductImage {
   id        String   @id @default(uuid())
   productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   url       String
   alt       String?
   isDisplay Boolean  @default(false)
   order     Int      @default(0)
   createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Customer {
@@ -66,7 +66,40 @@ model Customer {
   name      String
   email     String   @unique
   phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   orders    Order[]
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  orderNumber String      @unique
+  customerId  String
+  status      OrderStatus @default(PENDING)
+  totalAmount Decimal     @db.Decimal(10, 2)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  customer    Customer    @relation(fields: [customerId], references: [id])
+  items       OrderItem[]
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  productId String
+  variantId String?
+  quantity  Int
+  price     Decimal @db.Decimal(10, 2)
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String?
+  email     String   @unique
+  password  String?
+  role      Role     @default(USER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -79,40 +112,7 @@ enum OrderStatus {
   CANCELED
 }
 
-model Order {
-  id          String      @id @default(uuid())
-  orderNumber String      @unique
-  customerId  String
-  customer    Customer    @relation(fields: [customerId], references: [id])
-  status      OrderStatus @default(PENDING)
-  totalAmount Decimal     @db.Decimal(10, 2)
-  items       OrderItem[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-}
-
-model OrderItem {
-  id        String   @id @default(uuid())
-  orderId   String
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product  @relation(fields: [productId], references: [id])
-  variantId String?
-  quantity  Int
-  price     Decimal  @db.Decimal(10, 2)
-}
-
 enum Role {
   USER
   ADMIN
-}
-
-model User {
-  id            String    @id @default(uuid())
-  name          String?
-  email         String    @unique
-  password      String?
-  role          Role      @default(USER)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
 }

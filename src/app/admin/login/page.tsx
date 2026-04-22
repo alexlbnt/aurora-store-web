@@ -72,6 +72,12 @@ export default function LoginPage() {
               </>
             )}
           </button>
+          
+          <div className="text-center mt-2">
+            <Link href="#" className="text-sm text-primary/70 hover:text-primary transition-colors font-medium">
+              Esqueci minha senha
+            </Link>
+          </div>
         </form>
       </div>
 

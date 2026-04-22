@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { prisma } from "@/lib/prisma";
 
@@ -28,10 +29,10 @@ export default async function Customers() {
             <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Clientes</h2>
             <p className="text-slate-500 text-sm mt-1">Gerencie sua base de clientes e acompanhe o engajamento.</p>
           </div>
-          <button className="flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all shadow-sm">
+          <Link href="/admin/customers/new" className="flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all shadow-sm">
             <span className="material-symbols-outlined text-base">person_add</span>
             Adicionar Cliente
-          </button>
+          </Link>
         </div>
 
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-primary/10 shadow-sm overflow-hidden">
