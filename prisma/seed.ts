@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcryptjs'
+import { hash } from 'bcrypt-ts'
 
 const prisma = new PrismaClient()
 
@@ -17,7 +17,7 @@ async function main() {
   await prisma.user.deleteMany()
   
   // 0. Criar Usuário Admin Default
-  const hashedPassword = await bcrypt.hash('aurora2024', 10);
+  const hashedPassword = await hash('aurora2024', 10);
   await prisma.user.create({
     data: {
       name: 'Administrador',
