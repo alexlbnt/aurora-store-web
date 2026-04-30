@@ -67,23 +67,7 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Mobile Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md border-t border-primary/5 md:hidden">
-        <div className="flex h-16 items-center justify-around px-4">
-          <Link href="/" className="flex flex-col items-center justify-center gap-1 text-primary dark:text-slate-100">
-            <span className="material-symbols-outlined fill-[1]">home</span>
-          </Link>
-          <Link href="#" className="flex flex-col items-center justify-center gap-1 text-primary dark:text-slate-100 opacity-50 hover:opacity-100 transition-opacity">
-            <span className="material-symbols-outlined">favorite</span>
-          </Link>
-          <Link href="/cart" className="flex flex-col items-center justify-center gap-1 text-primary dark:text-slate-100 opacity-50 hover:opacity-100 transition-opacity">
-            <span className="material-symbols-outlined">shopping_bag</span>
-          </Link>
-          <Link href="#" className="flex flex-col items-center justify-center gap-1 text-primary dark:text-slate-100 opacity-50 hover:opacity-100 transition-opacity">
-            <span className="material-symbols-outlined">person</span>
-          </Link>
-        </div>
-      </nav>
+
     </footer>
   );
 }
