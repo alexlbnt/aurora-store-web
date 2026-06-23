@@ -131,19 +131,26 @@ export default function ProductForm({ categories, initialData }: { categories: a
           
           canvas.toBlob((blob) => {
             if (blob) {
-              const newFile = new File([blob], file.name, {
+              const compressedFile = new File([blob], file.name, {
                 type: 'image/jpeg',
                 lastModified: Date.now(),
               });
-              resolve(newFile);
+              resolve(compressedFile);
             } else {
-              reject(new Error("Erro ao comprimir imagem"));
+              resolve(file); // Fallback: se falhar o blob, envia o original
             }
-          }, 'image/jpeg', 0.8); // 80% quality
+          }, 'image/jpeg', 0.8);
         };
-        img.onerror = () => reject(new Error("Erro ao carregar imagem para compressão"));
+        img.onerror = () => {
+          // Se o navegador não conseguir ler a imagem (ex: formato HEIC do iPhone/Samsung)
+          if (file.size > 4.2 * 1024 * 1024) {
+            reject(new Error("Formato de imagem não suportado (ex: HEIC) e arquivo muito grande (>4MB). Por favor, use JPG ou PNG."));
+          } else {
+            resolve(file); // Envia o original se for pequeno o suficiente
+          }
+        };
       };
-      reader.onerror = error => reject(error);
+      reader.onerror = () => resolve(file);
     });
   };
 
