@@ -99,6 +99,54 @@ export default function ProductForm({ categories, initialData }: { categories: a
     setImages(images.filter(img => img !== url));
   };
 
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 1200;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const newFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              });
+              resolve(newFile);
+            } else {
+              reject(new Error("Erro ao comprimir imagem"));
+            }
+          }, 'image/jpeg', 0.8); // 80% quality
+        };
+        img.onerror = () => reject(new Error("Erro ao carregar imagem para compressão"));
+      };
+      reader.onerror = error => reject(error);
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsPending(true);
@@ -106,11 +154,21 @@ export default function ProductForm({ categories, initialData }: { categories: a
     try {
       let uploadedUrls: string[] = [];
       for (const { file } of localFiles) {
+        // Compress file to avoid "Request Entity Too Large" on Vercel
+        const compressedFile = await compressImage(file);
+        
         const fileData = new FormData();
-        fileData.append('file', file);
+        fileData.append('file', compressedFile);
         
         const res = await fetch('/api/upload', { method: 'POST', body: fileData });
-        const data = await res.json();
+        const text = await res.text(); // Read as text first to handle non-JSON errors like 413
+        
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          throw new Error(res.ok ? "Erro ao processar resposta do servidor." : `Erro do servidor: ${text.substring(0, 40)}... (Imagem muito grande?)`);
+        }
         
         if (!res.ok) {
           throw new Error(data.error || "Erro ao fazer upload da imagem. Você configurou a IMGBB_API_KEY no .env?");
