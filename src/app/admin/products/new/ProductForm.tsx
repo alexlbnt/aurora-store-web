@@ -149,6 +149,11 @@ export default function ProductForm({ categories, initialData }: { categories: a
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    // Captura o FormData de forma síncrona antes do primeiro 'await'
+    // pois o e.currentTarget se perde após requisições assíncronas no React.
+    const formData = new FormData(e.currentTarget);
+    
     setIsPending(true);
 
     try {
@@ -178,8 +183,6 @@ export default function ProductForm({ categories, initialData }: { categories: a
 
       const finalImages = [...images, ...uploadedUrls];
 
-      const formData = new FormData(e.currentTarget);
-      
       // Add variants data
       formData.append('images', JSON.stringify(finalImages));
       formData.append('variantsMatrix', JSON.stringify(variantMatrix));
