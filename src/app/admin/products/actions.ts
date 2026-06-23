@@ -53,7 +53,7 @@ export async function editProduct(productId: string, formData: FormData) {
   }
 
   if (!name || !price || !categoryId) {
-    throw new Error("Missing required fields");
+    return { success: false, error: "Campos obrigatórios ausentes." };
   }
 
   try {
@@ -94,9 +94,9 @@ export async function editProduct(productId: string, formData: FormData) {
 
     revalidatePath("/admin/products");
     return { success: true, productId: product.id };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to edit product:", error);
-    throw new Error("Failed to edit product");
+    return { success: false, error: "Falha ao editar produto: " + (error?.message || String(error)) };
   }
 }
 
