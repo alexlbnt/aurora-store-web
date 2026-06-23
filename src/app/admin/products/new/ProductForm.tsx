@@ -191,15 +191,22 @@ export default function ProductForm({ categories, initialData }: { categories: a
       if (isEditing) {
         // Fetch dynamically from imported actions to avoid circular deps with new/actions.ts
         const { editProduct } = await import("../actions");
-        await editProduct(initialData.id, formData);
+        const result = await editProduct(initialData.id, formData);
+        if (result && !result.success) {
+          throw new Error(result.error || "Erro ao editar produto.");
+        }
       } else {
-        await createProduct(formData);
+        const result = await createProduct(formData);
+        if (result && !result.success) {
+          throw new Error(result.error || "Erro ao criar produto.");
+        }
       }
       // Redirect to list
       window.location.href = '/admin/products';
     } catch (error: any) {
-      console.error("Failed to create product:", error);
-      alert(error.message || "Erro ao criar produto. Verifique os campos.");
+      console.error("Failed to create/edit product:", error);
+      const msg = error?.message || (typeof error === 'string' ? error : JSON.stringify(error));
+      alert(msg || "Erro desconhecido ao processar produto.");
     } finally {
       setIsPending(false);
     }
