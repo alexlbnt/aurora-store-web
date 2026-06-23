@@ -136,6 +136,65 @@ async function main() {
     }
   })
 
+  // 3. Criar Clientes
+  const customer1 = await prisma.customer.create({
+    data: {
+      name: 'Maria Oliveira',
+      email: 'maria.oliveira@email.com',
+      phone: '(11) 99999-8888'
+    }
+  });
+
+  const customer2 = await prisma.customer.create({
+    data: {
+      name: 'João Silva',
+      email: 'joao.silva@email.com',
+      phone: '(21) 97777-6666'
+    }
+  });
+
+  // 4. Criar Pedidos
+  await prisma.order.create({
+    data: {
+      orderNumber: `PED-${Date.now().toString().slice(-6)}10`,
+      customerId: customer1.id,
+      status: 'DELIVERED',
+      totalAmount: 489.00,
+      items: {
+        create: [
+          {
+            productId: p1.id,
+            quantity: 1,
+            price: 489.00
+          }
+        ]
+      }
+    }
+  });
+
+  await prisma.order.create({
+    data: {
+      orderNumber: `PED-${Date.now().toString().slice(-6)}11`,
+      customerId: customer2.id,
+      status: 'PENDING',
+      totalAmount: 778.90,
+      items: {
+        create: [
+          {
+            productId: p2.id,
+            quantity: 1,
+            price: 529.00
+          },
+          {
+            productId: p3.id,
+            quantity: 1,
+            price: 249.90
+          }
+        ]
+      }
+    }
+  });
+
   console.log('Seeding finished.')
 }
 
