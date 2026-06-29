@@ -42,7 +42,8 @@ export default function ProductForm({ categories, initialData }: { categories: a
            color,
            sku: existing?.sku || `AUR-${size.substring(0,3).toUpperCase()}-${color.substring(0,3).toUpperCase()}-${Math.floor(Math.random() * 1000)}`,
            price: existing?.price || '',
-           stock: existing?.stock || 0
+           stockA: existing?.stockA || 0,
+           stockV: existing?.stockV || 0
          });
       });
     });
@@ -430,7 +431,8 @@ export default function ProductForm({ categories, initialData }: { categories: a
                                <th className="px-4 py-3 font-bold text-slate-500">Cor</th>
                                <th className="px-4 py-3 font-bold text-slate-500 w-32">SKU</th>
                                <th className="px-4 py-3 font-bold text-slate-500 w-32">Preço (+/-)</th>
-                               <th className="px-4 py-3 font-bold text-slate-500 w-24">Estoque</th>
+                               <th className="px-4 py-3 font-bold text-slate-500 w-24">Estoque A</th>
+                               <th className="px-4 py-3 font-bold text-slate-500 w-24">Estoque V</th>
                              </tr>
                            </thead>
                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -445,7 +447,10 @@ export default function ProductForm({ categories, initialData }: { categories: a
                                    <input type="number" step="0.01" value={v.price} onChange={e => updateVariantElement(v._id, 'price', e.target.value)} placeholder="Base" className="w-full text-xs py-1.5 px-2 rounded border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-1 focus:ring-primary" />
                                  </td>
                                  <td className="px-4 py-2">
-                                   <input type="number" value={v.stock} onChange={e => updateVariantElement(v._id, 'stock', e.target.value)} className="w-full text-xs py-1.5 px-2 rounded border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-1 focus:ring-primary" />
+                                   <input type="number" value={v.stockA} onChange={e => updateVariantElement(v._id, 'stockA', e.target.value)} className="w-full text-xs py-1.5 px-2 rounded border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-1 focus:ring-primary" />
+                                 </td>
+                                 <td className="px-4 py-2">
+                                   <input type="number" value={v.stockV} onChange={e => updateVariantElement(v._id, 'stockV', e.target.value)} className="w-full text-xs py-1.5 px-2 rounded border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-1 focus:ring-primary" />
                                  </td>
                                </tr>
                              ))}
@@ -487,8 +492,12 @@ export default function ProductForm({ categories, initialData }: { categories: a
                   <input type="number" step="0.01" name="price" defaultValue={initialData?.basePrice} required placeholder="0.00" className="w-full rounded-lg border-primary/20 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white placeholder:text-slate-400" />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Estoque Total</label>
-                  <input type="number" name="stock" defaultValue={initialData ? initialData.variants.reduce((acc: number, v: any) => acc + v.stock, 0) : undefined} required placeholder="0" className="w-full rounded-lg border-primary/20 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white placeholder:text-slate-400" />
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Estoque A (Base)</label>
+                  <input type="number" name="stockA" defaultValue={initialData ? initialData.variants.reduce((acc: number, v: any) => acc + v.stockA, 0) : undefined} required placeholder="0" className="w-full rounded-lg border-primary/20 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white placeholder:text-slate-400" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Estoque V (Base)</label>
+                  <input type="number" name="stockV" defaultValue={initialData ? initialData.variants.reduce((acc: number, v: any) => acc + v.stockV, 0) : undefined} required placeholder="0" className="w-full rounded-lg border-primary/20 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white placeholder:text-slate-400" />
                 </div>
               </div>
             </div>

@@ -56,15 +56,16 @@ export default async function ProductsListPage() {
                   <th className="px-6 py-4 font-bold uppercase tracking-wider text-xs">Produto</th>
                   <th className="px-6 py-4 font-bold uppercase tracking-wider text-xs">SKU</th>
                   <th className="px-6 py-4 font-bold uppercase tracking-wider text-xs">Categoria</th>
-                  <th className="px-6 py-4 font-bold uppercase tracking-wider text-xs">Estoque</th>
+                  <th className="px-6 py-4 font-bold uppercase tracking-wider text-xs">Estoque A</th>
+                  <th className="px-6 py-4 font-bold uppercase tracking-wider text-xs">Estoque V</th>
                   <th className="px-6 py-4 font-bold uppercase tracking-wider text-xs">Preço</th>
                   <th className="px-6 py-4 font-bold uppercase tracking-wider text-xs text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {products.map((product) => {
-                  const totalStock = product.variants.reduce((acc, variant) => acc + variant.stock, 0);
-                  const isLowStock = totalStock > 0 && totalStock <= 5;
+                  const totalStockA = product.variants.reduce((acc, variant) => acc + variant.stockA, 0);
+                  const totalStockV = product.variants.reduce((acc, variant) => acc + variant.stockV, 0);
                   
                   return (
                     <tr key={product.id} className="hover:bg-slate-50 transition-colors">
@@ -89,9 +90,17 @@ export default async function ProductsListPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${totalStock === 0 ? 'bg-red-500' : isLowStock ? 'bg-amber-500' : 'bg-emerald-500'}`}></div>
-                          <span className={`font-semibold ${totalStock === 0 ? 'text-red-600' : 'text-slate-700'}`}>
-                            {totalStock} un
+                          <div className={`w-2 h-2 rounded-full ${totalStockA === 0 ? 'bg-red-500' : 'bg-purple-500'}`}></div>
+                          <span className={`font-semibold ${totalStockA === 0 ? 'text-red-600' : 'text-slate-700'}`}>
+                            {totalStockA} un
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${totalStockV === 0 ? 'bg-red-500' : 'bg-fuchsia-500'}`}></div>
+                          <span className={`font-semibold ${totalStockV === 0 ? 'text-red-600' : 'text-slate-700'}`}>
+                            {totalStockV} un
                           </span>
                         </div>
                       </td>

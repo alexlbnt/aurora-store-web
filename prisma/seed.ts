@@ -60,8 +60,8 @@ async function main() {
       },
       variants: {
         create: [
-          { color: 'Pérola', size: 'M', stock: 10, sku: 'CJ-SEDA-001-P-M' },
-          { color: 'Preto', size: 'M', stock: 5, sku: 'CJ-SEDA-001-PR-M' },
+          { color: 'Pérola', size: 'M', stockA: 10, sku: 'CJ-SEDA-001-P-M' },
+          { color: 'Preto', size: 'M', stockA: 5, sku: 'CJ-SEDA-001-PR-M' },
         ]
       }
     }
@@ -84,7 +84,7 @@ async function main() {
       },
       variants: {
         create: [
-          { color: 'Argila', size: 'Único', stock: 20, sku: 'RP-AVEL-001-U' }
+          { color: 'Argila', size: 'Único', stockA: 20, sku: 'RP-AVEL-001-U' }
         ]
       }
     }
@@ -107,7 +107,7 @@ async function main() {
       },
       variants: {
         create: [
-          { color: 'Azul Bebê', size: 'P', stock: 15, sku: 'CM-ALG-001-AZ-P' }
+          { color: 'Azul Bebê', size: 'P', stockA: 15, sku: 'CM-ALG-001-AZ-P' }
         ]
       }
     }
@@ -130,7 +130,7 @@ async function main() {
       },
       variants: {
         create: [
-          { color: 'Areia', size: 'G', stock: 8, sku: 'PJ-LIN-001-AR-G' }
+          { color: 'Areia', size: 'G', stockA: 8, sku: 'PJ-LIN-001-AR-G' }
         ]
       }
     }

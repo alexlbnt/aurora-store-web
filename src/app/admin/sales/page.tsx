@@ -108,7 +108,7 @@ export default async function Sales() {
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Cliente</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Data</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Valor Total</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Método</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Estoque</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Ações</th>
                 </tr>
@@ -144,7 +144,11 @@ export default async function Sales() {
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{new Date(order.createdAt).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
                     <td className="px-6 py-4 text-sm font-bold text-slate-900 dark:text-white">R$ {Number(order.totalAmount).toFixed(2).replace('.', ',')}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">Sistema</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${order.stockLocation === 'ESTOQUE_A' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400' : 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/40 dark:text-fuchsia-400'}`}>
+                        {order.stockLocation === 'ESTOQUE_A' ? 'Estoque-A' : 'Estoque-V'}
+                      </span>
+                    </td>
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide
                         ${statusColor === 'green' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' :

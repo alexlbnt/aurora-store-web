@@ -45,6 +45,7 @@ export async function createOrder(formData: FormData) {
     const customerEmail = formData.get("customerEmail") as string;
     const customerPhone = formData.get("customerPhone") as string;
     const itemsJson = formData.get("items") as string;
+    const stockLocation = (formData.get("stockLocation") as "ESTOQUE_A" | "ESTOQUE_V") || "ESTOQUE_A";
     const items: OrderItemParams[] = itemsJson ? JSON.parse(itemsJson) : [];
 
     if (!customerEmail || !customerName || items.length === 0) {
@@ -81,6 +82,7 @@ export async function createOrder(formData: FormData) {
         data: {
           orderNumber,
           customerId: customer.id,
+          stockLocation,
           status: "PENDING",
           totalAmount: totalAmount,
           items: {
@@ -99,9 +101,9 @@ export async function createOrder(formData: FormData) {
         if (item.variantId) {
           await tx.variant.update({
             where: { id: item.variantId },
-            data: {
-              stock: { decrement: item.quantity }
-            }
+            data: stockLocation === "ESTOQUE_A" 
+              ? { stockA: { decrement: item.quantity } }
+              : { stockV: { decrement: item.quantity } }
           });
         }
       }

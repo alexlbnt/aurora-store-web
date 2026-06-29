@@ -7,7 +7,8 @@ export async function createProduct(formData: FormData) {
   const name = formData.get("name") as string;
   const description = formData.get("description") as string;
   const price = formData.get("price") as string;
-  const stock = formData.get("stock") as string;
+  const stockA = formData.get("stockA") as string;
+  const stockV = formData.get("stockV") as string;
   const categoryId = formData.get("categoryId") as string;
   const imagesRaw = formData.get("images") as string;
   
@@ -31,7 +32,8 @@ export async function createProduct(formData: FormData) {
       color: 'Padrão', 
       sku: `AUR-${Math.random().toString(36).substring(7).toUpperCase()}`, 
       price: parseFloat(price), 
-      stock: parseInt(stock, 10) || 0 
+      stockA: parseInt(stockA, 10) || 0,
+      stockV: parseInt(stockV, 10) || 0
     }];
   }
 
@@ -60,7 +62,8 @@ export async function createProduct(formData: FormData) {
           create: variantsMatrix.map((v: any) => ({
             sku: v.sku || `AUR-${v.size}-${v.color}-${Math.random().toString(36).substring(7).toUpperCase()}`,
             price: v.price ? parseFloat(v.price) : parseFloat(price),
-            stock: parseInt(v.stock, 10) || 0,
+            stockA: parseInt(v.stockA, 10) || 0,
+            stockV: parseInt(v.stockV, 10) || 0,
             color: v.color,
             size: v.size
           }))

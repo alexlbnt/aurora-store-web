@@ -123,13 +123,14 @@ export default async function Dashboard() {
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Cliente</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Produto</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Valor</th>
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Estoque</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-primary/5">
               {orders.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-sm text-slate-500">Nenhum pedido recente.</td>
+                  <td colSpan={6} className="px-6 py-8 text-center text-sm text-slate-500">Nenhum pedido recente.</td>
                 </tr>
               ) : orders.slice(0, 5).map((order) => {
                 let statusColor = 'slate';
@@ -152,6 +153,11 @@ export default async function Dashboard() {
                     {order.items.length > 1 && ` (+${order.items.length - 1})`}
                   </td>
                   <td className="px-6 py-4 text-sm font-bold text-slate-800 dark:text-slate-100">R$ {Number(order.totalAmount).toFixed(2).replace('.', ',')}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${order.stockLocation === 'ESTOQUE_A' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400' : 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/40 dark:text-fuchsia-400'}`}>
+                      {order.stockLocation === 'ESTOQUE_A' ? 'Estoque-A' : 'Estoque-V'}
+                    </span>
+                  </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded text-[10px] font-bold ${
                       statusColor === 'emerald' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :

@@ -25,7 +25,7 @@ export default async function Reports() {
           name: item.product.name,
           quantity: 0,
           revenue: 0,
-          stock: item.product.variants.reduce((acc, v) => acc + v.stock, 0),
+          stock: item.product.variants.reduce((acc, v) => acc + (v.stockA || 0) + (v.stockV || 0), 0),
           img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDsjWA-9jRbZBTqH41MzeOowOGtiZ1sC-BP2BT5AkrxzZqxjWTTQpu6tnukP-tVz7qiAlOeXg8lwWu4UC4BGLzczGV7EItI2THH65CaQLbZTdKUOXCCyxBvi26c-BXCeTY5T1b_xBNThB6DApdheWFQvTvmKeuF2tmeiqoOuc5_6BSb3_7qsdvEIyc61vbxpapLFGG1ICVUQcN07yJuzPt8zCzMyQYTqk1QkX-HMuKuDZRhgAm3OIUyxL38FAhuMuw2ui1IqJXkiqs", // Default image as we don't have images in schema yet
           categoryId: item.product.categoryId
         };

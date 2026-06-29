@@ -35,6 +35,9 @@ export default async function OrderDetailsPage({ params }: { params: { id: strin
             <span className="text-sm font-normal text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
               {new Date(order.createdAt).toLocaleString('pt-BR')}
             </span>
+            <span className={`text-sm font-bold px-2 py-0.5 rounded uppercase ${order.stockLocation === 'ESTOQUE_A' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400' : 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/40 dark:text-fuchsia-400'}`}>
+              {order.stockLocation === 'ESTOQUE_A' ? 'Estoque-A' : 'Estoque-V'}
+            </span>
           </h1>
         </div>
         <StatusUpdater orderId={order.id} currentStatus={order.status} />
