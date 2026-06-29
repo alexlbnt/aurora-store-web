@@ -493,11 +493,19 @@ export default function ProductForm({ categories, initialData }: { categories: a
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Estoque A (Base)</label>
-                  <input type="number" name="stockA" defaultValue={initialData ? initialData.variants.reduce((acc: number, v: any) => acc + v.stockA, 0) : undefined} required placeholder="0" className="w-full rounded-lg border-primary/20 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white placeholder:text-slate-400" />
+                  {hasVariants ? (
+                    <input type="number" name="stockA" value={variantMatrix.reduce((acc, v) => acc + (Number(v.stockA) || 0), 0)} readOnly className="w-full rounded-lg border-slate-200 bg-slate-50 opacity-70 cursor-not-allowed dark:bg-slate-800 dark:border-slate-700 dark:text-white" />
+                  ) : (
+                    <input type="number" name="stockA" defaultValue={initialData ? initialData.variants.reduce((acc: number, v: any) => acc + v.stockA, 0) : undefined} required placeholder="0" className="w-full rounded-lg border-primary/20 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white placeholder:text-slate-400" />
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Estoque V (Base)</label>
-                  <input type="number" name="stockV" defaultValue={initialData ? initialData.variants.reduce((acc: number, v: any) => acc + v.stockV, 0) : undefined} required placeholder="0" className="w-full rounded-lg border-primary/20 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white placeholder:text-slate-400" />
+                  {hasVariants ? (
+                    <input type="number" name="stockV" value={variantMatrix.reduce((acc, v) => acc + (Number(v.stockV) || 0), 0)} readOnly className="w-full rounded-lg border-slate-200 bg-slate-50 opacity-70 cursor-not-allowed dark:bg-slate-800 dark:border-slate-700 dark:text-white" />
+                  ) : (
+                    <input type="number" name="stockV" defaultValue={initialData ? initialData.variants.reduce((acc: number, v: any) => acc + v.stockV, 0) : undefined} required placeholder="0" className="w-full rounded-lg border-primary/20 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white placeholder:text-slate-400" />
+                  )}
                 </div>
               </div>
             </div>
