@@ -2,9 +2,9 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { createCustomer } from "../actions";
+import { createCustomer, updateCustomer } from "../actions";
 
-export default function CustomerForm() {
+export default function CustomerForm({ initialData }: { initialData?: any }) {
   const [isPending, setIsPending] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -13,7 +13,7 @@ export default function CustomerForm() {
 
     const formData = new FormData(e.currentTarget);
     try {
-      const result = await createCustomer(formData);
+      const result = await (initialData ? updateCustomer(initialData.id, formData) : createCustomer(formData));
       if (result.error) {
         alert(result.error);
         setIsPending(false);
@@ -36,13 +36,13 @@ export default function CustomerForm() {
           <nav className="flex items-center gap-2 text-sm font-medium">
             <Link href="/admin/customers" className="text-slate-500 hover:text-primary transition-colors">Clientes</Link>
             <span className="material-symbols-outlined text-xs text-slate-400">chevron_right</span>
-            <span className="text-slate-900 dark:text-white border-b-2 border-primary pb-0.5">Novo Cliente</span>
+          <span className="text-slate-900 dark:text-white border-b-2 border-primary pb-0.5">{initialData ? 'Editar Cliente' : 'Novo Cliente'}</span>
           </nav>
         </div>
         <div className="flex items-center gap-4">
            <button type="submit" disabled={isPending} className="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-              <span className="material-symbols-outlined text-sm">{isPending ? 'sync' : 'person_add'}</span>
-              {isPending ? 'Salvando...' : 'Cadastrar Cliente'}
+              <span className="material-symbols-outlined text-sm">{isPending ? 'sync' : (initialData ? 'save' : 'person_add')}</span>
+              {isPending ? 'Salvando...' : 'Salvar Cliente'}
            </button>
         </div>
       </div>
@@ -66,6 +66,7 @@ export default function CustomerForm() {
                   type="text" 
                   name="name"
                   required
+                  defaultValue={initialData?.name}
                   placeholder="Ex: Carlos Eduardo Silva" 
                   className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-white" 
                 />
@@ -77,6 +78,7 @@ export default function CustomerForm() {
                     type="email" 
                     name="email"
                     required
+                    defaultValue={initialData?.email}
                     placeholder="carlos@email.com" 
                     className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-white" 
                   />
@@ -86,6 +88,7 @@ export default function CustomerForm() {
                   <input 
                     type="tel" 
                     name="phone"
+                    defaultValue={initialData?.phone || ""}
                     placeholder="(00) 00000-0000" 
                     className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-white" 
                   />

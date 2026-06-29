@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { prisma } from "@/lib/prisma";
+import DeleteCustomerButton from "./DeleteCustomerButton";
 
 export const revalidate = 0;
 
@@ -104,15 +105,13 @@ export default async function Customers() {
                     <td className="px-6 py-4 text-sm text-slate-500">{lastOrder}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="p-1.5 hover:bg-primary/10 rounded text-slate-400 hover:text-primary transition-colors" title="Editar">
+                        <Link href={`/admin/customers/${customer.id}`} className="p-1.5 hover:bg-primary/10 rounded text-slate-400 hover:text-primary transition-colors" title="Editar">
                           <span className="material-symbols-outlined text-lg">edit</span>
-                        </button>
-                        <button className="p-1.5 hover:bg-primary/10 rounded text-slate-400 hover:text-primary transition-colors" title="Ver detalhes">
+                        </Link>
+                        <Link href={`/admin/customers/${customer.id}`} className="p-1.5 hover:bg-primary/10 rounded text-slate-400 hover:text-primary transition-colors" title="Ver detalhes">
                           <span className="material-symbols-outlined text-lg">visibility</span>
-                        </button>
-                        <button className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded text-slate-400 hover:text-red-500 transition-colors" title="Excluir">
-                          <span className="material-symbols-outlined text-lg">delete</span>
-                        </button>
+                        </Link>
+                        <DeleteCustomerButton id={customer.id} />
                       </div>
                     </td>
                   </tr>
