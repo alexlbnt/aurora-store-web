@@ -8,6 +8,7 @@ export default function ProductForm({ categories, initialData }: { categories: a
   const isEditing = !!initialData;
   const [isPending, setIsPending] = useState(false);
   const [hasVariants, setHasVariants] = useState(initialData ? initialData.variants.length > 0 : true);
+  const [isNewCategory, setIsNewCategory] = useState(false);
 
   // Derive initial unique sizes and colors from variants if editing
   const initialSizes = initialData 
@@ -474,11 +475,22 @@ export default function ProductForm({ categories, initialData }: { categories: a
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Categoria</label>
-                  <select name="categoryId" defaultValue={initialData?.categoryId} className="w-full rounded-lg border-slate-200 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                  <select name="categoryId" defaultValue={initialData?.categoryId || ""} onChange={(e) => setIsNewCategory(e.target.value === 'NEW')} className="w-full rounded-lg border-slate-200 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                    <option value="" disabled>Selecione uma categoria...</option>
                     {categories.map((cat) => (
                       <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
+                    <option value="NEW" className="font-bold text-primary">+ Nova Categoria</option>
                   </select>
+                  {isNewCategory && (
+                    <input 
+                      type="text" 
+                      name="newCategoryName" 
+                      placeholder="Nome da nova categoria" 
+                      required 
+                      className="w-full mt-2 rounded-lg border-slate-200 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white placeholder:text-slate-400" 
+                    />
+                  )}
                 </div>
               </div>
             </div>

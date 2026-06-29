@@ -9,9 +9,20 @@ export async function createProduct(formData: FormData) {
   const price = formData.get("price") as string;
   const stockA = formData.get("stockA") as string;
   const stockV = formData.get("stockV") as string;
-  const categoryId = formData.get("categoryId") as string;
-  const imagesRaw = formData.get("images") as string;
+  let categoryId = formData.get("categoryId") as string;
+  const newCategoryName = formData.get("newCategoryName") as string;
   
+  if (categoryId === "NEW" && newCategoryName) {
+    const newCat = await prisma.category.create({
+      data: {
+        name: newCategoryName,
+        slug: newCategoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') + '-' + Math.random().toString(36).substring(7)
+      }
+    });
+    categoryId = newCat.id;
+  }
+  
+  const imagesRaw = formData.get("images") as string;
   let images: string[] = [];
   if (imagesRaw) {
     try { images = JSON.parse(imagesRaw); } catch(e) {}
