@@ -2,6 +2,7 @@ import React from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import DeleteButton from "./DeleteButton";
 
 export const revalidate = 0; // Don't cache admin pages
 
@@ -141,7 +142,7 @@ export default async function Sales() {
                         <span className="text-sm font-medium text-slate-900 dark:text-white">{order.customer.name}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{new Date(order.createdAt).toLocaleDateString('pt-BR')}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{new Date(order.createdAt).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
                     <td className="px-6 py-4 text-sm font-bold text-slate-900 dark:text-white">R$ {Number(order.totalAmount).toFixed(2).replace('.', ',')}</td>
                     <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">Sistema</td>
                     <td className="px-6 py-4">
@@ -155,9 +156,12 @@ export default async function Sales() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Link href={`/admin/sales/${order.id}`} className="text-slate-400 hover:text-primary transition-colors p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800/50 inline-block" title="Ver Detalhes">
-                        <span className="material-symbols-outlined">visibility</span>
-                      </Link>
+                      <div className="flex items-center justify-end gap-1">
+                        <Link href={`/admin/sales/${order.id}`} className="text-slate-400 hover:text-primary transition-colors p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800/50 inline-block" title="Ver Detalhes">
+                          <span className="material-symbols-outlined">visibility</span>
+                        </Link>
+                        <DeleteButton orderId={order.id} />
+                      </div>
                     </td>
                   </tr>
                 )})}

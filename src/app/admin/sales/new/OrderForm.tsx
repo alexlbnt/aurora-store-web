@@ -158,7 +158,7 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                   <select 
                     value={selectedCustomerId}
                     onChange={(e) => handleCustomerSelect(e.target.value)}
-                    className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                    className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white"
                   >
                     <option value="">-- Cadastrar Novo Cliente --</option>
                     {customers.map(c => (
@@ -177,7 +177,7 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder="Ex: Maria Alice Fontes" 
-                    className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-white" 
+                    className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white" 
                   />
                 </div>
                 <div>
@@ -188,7 +188,7 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                     value={customerEmail}
                     onChange={(e) => setCustomerEmail(e.target.value)}
                     placeholder="cliente@email.com" 
-                    className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-white" 
+                    className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white" 
                   />
                 </div>
                 <div>
@@ -198,7 +198,7 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
                     placeholder="(00) 00000-0000" 
-                    className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-white" 
+                    className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white" 
                   />
                 </div>
              </div>
@@ -249,7 +249,7 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                             <select 
                               value={item.productId}
                               onChange={(e) => updateItem(item.id, "productId", e.target.value)}
-                              className="w-full h-11 rounded-lg border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                              className="w-full h-11 rounded-lg border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white"
                             >
                               <option value="">Selecione um produto</option>
                               {products.map(p => (
@@ -264,7 +264,7 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                               <select 
                                 value={item.variantId}
                                 onChange={(e) => updateItem(item.id, "variantId", e.target.value)}
-                                className="w-full h-11 rounded-lg border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                                className="w-full h-11 rounded-lg border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white"
                               >
                                 <option value="">Nenhuma</option>
                                 {variants.map(v => (
@@ -276,8 +276,8 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                             </div>
                           )}
                           
-                          <div className="w-full md:w-2/12 flex gap-4">
-                            <div className="w-1/2 md:w-full">
+                          <div className="w-full md:w-auto flex gap-4">
+                            <div className="w-1/2 md:w-[80px] shrink-0">
                               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Qtd</label>
                               <input 
                                 type="number" 
@@ -287,7 +287,7 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                                   const rawVal = e.target.value;
                                   updateItem(item.id, "quantity", rawVal === '' ? '' : parseInt(rawVal) || 0);
                                 }}
-                                className="w-full h-11 rounded-lg border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-white text-center"
+                                className="w-full h-11 rounded-lg border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white text-center"
                               />
                             </div>
                             
@@ -298,7 +298,7 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                                  step="0.01"
                                  value={item.price}
                                  onChange={(e) => updateItem(item.id, "price", e.target.value)}
-                                 className="w-full h-11 rounded-lg border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-white text-right font-mono"
+                                 className="w-full h-11 rounded-lg border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white text-right font-mono"
                                />
                             </div>
                           </div>

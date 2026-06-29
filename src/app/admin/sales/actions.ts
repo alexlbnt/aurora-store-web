@@ -18,6 +18,20 @@ export async function updateOrderStatus(orderId: string, status: "PENDING" | "PA
   }
 }
 
+export async function deleteOrder(orderId: string) {
+  try {
+    await prisma.order.delete({
+      where: { id: orderId }
+    });
+    revalidatePath("/admin/sales");
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting order:", error);
+    return { error: "Erro ao excluir pedido." };
+  }
+}
+
 interface OrderItemParams {
   productId: string;
   variantId?: string | null;
