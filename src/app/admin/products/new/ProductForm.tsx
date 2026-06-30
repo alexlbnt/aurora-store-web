@@ -3,12 +3,16 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { createProduct } from "./actions";
+import { quickUpdateCategory, quickDeleteCategory } from "../actions";
 
 export default function ProductForm({ categories, initialData }: { categories: any[], initialData?: any }) {
   const isEditing = !!initialData;
   const [isPending, setIsPending] = useState(false);
   const [hasVariants, setHasVariants] = useState(initialData ? initialData.variants.length > 0 : true);
   const [isNewCategory, setIsNewCategory] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(initialData?.categoryId || "");
+  const [isEditingCategory, setIsEditingCategory] = useState(false);
+  const [editingCategoryName, setEditingCategoryName] = useState("");
 
   // Derive initial unique sizes and colors from variants if editing
   const initialSizes = initialData 
@@ -475,13 +479,51 @@ export default function ProductForm({ categories, initialData }: { categories: a
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Categoria</label>
-                  <select name="categoryId" defaultValue={initialData?.categoryId || ""} onChange={(e) => setIsNewCategory(e.target.value === 'NEW')} className="w-full rounded-lg border-slate-200 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white">
-                    <option value="" disabled>Selecione uma categoria...</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                    <option value="NEW" className="font-bold text-primary">+ Nova Categoria</option>
-                  </select>
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <select name="categoryId" value={selectedCategoryId} onChange={(e) => {
+                      setSelectedCategoryId(e.target.value);
+                      setIsNewCategory(e.target.value === 'NEW');
+                      setIsEditingCategory(false);
+                    }} className="flex-1 min-w-0 rounded-lg border-slate-200 text-sm sm:text-base focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                      <option value="" disabled>Selecione uma categoria...</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
+                      <option value="NEW" className="font-bold text-primary">+ Nova Categoria</option>
+                    </select>
+                    {selectedCategoryId && selectedCategoryId !== 'NEW' && !isEditingCategory && (
+                      <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+                        <button type="button" onClick={() => {
+                          setIsEditingCategory(true);
+                          setEditingCategoryName(categories.find(c => c.id === selectedCategoryId)?.name || "");
+                        }} className="p-1.5 sm:p-2 text-slate-400 hover:text-primary transition-colors rounded-md hover:bg-slate-50 dark:hover:bg-slate-800" title="Editar Categoria">
+                          <span className="material-symbols-outlined text-[18px]">edit</span>
+                        </button>
+                        <button type="button" onClick={async () => {
+                          if (confirm("Tem certeza que deseja excluir esta categoria?")) {
+                            const res = await quickDeleteCategory(selectedCategoryId);
+                            if (res?.error) alert(res.error);
+                            else { setSelectedCategoryId(""); setIsNewCategory(false); }
+                          }
+                        }} className="p-1.5 sm:p-2 text-slate-400 hover:text-rose-500 transition-colors rounded-md hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Excluir Categoria">
+                          <span className="material-symbols-outlined text-[18px]">delete</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  {isEditingCategory && (
+                    <div className="flex flex-col sm:flex-row gap-2 mt-2">
+                      <input type="text" value={editingCategoryName} onChange={(e) => setEditingCategoryName(e.target.value)} className="flex-1 min-w-0 rounded-lg border-slate-200 text-sm p-2 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white" />
+                      <div className="flex gap-2 shrink-0">
+                        <button type="button" onClick={async () => {
+                          const res = await quickUpdateCategory(selectedCategoryId, editingCategoryName);
+                          if (res?.error) alert(res.error);
+                          else setIsEditingCategory(false);
+                        }} className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors text-center">Salvar</button>
+                        <button type="button" onClick={() => setIsEditingCategory(false)} className="flex-1 sm:flex-none bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors text-center">Cancelar</button>
+                      </div>
+                    </div>
+                  )}
                   {isNewCategory && (
                     <input 
                       type="text" 

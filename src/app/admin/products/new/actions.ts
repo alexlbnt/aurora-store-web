@@ -13,13 +13,34 @@ export async function createProduct(formData: FormData) {
   const newCategoryName = formData.get("newCategoryName") as string;
   
   if (categoryId === "NEW" && newCategoryName) {
-    const newCat = await prisma.category.create({
-      data: {
-        name: newCategoryName,
-        slug: newCategoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') + '-' + Math.random().toString(36).substring(7)
+    const existingCat = await prisma.category.findFirst({
+      where: {
+        name: {
+          equals: newCategoryName,
+          mode: 'insensitive'
+        }
       }
     });
-    categoryId = newCat.id;
+
+    if (existingCat) {
+      categoryId = existingCat.id;
+    } else {
+      let slugBase = newCategoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+      if (!slugBase) slugBase = 'categoria';
+      let uniqueSlug = slugBase;
+      let counter = 1;
+      while (await prisma.category.findUnique({ where: { slug: uniqueSlug } })) {
+        uniqueSlug = `${slugBase}-${counter}`;
+        counter++;
+      }
+      const newCat = await prisma.category.create({
+        data: {
+          name: newCategoryName,
+          slug: uniqueSlug
+        }
+      });
+      categoryId = newCat.id;
+    }
   }
   
   const imagesRaw = formData.get("images") as string;
