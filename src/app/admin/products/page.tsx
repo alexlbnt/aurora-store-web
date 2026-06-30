@@ -1,6 +1,7 @@
 import AdminLayout from "@/components/admin/AdminLayout";
 import Link from "next/link";
 import ProductRowActions from "./ProductRowActions";
+import AdminProductImage from "@/components/admin/AdminProductImage";
 import { prisma } from "@/lib/prisma";
 
 export const revalidate = 0; // Force dynamic fetching to always show the latest products
@@ -11,6 +12,10 @@ export default async function ProductsListPage() {
     include: {
       category: true,
       variants: true,
+      images: {
+        orderBy: { order: 'asc' },
+        take: 1
+      }
     },
     orderBy: {
       createdAt: 'desc'
@@ -71,8 +76,11 @@ export default async function ProductsListPage() {
                     <tr key={product.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <span className="material-symbols-outlined text-slate-400 text-xl">image</span>
+                          <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden border border-slate-200">
+                            <AdminProductImage 
+                              src={product.images && product.images.length > 0 ? product.images[0].url : ""} 
+                              alt={product.name} 
+                            />
                           </div>
                           <div>
                             <p className="font-bold text-slate-900">{product.name}</p>

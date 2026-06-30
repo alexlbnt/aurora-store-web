@@ -5,6 +5,7 @@ import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import AddToCart from "@/components/storefront/AddToCart";
+import ProductGallery from "@/components/storefront/ProductGallery";
 
 export default async function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
   // In a real app we'd fetch product data here based on params.id
@@ -63,21 +64,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
 
       <div className="flex flex-col md:flex-row gap-10 lg:gap-16 mb-20 relative">
         {/* Images Selection */}
-        <div className="w-full md:w-[55%] flex flex-col-reverse md:flex-row gap-4 h-full md:sticky md:top-24">
-          <div className="flex md:flex-col gap-4 overflow-x-auto md:overflow-y-auto no-scrollbar md:w-20 lg:w-24 shrink-0 snap-x">
-            {product.images.map((img, idx) => (
-              <button key={idx} className={`aspect-[3/4] rounded md:rounded-none shrink-0 w-20 md:w-full overflow-hidden border-2 snap-center transition-all ${idx === 0 ? 'border-primary dark:border-slate-500' : 'border-transparent opacity-60 hover:opacity-100 hover:border-primary/30'}`}>
-                <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url(${img})` }} />
-              </button>
-            ))}
-          </div>
-          <div className="flex-1 aspect-[3/4] md:aspect-auto md:h-[calc(100vh-160px)] min-h-[400px] bg-primary/5 rounded-lg overflow-hidden relative cursor-zoom-in">
-             <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url(${product.images[0]})` }} />
-             <button className="absolute bottom-4 right-4 bg-white/80 backdrop-blur size-10 flex items-center justify-center rounded-full text-primary hover:bg-white transition-colors shadow-sm">
-               <span className="material-symbols-outlined">zoom_in</span>
-             </button>
-          </div>
-        </div>
+        <ProductGallery images={product.images} />
 
         {/* Product Info */}
         <div className="w-full md:w-[45%] flex flex-col gap-8 md:pt-4">

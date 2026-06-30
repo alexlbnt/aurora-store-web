@@ -326,7 +326,7 @@ export default function ProductForm({ categories, initialData }: { categories: a
                      {images.map((url, i) => (
                        <div key={`url-${i}`} className="relative group rounded-xl border border-slate-200 overflow-hidden aspect-[3/4] bg-slate-50">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={url} alt={`Preview ${i}`} className="w-full h-full object-cover" />
+                          <img src={url} alt={`Preview ${i}`} className="w-full h-full object-contain" />
                           <button 
                             type="button" 
                             onClick={() => removeImage(url)} 
@@ -339,7 +339,7 @@ export default function ProductForm({ categories, initialData }: { categories: a
                      {localFiles.map((local, i) => (
                        <div key={`local-${i}`} className="relative group rounded-xl border border-slate-200 overflow-hidden aspect-[3/4] bg-slate-50">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={local.preview} alt={`Local Preview ${i}`} className="w-full h-full object-cover" />
+                          <img src={local.preview} alt={`Local Preview ${i}`} className="w-full h-full object-contain" />
                           <button 
                             type="button" 
                             onClick={() => {
