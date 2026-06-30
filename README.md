@@ -17,14 +17,15 @@ O projeto foi construído utilizando as ferramentas mais modernas do ecossistema
 
 ### Área do Cliente (Storefront)
 - Catálogo de produtos com categorias (Camisolas, Conjuntos, Roupões, etc).
-- Página de detalhes do produto (com suporte a variações de cores e tamanhos).
+- Página de detalhes do produto com **galeria interativa** (com ajuste inteligente de dimensão das fotos) e suporte a variações de cores e tamanhos.
 - Carrinho de compras integrado.
 - Lista de Desejos (Wishlist).
 - Layout responsivo, focado no minimalismo.
 
 ### Painel Administrativo
 - **Dashboard:** Visão geral com gráficos de vendas e métricas.
-- **Produtos:** Cadastro, edição e listagem (com suporte a upload via URLs externas).
+- **Produtos:** Cadastro, edição e listagem (suporte a upload via URLs externas, miniaturas com fallback inteligente na listagem).
+- **Categorias:** Gerenciamento inline avançado (criação, edição e exclusão com proteção contra duplicatas e dependências) diretamente pelo formulário do Produto.
 - **Vendas:** Gerenciamento do status de pedidos.
 - **Clientes:** Cadastro e visualização de clientes.
 
