@@ -87,17 +87,14 @@ export default async function Home() {
         <div className="flex flex-col items-center gap-3 pt-6 md:pt-0">
           <Truck className="w-8 h-8 text-primary/70 dark:text-slate-400" />
           <h4 className="text-primary dark:text-slate-100 font-serif font-semibold text-lg">Frete Grátis</h4>
-          <p className="text-primary/60 dark:text-slate-400 text-sm">Em compras acima de R$ 399</p>
         </div>
         <div className="flex flex-col items-center gap-3 pt-6 md:pt-0">
           <Award className="w-8 h-8 text-primary/70 dark:text-slate-400" />
           <h4 className="text-primary dark:text-slate-100 font-serif font-semibold text-lg">Qualidade Premium</h4>
-          <p className="text-primary/60 dark:text-slate-400 text-sm">Materiais nobres e toque macio</p>
         </div>
         <div className="flex flex-col items-center gap-3 pt-6 md:pt-0">
           <RefreshCw className="w-8 h-8 text-primary/70 dark:text-slate-400" />
           <h4 className="text-primary dark:text-slate-100 font-serif font-semibold text-lg">Troca Fácil</h4>
-          <p className="text-primary/60 dark:text-slate-400 text-sm">Primeira troca sem custo em 30 dias</p>
         </div>
       </section>
 

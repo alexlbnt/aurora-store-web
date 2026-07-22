@@ -35,18 +35,6 @@ export default function Footer() {
           {/* Newsletter & Social */}
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-3">
-              <h4 className="text-primary dark:text-slate-100 font-serif font-semibold text-base">Fique por dentro</h4>
-              <p className="text-primary/60 dark:text-slate-400 text-xs">Assine nossa newsletter para novidades e ofertas exclusivas.</p>
-              <div className="flex gap-2 mt-1">
-                <input 
-                  type="email" 
-                  placeholder="Seu e-mail" 
-                  className="flex-1 bg-primary/5 dark:bg-white/5 border-primary/20 dark:border-slate-700 rounded-full px-4 py-2 text-sm focus:ring-primary focus:border-primary placeholder:text-primary/30 dark:placeholder:text-slate-500 outline-none text-primary dark:text-white" 
-                />
-                <button className="bg-primary hover:bg-primary/90 text-background-light text-xs font-semibold px-5 py-2 rounded-full transition-colors uppercase tracking-wider">OK</button>
-              </div>
-            </div>
-            <div className="flex flex-col gap-3">
               <p className="text-primary dark:text-slate-100 font-serif font-semibold text-sm">Siga-nos</p>
               <div className="flex gap-5">
                 <Link href="#" aria-label="Instagram" className="text-primary/60 dark:text-slate-400 hover:text-primary dark:hover:text-white transition-colors">
@@ -62,7 +50,7 @@ export default function Footer() {
         {/* Bottom Footer */}
         <div className="border-t border-primary/10 dark:border-slate-800 pt-8 flex flex-col items-center gap-4">
           <p className="text-primary/40 dark:text-slate-500 text-[10px] tracking-[0.2em] uppercase font-medium text-center">
-            © 2024 AURORA SLEEPWEAR. FEITO PARA SONHAR.
+            © 2026 AURORA SLEEPWEAR. FEITO PARA SONHAR.
           </p>
         </div>
       </div>
