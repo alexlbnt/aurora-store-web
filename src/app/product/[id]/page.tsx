@@ -44,11 +44,11 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
     description: dbProduct.description,
     categoryName: dbProduct.category.name,
     categorySlug: dbProduct.category.slug,
-    details: [
+    details: dbProduct.details.length > 0 ? dbProduct.details : [
       "Qualidade Premium",
       "Modelagem confortável",
       "Toque macio"
-    ] // Fake details as we don't have this in schema yet
+    ]
   };
 
   return (

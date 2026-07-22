@@ -1,6 +1,7 @@
 import React from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { prisma } from "@/lib/prisma";
+import DashboardCharts from "@/components/admin/DashboardCharts";
 
 export const revalidate = 0;
 
@@ -13,6 +14,22 @@ export default async function Reports() {
 
   const totalRevenue = orders.reduce((acc, order) => acc + Number(order.totalAmount), 0);
   const averageTicket = orders.length > 0 ? totalRevenue / orders.length : 0;
+
+  // Generate chart data for the last 7 days
+  const chartData = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    return { name: dateStr, total: 0 };
+  });
+
+  orders.forEach(order => {
+    const dateStr = order.createdAt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    const dayData = chartData.find(d => d.name === dateStr);
+    if (dayData) {
+      dayData.total += Number(order.totalAmount);
+    }
+  });
 
   // Calculate top products
   const productSales: Record<string, { name: string, quantity: number, revenue: number, stock: number, img: string, categoryId: string }> = {};
@@ -98,17 +115,7 @@ export default async function Reports() {
               </select>
             </div>
             <div className="flex-1 min-h-[250px] relative flex items-end gap-2 px-2">
-              {/* Mock Bar Chart */}
-              <div className="flex-1 bg-primary/20 rounded-t-lg transition-all hover:bg-primary/40" style={{ height: "60%" }}></div>
-              <div className="flex-1 bg-primary/40 rounded-t-lg transition-all hover:bg-primary/60" style={{ height: "45%" }}></div>
-              <div className="flex-1 bg-primary/20 rounded-t-lg transition-all hover:bg-primary/40" style={{ height: "80%" }}></div>
-              <div className="flex-1 bg-primary/60 rounded-t-lg transition-all hover:bg-primary/80" style={{ height: "55%" }}></div>
-              <div className="flex-1 bg-primary/30 rounded-t-lg transition-all hover:bg-primary/50" style={{ height: "95%" }}></div>
-              <div className="flex-1 bg-primary rounded-t-lg transition-all" style={{ height: "70%" }}></div>
-              <div className="flex-1 bg-primary/50 rounded-t-lg transition-all hover:bg-primary/70" style={{ height: "85%" }}></div>
-            </div>
-            <div className="flex justify-between mt-4 px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              <span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sab</span><span>Dom</span>
+              <DashboardCharts data={chartData} />
             </div>
           </div>
 

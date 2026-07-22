@@ -27,6 +27,10 @@ export default function ProductForm({ categories, initialData }: { categories: a
   const [newSize, setNewSize] = useState("");
   const [newColor, setNewColor] = useState("");
 
+  const initialDetails = initialData?.details || [];
+  const [details, setDetails] = useState<string[]>(initialDetails);
+  const [newDetail, setNewDetail] = useState("");
+
   const initialImages = initialData?.images ? initialData.images.map((img: any) => typeof img === 'string' ? img : img.url) : [];
   const [images, setImages] = useState<string[]>(initialImages);
   const [newImage, setNewImage] = useState("");
@@ -89,6 +93,18 @@ export default function ProductForm({ categories, initialData }: { categories: a
 
   const removeColor = (color: string) => {
     setColors(colors.filter(c => c !== color));
+  };
+
+  const addDetail = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && newDetail.trim() !== "") {
+      e.preventDefault();
+      setDetails([...details, newDetail.trim()]);
+      setNewDetail("");
+    }
+  };
+
+  const removeDetail = (index: number) => {
+    setDetails(details.filter((_, i) => i !== index));
   };
 
   const addImage = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -200,6 +216,7 @@ export default function ProductForm({ categories, initialData }: { categories: a
       formData.append('images', JSON.stringify(finalImages));
       formData.append('variantsMatrix', JSON.stringify(variantMatrix));
       formData.append('hasVariants', String(hasVariants));
+      formData.append('details', JSON.stringify(details));
       
       if (isEditing) {
         // Fetch dynamically from imported actions to avoid circular deps with new/actions.ts
@@ -277,6 +294,29 @@ export default function ProductForm({ categories, initialData }: { categories: a
                       placeholder="Descreva os detalhes, materiais e cuidados do produto..." 
                       className="w-full border-none focus:ring-0 dark:bg-slate-800 dark:text-white p-4 text-sm resize-y"
                     />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Detalhes (Tópicos)</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={newDetail}
+                      onChange={(e) => setNewDetail(e.target.value)}
+                      onKeyDown={addDetail}
+                      placeholder="Ex: Qualidade Premium (Aperte Enter)" 
+                      className="flex-1 rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-800 text-sm focus:ring-primary dark:text-white" 
+                    />
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {details.map((detail, idx) => (
+                      <span key={idx} className="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg flex items-center gap-2 border border-slate-200 dark:border-slate-700">
+                        {detail}
+                        <button type="button" onClick={() => removeDetail(idx)} className="text-slate-400 hover:text-rose-500 transition-colors">
+                          <span className="material-symbols-outlined text-[14px]">close</span>
+                        </button>
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>

@@ -27,6 +27,7 @@ model Product {
   categoryId  String
   isNew       Boolean        @default(false)
   isFeatured  Boolean        @default(false)
+  details     String[]       @default([])
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
   orderItems  OrderItem[]

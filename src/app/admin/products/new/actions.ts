@@ -55,6 +55,12 @@ export async function createProduct(formData: FormData) {
   const hasVariants = formData.get("hasVariants") === "true";
   const variantsMatrixRaw = formData.get("variantsMatrix") as string;
   
+  const detailsRaw = formData.get("details") as string;
+  let details: string[] = [];
+  if (detailsRaw) {
+    try { details = JSON.parse(detailsRaw); } catch(e) {}
+  }
+  
   let variantsMatrix: any[] = [];
   if (hasVariants && variantsMatrixRaw) {
     variantsMatrix = JSON.parse(variantsMatrixRaw);
@@ -81,6 +87,7 @@ export async function createProduct(formData: FormData) {
         description: description || "",
         basePrice: parseFloat(price),
         categoryId,
+        details,
         isFeatured: false,
         sku: `AUR-${Math.random().toString(36).substring(7).toUpperCase()}`,
         images: {
