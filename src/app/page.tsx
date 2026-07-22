@@ -63,7 +63,7 @@ export default async function Home() {
   return (
     <StorefrontLayout>
       {/* Hero Section */}
-      <section className="relative h-[80vh] min-h-[500px] max-h-[800px] w-full mt-4 rounded-xl overflow-hidden flex items-center justify-center -mx-4 sm:mx-0 sm:w-full">
+      <section className="relative h-[80vh] min-h-[500px] max-h-[800px] w-full mt-4 rounded-xl overflow-hidden flex items-center justify-center">
         <Image 
           src="/hero-banner.jpg" 
           alt="Elegância no Descanso" 
