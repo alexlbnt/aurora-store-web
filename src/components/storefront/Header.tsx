@@ -4,11 +4,17 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/context/CartContext";
+import { getCategories } from "@/actions/categories";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [categories, setCategories] = useState<{id: string, name: string, slug: string}[]>([]);
   const pathname = usePathname();
   const { cartCount } = useCart();
+
+  React.useEffect(() => {
+    getCategories().then(cats => setCategories(cats)).catch(console.error);
+  }, []);
 
   // Close menu when route changes
   React.useEffect(() => {
@@ -86,10 +92,20 @@ export default function Header() {
             <div className="w-full h-px bg-primary/10 dark:bg-slate-800 my-2" />
             
             <span className="text-sm font-bold uppercase tracking-widest text-primary/40 dark:text-slate-500 mb-2">Categorias</span>
-            <Link href="/category/camisolas" className="text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>Camisolas</Link>
-            <Link href="/category/conjuntos" className="text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>Conjuntos</Link>
-            <Link href="/category/roupoes" className="text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>Roupões</Link>
-            <Link href="/category/acessorios" className="text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>Acessórios</Link>
+            {categories.length > 0 ? (
+              categories.map(cat => (
+                <Link key={cat.id} href={`/category/${cat.slug}`} className="text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors capitalize" onClick={() => setIsMenuOpen(false)}>
+                  {cat.name}
+                </Link>
+              ))
+            ) : (
+              <>
+                <Link href="/category/camisolas" className="text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>Camisolas</Link>
+                <Link href="/category/conjuntos" className="text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>Conjuntos</Link>
+                <Link href="/category/roupoes" className="text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>Roupões</Link>
+                <Link href="/category/acessorios" className="text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>Acessórios</Link>
+              </>
+            )}
 
             <div className="w-full h-px bg-primary/10 dark:bg-slate-800 my-2" />
             
