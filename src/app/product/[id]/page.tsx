@@ -25,7 +25,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   });
 
   const session = await auth();
-  const isAdmin = session?.user?.role === "ADMIN";
+  const isAdmin = (session?.user as any)?.role === "ADMIN";
 
   if (!dbProduct) {
     notFound();

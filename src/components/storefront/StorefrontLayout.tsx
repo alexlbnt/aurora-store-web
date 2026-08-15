@@ -9,7 +9,7 @@ export default async function StorefrontLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-  const isAdmin = session?.user?.role === "ADMIN";
+  const isAdmin = (session?.user as any)?.role === "ADMIN";
 
   return (
     <div className="flex flex-col min-h-screen">
