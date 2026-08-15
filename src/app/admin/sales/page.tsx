@@ -161,7 +161,7 @@ export default async function Sales() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Link href={`/admin/sales/${order.id}`} className="text-slate-400 hover:text-primary transition-colors p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800/50 inline-block" title="Ver Detalhes">
+                        <Link href={`/admin/sales/${order.id}`} className="text-slate-400 hover:text-primary transition-colors p-2 md:p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800/50 inline-flex items-center justify-center" title="Ver Detalhes">
                           <span className="material-symbols-outlined">visibility</span>
                         </Link>
                         <DeleteButton orderId={order.id} />
