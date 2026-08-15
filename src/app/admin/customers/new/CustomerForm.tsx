@@ -3,9 +3,11 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { createCustomer, updateCustomer } from "../actions";
+import { formatPhone } from "@/lib/formatters";
 
 export default function CustomerForm({ initialData }: { initialData?: any }) {
   const [isPending, setIsPending] = useState(false);
+  const [phone, setPhone] = useState(initialData?.phone || "");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -73,26 +75,38 @@ export default function CustomerForm({ initialData }: { initialData?: any }) {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">E-mail</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">E-mail <span className="text-slate-400 font-normal">(Opcional)</span></label>
                   <input 
                     type="email" 
                     name="email"
-                    required
-                    defaultValue={initialData?.email}
+                    defaultValue={initialData?.email || ""}
                     placeholder="carlos@email.com" 
                     className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-white" 
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Telefone <span className="text-slate-400 font-normal">(Opcional)</span></label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Telefone</label>
                   <input 
                     type="tel" 
                     name="phone"
-                    defaultValue={initialData?.phone || ""}
+                    required
+                    value={phone}
+                    onChange={(e) => setPhone(formatPhone(e.target.value))}
                     placeholder="(00) 00000-0000" 
                     className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-white" 
                   />
                 </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Redes Sociais <span className="text-slate-400 font-normal">(Opcional)</span></label>
+                <input 
+                  type="text" 
+                  name="socialMedia"
+                  defaultValue={initialData?.socialMedia || ""}
+                  placeholder="Ex: @carlos.silva ou https://linkedin.com/in/carlos" 
+                  className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-white" 
+                />
               </div>
             </div>
         </div>

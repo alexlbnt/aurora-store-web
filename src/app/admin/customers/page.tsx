@@ -65,7 +65,7 @@ export default async function Customers() {
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800 text-left border-b border-primary/10">
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-[30%]">Nome</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">E-mail</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Contato</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Total Pedidos</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Valor Gasto</th>
                   <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Último Pedido</th>
@@ -95,7 +95,10 @@ export default async function Customers() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{customer.email}</td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-slate-600 dark:text-slate-300 font-medium">{customer.phone}</div>
+                      <div className="text-xs text-slate-400">{customer.email || 'Sem e-mail'}</div>
+                    </td>
                     <td className="px-6 py-4 text-center">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
                         {customer.orders.length}

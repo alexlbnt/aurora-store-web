@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { createOrder } from "../actions";
+import { formatPhone } from "@/lib/formatters";
 
 interface Product {
   id: string;
@@ -15,8 +16,8 @@ interface Product {
 interface Customer {
   id: string;
   name: string;
-  email: string;
-  phone: string | null;
+  email: string | null;
+  phone: string;
 }
 
 export default function OrderForm({ products, customers = [] }: { products: Product[], customers?: Customer[] }) {
@@ -39,8 +40,8 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
        const cus = customers.find(c => c.id === id);
        if (cus) {
          setCustomerName(cus.name);
-         setCustomerEmail(cus.email);
-         setCustomerPhone(cus.phone || "");
+         setCustomerEmail(cus.email || "");
+         setCustomerPhone(formatPhone(cus.phone));
        }
     }
   };
@@ -55,6 +56,10 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
   const removeItem = (id: string) => {
     setItems(items.filter(item => item.id !== id));
   };
+
+  const [discountType, setDiscountType] = useState<"NONE" | "FIXED" | "PERCENTAGE">("NONE");
+  const [discountValue, setDiscountValue] = useState("");
+  const [successOrder, setSuccessOrder] = useState<any>(null);
 
   const updateItem = (id: string, field: string, value: any) => {
     setItems(prevItems => prevItems.map(item => {
@@ -85,7 +90,16 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
     }));
   };
 
-  const totalAmount = items.reduce((acc, item) => acc + (parseFloat(item.price) || 0) * (Number(item.quantity) || 0), 0);
+  const subTotalAmount = items.reduce((acc, item) => acc + (parseFloat(item.price) || 0) * (Number(item.quantity) || 0), 0);
+  
+  let discountAmount = 0;
+  const numDiscountValue = parseFloat(discountValue.replace(',', '.')) || 0;
+  if (discountType === "FIXED") {
+    discountAmount = numDiscountValue;
+  } else if (discountType === "PERCENTAGE") {
+    discountAmount = (subTotalAmount * numDiscountValue) / 100;
+  }
+  const totalAmount = Math.max(0, subTotalAmount - discountAmount);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -104,19 +118,68 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
     }));
     formData.append("items", JSON.stringify(validItems));
 
+    if (discountType !== "NONE") {
+      formData.append("discountType", discountType);
+      formData.append("discountValue", discountValue);
+    }
+
     try {
       const result = await createOrder(formData);
       if (result.error) {
         alert(result.error);
         setIsPending(false);
       } else {
-        window.location.href = '/admin/sales';
+        setSuccessOrder(result);
+        setIsPending(false);
       }
     } catch (error) {
       alert("Erro crítico ao criar pedido.");
       setIsPending(false);
     }
   };
+
+  if (successOrder) {
+    let itemsText = items.map(item => {
+      const p = products.find(prod => prod.id === item.productId);
+      const itemSubtotal = (parseFloat(item.price) || 0) * (Number(item.quantity) || 0);
+      return `▫️ ${item.quantity}x ${p ? p.name : 'Produto'} - R$ ${itemSubtotal.toFixed(2).replace('.', ',')}`;
+    }).join('\n');
+    
+    let receiptText = `*Resumo do Pedido:*\n${itemsText}\n\n`;
+    
+    if (discountAmount > 0) {
+      receiptText += `Subtotal: R$ ${subTotalAmount.toFixed(2).replace('.', ',')}\n`;
+      receiptText += `Desconto: - R$ ${discountAmount.toFixed(2).replace('.', ',')}\n`;
+    }
+    receiptText += `*Total: R$ ${totalAmount.toFixed(2).replace('.', ',')}*`;
+
+    const textMessage = `Olá, ${customerName}! Seu pedido #${successOrder.orderNumber} foi criado com sucesso.\n\n${receiptText}\n\nEm breve enviaremos atualizações sobre o envio. Muito obrigado(a) pela preferência!`;
+    const waLink = `https://wa.me/55${successOrder.customerPhone.replace(/\D/g, '')}?text=${encodeURIComponent(textMessage)}`;
+
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center py-20 animate-fade-in">
+        <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6">
+          <span className="material-symbols-outlined text-4xl">check_circle</span>
+        </div>
+        <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Pedido Criado!</h2>
+        <p className="text-slate-500 mb-8 max-w-md text-center">
+          O pedido <span className="font-bold text-slate-700 dark:text-slate-300">#{successOrder.orderNumber}</span> foi registrado com sucesso. O que você deseja fazer agora?
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Link href={`/admin/sales/${successOrder.orderId}`} className="px-6 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-bold transition-colors">
+            Ver detalhes do pedido
+          </Link>
+          <a href={waLink} target="_blank" rel="noopener noreferrer" className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold flex items-center gap-2 transition-colors shadow-sm">
+             <span className="material-symbols-outlined">forum</span>
+             Compartilhar no WhatsApp
+          </a>
+        </div>
+        <button onClick={() => window.location.href = '/admin/sales/new'} className="mt-8 text-sm text-primary hover:underline font-semibold">
+          Criar outro pedido manual
+        </button>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -183,10 +246,9 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">E-mail</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">E-mail <span className="text-slate-400 font-normal">(Opcional)</span></label>
                   <input 
                     type="email" 
-                    required
                     value={customerEmail}
                     onChange={(e) => setCustomerEmail(e.target.value)}
                     placeholder="cliente@email.com" 
@@ -194,11 +256,12 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Telefone <span className="text-slate-400 font-normal">(Opcional)</span></label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Telefone</label>
                   <input 
                     type="tel" 
+                    required
                     value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    onChange={(e) => setCustomerPhone(formatPhone(e.target.value))}
                     placeholder="(00) 00000-0000" 
                     className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white" 
                   />
@@ -350,6 +413,50 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                </div>
              )}
           </div>
+
+          {/* Desconto */}
+          <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all">
+             <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                  <span className="material-symbols-outlined">loyalty</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Descontos e Acréscimos</h3>
+                  <p className="text-sm text-slate-500">Aplique descontos ao valor total</p>
+                </div>
+             </div>
+             
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Tipo de Desconto</label>
+                  <select 
+                    value={discountType}
+                    onChange={(e) => setDiscountType(e.target.value as any)}
+                    className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white"
+                  >
+                    <option value="NONE">Sem desconto</option>
+                    <option value="FIXED">Valor Fixo (R$)</option>
+                    <option value="PERCENTAGE">Porcentagem (%)</option>
+                  </select>
+                </div>
+                {discountType !== "NONE" && (
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                      Valor do Desconto {discountType === 'PERCENTAGE' ? '(%)' : '(R$)'}
+                    </label>
+                    <input 
+                      type="number"
+                      step={discountType === 'PERCENTAGE' ? "1" : "0.01"}
+                      required
+                      value={discountValue}
+                      onChange={(e) => setDiscountValue(e.target.value)}
+                      placeholder={discountType === 'PERCENTAGE' ? "10" : "50.00"}
+                      className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white font-mono"
+                    />
+                  </div>
+                )}
+             </div>
+          </div>
         </div>
 
         {/* Resumo Column */}
@@ -366,7 +473,7 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                 ) : (
                   items.map((item, i) => {
                     const p = products.find(prod => prod.id === item.productId);
-                    const subTotal = (parseFloat(item.price) || 0) * (Number(item.quantity) || 0);
+                    const subTotalItem = (parseFloat(item.price) || 0) * (Number(item.quantity) || 0);
                     if (!p) return null;
                     return (
                       <div key={item.id} className="flex justify-between text-sm items-center pb-4 border-b border-white/10 last:border-0 last:pb-0">
@@ -374,7 +481,7 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                            {item.quantity}x {p.name}
                          </div>
                          <div className="font-medium whitespace-nowrap">
-                           R$ {subTotal.toFixed(2)}
+                           R$ {subTotalItem.toFixed(2)}
                          </div>
                       </div>
                     );
@@ -383,7 +490,17 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
               </div>
 
               <div className="pt-6 border-t border-white/20">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-slate-300">Subtotal</span>
+                  <span className="text-lg font-bold">R$ {subTotalAmount.toFixed(2)}</span>
+                </div>
+                {discountAmount > 0 && (
+                  <div className="flex items-center justify-between mb-4 text-emerald-400">
+                    <span>Desconto</span>
+                    <span className="font-bold">- R$ {discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between border-t border-white/20 pt-4 mt-2">
                   <span className="text-slate-300">Total calculado</span>
                   <span className="text-3xl font-black text-rose-300">R$ {totalAmount.toFixed(2)}</span>
                 </div>

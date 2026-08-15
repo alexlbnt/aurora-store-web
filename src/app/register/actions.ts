@@ -10,7 +10,7 @@ export async function registerCustomer(prevState: any, formData: FormData) {
   const password = formData.get("password") as string;
   const phone = formData.get("phone") as string;
 
-  if (!name || !email || !password) {
+  if (!name || !email || !password || !phone) {
     return { error: "Preencha todos os campos obrigatórios." };
   }
 
@@ -40,7 +40,7 @@ export async function registerCustomer(prevState: any, formData: FormData) {
           data: {
             name,
             email,
-            phone: phone || null
+            phone
           }
         });
       } else if (phone && !existingCustomer.phone) {

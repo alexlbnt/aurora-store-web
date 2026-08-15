@@ -7,6 +7,7 @@ export async function processPaymentAndCreateOrder(prevState: any, formData: For
   const rawCart = formData.get("cartItems") as string;
   const address = formData.get("address") as string;
   const email = formData.get("email") as string;
+  const phone = formData.get("phone") as string;
   const name = formData.get("name") as string;
   
   if (!rawCart) return { error: "Carrinho vazio." };
@@ -18,7 +19,7 @@ export async function processPaymentAndCreateOrder(prevState: any, formData: For
     return { error: "Erro ao ler carrinho" };
   }
 
-  if (!email || !name || !address) {
+  if (!phone || !name || !address) {
     return { error: "Preencha todos os dados obrigatórios." };
   }
 
@@ -26,10 +27,15 @@ export async function processPaymentAndCreateOrder(prevState: any, formData: For
     // Simulando delay natural de processamento de cartão (Gateway fake)
     await new Promise(r => setTimeout(r, 2000)); 
 
-    let customer = await prisma.customer.findUnique({ where: { email } });
+    let customer = email ? await prisma.customer.findUnique({ where: { email } }) : null;
     if (!customer) {
       customer = await prisma.customer.create({
-        data: { name, email }
+        data: { name, email: email || null, phone }
+      });
+    } else if (phone && customer.phone !== phone) {
+      customer = await prisma.customer.update({
+        where: { id: customer.id },
+        data: { phone }
       });
     }
 

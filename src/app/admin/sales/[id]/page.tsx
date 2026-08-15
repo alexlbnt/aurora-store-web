@@ -22,6 +22,19 @@ export default async function OrderDetailsPage({ params }: { params: { id: strin
 
   if (!order) return notFound();
 
+  let itemsText = order.items.map(item => `▫️ ${item.quantity}x ${item.product.name} - R$ ${Number(item.price * item.quantity).toFixed(2).replace('.', ',')}`).join('\n');
+  let receiptText = `*Resumo do Pedido:*\n${itemsText}\n\n`;
+  const subtotal = Number(order.totalAmount) + Number(order.discountAmount || 0);
+  
+  if (order.discountAmount && Number(order.discountAmount) > 0) {
+    receiptText += `Subtotal: R$ ${subtotal.toFixed(2).replace('.', ',')}\n`;
+    receiptText += `Desconto: - R$ ${Number(order.discountAmount).toFixed(2).replace('.', ',')}\n`;
+  }
+  receiptText += `*Total: R$ ${Number(order.totalAmount).toFixed(2).replace('.', ',')}*`;
+
+  const textMessage = `Olá, ${order.customer.name}! Seu pedido #${order.orderNumber} foi criado com sucesso.\n\n${receiptText}\n\nEm breve enviaremos atualizações sobre o envio. Muito obrigado(a) pela preferência!`;
+  const waLink = order.customer.phone ? `https://wa.me/55${order.customer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(textMessage)}` : null;
+
   return (
     <AdminLayout>
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -40,7 +53,15 @@ export default async function OrderDetailsPage({ params }: { params: { id: strin
             </span>
           </h1>
         </div>
-        <StatusUpdater orderId={order.id} currentStatus={order.status} />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          {waLink && (
+            <a href={waLink} target="_blank" rel="noopener noreferrer" className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 h-10 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-sm">
+               <span className="material-symbols-outlined text-[18px]">forum</span>
+               Compartilhar
+            </a>
+          )}
+          <StatusUpdater orderId={order.id} currentStatus={order.status} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -67,9 +88,28 @@ export default async function OrderDetailsPage({ params }: { params: { id: strin
                 </div>
               ))}
             </div>
-            <div className="mt-6 pt-5 bg-slate-50 dark:bg-slate-800/20 -mx-6 -mb-6 px-6 pb-6 rounded-b-xl border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-lg font-bold">
-              <span className="text-slate-700 dark:text-slate-300">Total do Pedido</span>
-              <span className="text-primary text-2xl tracking-tight">R$ {Number(order.totalAmount).toFixed(2).replace('.', ',')}</span>
+            <div className="mt-6 pt-5 bg-slate-50 dark:bg-slate-800/20 -mx-6 -mb-6 px-6 pb-6 rounded-b-xl border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2 text-lg font-bold">
+              {order.discountAmount && Number(order.discountAmount) > 0 ? (
+                <>
+                  <div className="flex justify-between items-center text-sm font-medium text-slate-500">
+                    <span>Subtotal</span>
+                    <span>R$ {(Number(order.totalAmount) + Number(order.discountAmount)).toFixed(2).replace('.', ',')}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm font-bold text-emerald-500">
+                    <span>Desconto</span>
+                    <span>- R$ {Number(order.discountAmount).toFixed(2).replace('.', ',')}</span>
+                  </div>
+                  <div className="border-t border-slate-200 dark:border-slate-700/50 mt-2 pt-2 flex justify-between items-center">
+                    <span className="text-slate-700 dark:text-slate-300">Total do Pedido</span>
+                    <span className="text-primary text-2xl tracking-tight">R$ {Number(order.totalAmount).toFixed(2).replace('.', ',')}</span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-700 dark:text-slate-300">Total do Pedido</span>
+                  <span className="text-primary text-2xl tracking-tight">R$ {Number(order.totalAmount).toFixed(2).replace('.', ',')}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

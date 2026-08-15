@@ -65,13 +65,14 @@ model ProductImage {
 }
 
 model Customer {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  phone     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  orders    Order[]
+  id          String   @id @default(uuid())
+  name        String
+  email       String?  @unique
+  phone       String
+  socialMedia String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  orders      Order[]
 }
 
 model Order {
@@ -80,6 +81,9 @@ model Order {
   customerId    String
   stockLocation StockLocation @default(ESTOQUE_A)
   status        OrderStatus @default(PENDING)
+  discountType  String?
+  discountValue Decimal?    @db.Decimal(10, 2)
+  discountAmount Decimal    @default(0) @db.Decimal(10, 2)
   totalAmount Decimal     @db.Decimal(10, 2)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt

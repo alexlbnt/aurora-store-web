@@ -46,30 +46,47 @@ export async function createOrder(formData: FormData) {
     const customerPhone = formData.get("customerPhone") as string;
     const itemsJson = formData.get("items") as string;
     const stockLocation = (formData.get("stockLocation") as "ESTOQUE_A" | "ESTOQUE_V") || "ESTOQUE_A";
+    
+    // Discount fields
+    const discountType = formData.get("discountType") as string | null;
+    const discountValueStr = formData.get("discountValue") as string | null;
+    let discountValue = discountValueStr ? parseFloat(discountValueStr.replace(',', '.')) : null;
+    if (isNaN(discountValue as number)) discountValue = null;
+
     const items: OrderItemParams[] = itemsJson ? JSON.parse(itemsJson) : [];
 
-    if (!customerEmail || !customerName || items.length === 0) {
-      throw new Error("Campos obrigatórios ausentes");
+    if (!customerPhone || !customerName || items.length === 0) {
+      throw new Error("Nome, telefone e itens são obrigatórios");
     }
 
-    const totalAmount = items.reduce((acc, item) => acc + (parseFloat(item.price) * item.quantity), 0);
+    const subtotal = items.reduce((acc, item) => acc + (parseFloat(item.price) * item.quantity), 0);
+    
+    let discountAmount = 0;
+    if (discountType === "FIXED" && discountValue) {
+      discountAmount = discountValue;
+    } else if (discountType === "PERCENTAGE" && discountValue) {
+      discountAmount = (subtotal * discountValue) / 100;
+    }
+
+    const totalAmount = Math.max(0, subtotal - discountAmount);
+
     const orderNumber = `PED-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 90 + 10)}`;
 
     const order = await prisma.$transaction(async (tx) => {
       // 1. Find or create Customer
-      let customer = await tx.customer.findUnique({
+      let customer = customerEmail ? await tx.customer.findUnique({
         where: { email: customerEmail }
-      });
+      }) : null;
 
       if (!customer) {
         customer = await tx.customer.create({
           data: {
             name: customerName,
-            email: customerEmail,
-            phone: customerPhone || null
+            email: customerEmail || null,
+            phone: customerPhone
           }
         });
-      } else if (customerPhone && !customer.phone) {
+      } else if (customerPhone && customer.phone !== customerPhone) {
         // Optionally update phone if newly provided
         customer = await tx.customer.update({
           where: { id: customer.id },
@@ -84,6 +101,9 @@ export async function createOrder(formData: FormData) {
           customerId: customer.id,
           stockLocation,
           status: "PENDING",
+          discountType,
+          discountValue,
+          discountAmount,
           totalAmount: totalAmount,
           items: {
             create: items.map(item => ({
@@ -113,7 +133,13 @@ export async function createOrder(formData: FormData) {
 
     revalidatePath("/admin/sales");
     revalidatePath("/admin");
-    return { success: true, orderId: order.id };
+    return { 
+      success: true, 
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      totalAmount: order.totalAmount.toNumber(),
+      customerPhone: customerPhone
+    };
   } catch (error) {
     console.error("Error creating order:", error);
     return { error: "Erro ao criar pedido manual." };

@@ -2,8 +2,9 @@
 
 import StorefrontLayout from "@/components/storefront/StorefrontLayout";
 import { useCart } from "@/context/CartContext";
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { processPaymentAndCreateOrder } from "./actions";
+import { formatPhone } from "@/lib/formatters";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -11,6 +12,7 @@ export default function CheckoutPage() {
   const { items, cartTotal } = useCart();
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(processPaymentAndCreateOrder, null);
+  const [phone, setPhone] = useState("");
 
   useEffect(() => {
     // Redirecionar se carrinho vazio
@@ -47,8 +49,22 @@ export default function CheckoutPage() {
                     <input type="text" name="name" required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-primary outline-none" placeholder="João Silva" />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1">E-mail</label>
-                    <input type="email" name="email" required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-primary outline-none" placeholder="joao@gmail.com" />
+                    <label className="block text-sm font-bold text-slate-700 mb-1">E-mail <span className="text-slate-400 font-normal">(Opcional)</span></label>
+                    <input type="email" name="email" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-primary outline-none" placeholder="joao@gmail.com" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Telefone</label>
+                    <input 
+                      type="tel" 
+                      name="phone" 
+                      required 
+                      value={phone}
+                      onChange={(e) => setPhone(formatPhone(e.target.value))}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-primary outline-none" 
+                      placeholder="(00) 00000-0000" 
+                    />
                   </div>
                 </div>
               </div>

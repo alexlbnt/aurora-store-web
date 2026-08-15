@@ -1,11 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
+import { formatPhone } from "@/lib/formatters";
 import { registerCustomer } from "./actions";
 
 export default function RegisterPage() {
   const [state, formAction, isPending] = useActionState(registerCustomer, null);
+  const [phone, setPhone] = useState("");
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -65,13 +67,16 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="phone" className="block text-sm font-semibold text-slate-700">
-                Celular (Opcional)
+                Celular
               </label>
               <div className="mt-2 text-slate-800">
                 <input
                   id="phone"
                   name="phone"
-                  type="text"
+                  type="tel"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(formatPhone(e.target.value))}
                   className="appearance-none block w-full px-4 py-3 border border-slate-200 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm transition-colors bg-slate-50 focus:bg-white"
                   placeholder="(11) 99999-9999"
                 />
