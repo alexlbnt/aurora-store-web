@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { getCategories } from "@/actions/categories";
 
-export default function Header() {
+export default function Header({ isAdmin }: { isAdmin?: boolean }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [categories, setCategories] = useState<{id: string, name: string, slug: string}[]>([]);
   const pathname = usePathname();
@@ -49,6 +49,11 @@ export default function Header() {
           <Link href="/">AURORA</Link>
         </h1>
         <div className="flex items-center gap-1 shrink-0 relative z-50">
+          {isAdmin && (
+            <Link href="/admin" aria-label="Painel Admin" className="text-primary dark:text-primary/80 flex size-10 items-center justify-center hover:bg-primary/5 rounded-full transition-colors hidden sm:flex">
+              <span className="material-symbols-outlined text-[24px]">admin_panel_settings</span>
+            </Link>
+          )}
           <Link href="/catalog" aria-label="Search" className="text-primary dark:text-primary/80 flex size-10 items-center justify-center hover:bg-primary/5 rounded-full transition-colors">
             <span className="material-symbols-outlined text-[24px]">search</span>
           </Link>
@@ -112,6 +117,11 @@ export default function Header() {
             <Link href="/account" className="flex items-center gap-2 text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>
               <span className="material-symbols-outlined">person</span> Minha Conta
             </Link>
+            {isAdmin && (
+              <Link href="/admin" className="flex items-center gap-2 text-base font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 transition-colors" onClick={() => setIsMenuOpen(false)}>
+                <span className="material-symbols-outlined">admin_panel_settings</span> Painel Admin
+              </Link>
+            )}
           </nav>
         </div>
       </div>

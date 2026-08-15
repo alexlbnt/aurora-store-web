@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import { auth } from "@/auth";
 import AddToCart from "@/components/storefront/AddToCart";
 import ProductGallery from "@/components/storefront/ProductGallery";
 
@@ -22,6 +23,9 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
       variants: true
     }
   });
+
+  const session = await auth();
+  const isAdmin = session?.user?.role === "ADMIN";
 
   if (!dbProduct) {
     notFound();
@@ -69,7 +73,15 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
         {/* Product Info */}
         <div className="w-full md:w-[45%] flex flex-col gap-8 md:pt-4">
           <div className="space-y-4 border-b border-primary/10 pb-8">
-            <h1 className="text-3xl lg:text-4xl font-serif text-primary dark:text-slate-100 font-bold leading-tight">{product.name}</h1>
+            <div className="flex items-start justify-between gap-4">
+              <h1 className="text-3xl lg:text-4xl font-serif text-primary dark:text-slate-100 font-bold leading-tight">{product.name}</h1>
+              {isAdmin && (
+                <Link href={`/admin/products/${product.id}/edit`} className="shrink-0 flex items-center gap-1 bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 hover:bg-emerald-100 hover:text-emerald-700 dark:hover:bg-emerald-500/20 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider border border-emerald-200 dark:border-emerald-500/30 transition-colors">
+                  <span className="material-symbols-outlined text-[16px]">edit</span>
+                  Editar
+                </Link>
+              )}
+            </div>
             <div>
               <p className="text-2xl font-bold text-primary dark:text-slate-100 mb-1">{product.price}</p>
               <p className="text-sm text-primary/60 dark:text-slate-400 font-medium">{product.installments}</p>

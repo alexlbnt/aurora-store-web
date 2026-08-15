@@ -43,6 +43,10 @@ export default async function Sidebar() {
           <span className="material-symbols-outlined">settings</span>
           <span className="text-sm font-medium">Configurações</span>
         </Link>
+        <Link href="/" target="_blank" className="flex items-center gap-3 px-3 py-2.5 mt-2 rounded-lg text-emerald-400 hover:bg-emerald-500/20 transition-colors">
+          <span className="material-symbols-outlined">storefront</span>
+          <span className="text-sm font-medium">Ver Loja</span>
+        </Link>
         <div className="mt-4 flex items-center justify-between px-3 py-2 bg-slate-800/50 rounded-lg">
           <div className="flex items-center gap-3">
             <div className="size-8 rounded-full bg-primary/30 flex items-center justify-center overflow-hidden">
