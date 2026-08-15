@@ -22,7 +22,7 @@ export default async function OrderDetailsPage({ params }: { params: { id: strin
 
   if (!order) return notFound();
 
-  let itemsText = order.items.map(item => `▫️ ${item.quantity}x ${item.product.name} - R$ ${Number(item.price * item.quantity).toFixed(2).replace('.', ',')}`).join('\n');
+  let itemsText = order.items.map(item => `▫️ ${item.quantity}x ${item.product.name} - R$ ${(Number(item.price) * item.quantity).toFixed(2).replace('.', ',')}`).join('\n');
   let receiptText = `*Resumo do Pedido:*\n${itemsText}\n\n`;
   const subtotal = Number(order.totalAmount) + Number(order.discountAmount || 0);
   
