@@ -46,6 +46,7 @@ export async function createOrder(formData: FormData) {
     const customerPhone = formData.get("customerPhone") as string;
     const itemsJson = formData.get("items") as string;
     const stockLocation = (formData.get("stockLocation") as "ESTOQUE_A" | "ESTOQUE_V") || "ESTOQUE_A";
+    const paymentMethod = formData.get("paymentMethod") as string | null;
     
     // Discount fields
     const discountType = formData.get("discountType") as string | null;
@@ -105,6 +106,7 @@ export async function createOrder(formData: FormData) {
           discountValue,
           discountAmount,
           totalAmount: totalAmount,
+          paymentMethod: paymentMethod as any,
           items: {
             create: items.map(item => ({
               productId: item.productId,

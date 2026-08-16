@@ -60,6 +60,7 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
   const [discountType, setDiscountType] = useState<"NONE" | "FIXED" | "PERCENTAGE">("NONE");
   const [discountValue, setDiscountValue] = useState("");
   const [successOrder, setSuccessOrder] = useState<any>(null);
+  const [paymentMethod, setPaymentMethod] = useState("CREDIT_CARD");
 
   const updateItem = (id: string, field: string, value: any) => {
     setItems(prevItems => prevItems.map(item => {
@@ -110,6 +111,7 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
     formData.append("customerEmail", customerEmail);
     formData.append("customerPhone", customerPhone);
     formData.append("stockLocation", stockLocation);
+    formData.append("paymentMethod", paymentMethod);
     
     // Filter out items that are incomplete
     const validItems = items.filter(item => item.productId && Number(item.quantity) > 0).map(item => ({
@@ -291,6 +293,20 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                   >
                     <option value="ESTOQUE_A">Estoque-A</option>
                     <option value="ESTOQUE_V">Estoque-V</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Método de Pagamento</label>
+                  <select 
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white"
+                  >
+                    <option value="CREDIT_CARD">Cartão de Crédito</option>
+                    <option value="DEBIT_CARD">Cartão de Débito</option>
+                    <option value="PIX">PIX</option>
+                    <option value="BOLETO">Boleto</option>
+                    <option value="CASH">Dinheiro</option>
                   </select>
                 </div>
              </div>

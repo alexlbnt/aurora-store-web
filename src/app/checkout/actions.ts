@@ -51,6 +51,7 @@ export async function processPaymentAndCreateOrder(prevState: any, formData: For
         items: {
           create: cartItems.map(item => ({
             productId: item.productId,
+            variantId: item.id.length === 36 ? item.id : null, // Assuming UUID length, or simply store it if it's the variant ID
             quantity: item.qty,
             price: item.numericPrice
           }))
