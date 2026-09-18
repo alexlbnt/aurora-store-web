@@ -19,6 +19,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXTAUTH_URL || "http://localhost:3000"),
   title: "Aurora | Premium Sleepwear",
   description: "Ressignificando o seu descanso com elegância e conforto.",
 };

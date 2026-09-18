@@ -17,7 +17,10 @@ export default async function Home() {
     include: {
       category: true,
       images: {
-        where: { isDisplay: true },
+        orderBy: [
+          { isDisplay: 'desc' },
+          { order: 'asc' }
+        ],
         take: 1
       }
     }
@@ -31,7 +34,10 @@ export default async function Home() {
         take: 1,
         include: {
           images: {
-            where: { isDisplay: true },
+            orderBy: [
+              { isDisplay: 'desc' },
+              { order: 'asc' }
+            ],
             take: 1
           }
         }
@@ -45,7 +51,13 @@ export default async function Home() {
   type ProductWithRelations = Prisma.ProductGetPayload<{
     include: {
       category: true;
-      images: { where: { isDisplay: true }; take: 1 };
+      images: {
+        orderBy: [
+          { isDisplay: 'desc' },
+          { order: 'asc' }
+        ];
+        take: 1;
+      };
     };
   }>;
 

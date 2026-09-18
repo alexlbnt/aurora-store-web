@@ -61,6 +61,9 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
   const [discountValue, setDiscountValue] = useState("");
   const [successOrder, setSuccessOrder] = useState<any>(null);
   const [paymentMethod, setPaymentMethod] = useState("CREDIT_CARD");
+  const [shippingType, setShippingType] = useState<"SEM_FRETE" | "PAGO_AURORA" | "PAGO_CLIENTE">("SEM_FRETE");
+  const [notes, setNotes] = useState("");
+
 
   const updateItem = (id: string, field: string, value: any) => {
     setItems(prevItems => prevItems.map(item => {
@@ -112,6 +115,8 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
     formData.append("customerPhone", customerPhone);
     formData.append("stockLocation", stockLocation);
     formData.append("paymentMethod", paymentMethod);
+    formData.append("shippingType", shippingType);
+    formData.append("notes", notes);
     
     // Filter out items that are incomplete
     const validItems = items.filter(item => item.productId && Number(item.quantity) > 0).map(item => ({
@@ -153,9 +158,21 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
       receiptText += `Subtotal: R$ ${subTotalAmount.toFixed(2).replace('.', ',')}\n`;
       receiptText += `Desconto: - R$ ${discountAmount.toFixed(2).replace('.', ',')}\n`;
     }
-    receiptText += `*Total: R$ ${totalAmount.toFixed(2).replace('.', ',')}*`;
+    receiptText += `*Total: R$ ${totalAmount.toFixed(2).replace('.', ',')}*\n`;
 
-    const textMessage = `Olá, ${customerName}! Seu pedido #${successOrder.orderNumber} foi criado com sucesso.\n\n${receiptText}\n\nEm breve enviaremos atualizações sobre o envio. Muito obrigado(a) pela preferência!`;
+    const shippingLabels: Record<string, string> = {
+      SEM_FRETE: "Sem Frete",
+      PAGO_AURORA: "Pago Aurora",
+      PAGO_CLIENTE: "Pago pelo Cliente"
+    };
+    receiptText += `Frete: ${shippingLabels[shippingType] || "Sem Frete"}\n`;
+
+    if (notes) {
+      receiptText += `Observações: ${notes}\n`;
+    }
+
+    const textMessage = `Olá, ${customerName}! Seu pedido #${successOrder.orderNumber} foi criado com sucesso.\n\n${receiptText}\nEm breve enviaremos atualizações sobre o envio. Muito obrigado(a) pela preferência!`;
+
     const waLink = `https://wa.me/55${successOrder.customerPhone.replace(/\D/g, '')}?text=${encodeURIComponent(textMessage)}`;
 
     return (
@@ -283,7 +300,7 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                 </div>
              </div>
              
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Origem do Estoque</label>
                   <select 
@@ -309,6 +326,35 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                     <option value="CASH">Dinheiro</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[18px] text-primary">local_shipping</span>
+                    Frete
+                  </label>
+                  <select 
+                    value={shippingType}
+                    onChange={(e) => setShippingType(e.target.value as any)}
+                    className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white font-medium"
+                  >
+                    <option value="SEM_FRETE">1 - Sem Frete</option>
+                    <option value="PAGO_AURORA">2 - Pago Aurora</option>
+                    <option value="PAGO_CLIENTE">3 - Cliente (Pago pelo Cliente)</option>
+                  </select>
+                </div>
+             </div>
+
+             <div className="mt-6">
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[18px] text-primary">edit_note</span>
+                  Observações do Pedido <span className="text-slate-400 font-normal text-xs">(Particularidades do pedido)</span>
+                </label>
+                <textarea 
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Escreva aqui particularidades, instruções de entrega, embalagem de presente ou observações gerais..."
+                  rows={3}
+                  className="w-full p-3.5 rounded-xl border border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white text-sm outline-none transition-all placeholder:text-slate-400 focus:ring-2"
+                />
              </div>
           </div>
 

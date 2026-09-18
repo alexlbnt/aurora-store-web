@@ -21,7 +21,10 @@ export default async function CategoryPage({ params }: Props) {
         include: {
           category: true,
           images: {
-            where: { isDisplay: true },
+            orderBy: [
+              { isDisplay: 'desc' },
+              { order: 'asc' }
+            ],
             take: 1
           }
         }

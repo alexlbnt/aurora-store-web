@@ -31,7 +31,13 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
     orderBy,
     include: {
       category: true,
-      images: { where: { isDisplay: true }, take: 1 }
+      images: {
+        orderBy: [
+          { isDisplay: 'desc' },
+          { order: 'asc' }
+        ],
+        take: 1
+      }
     }
   });
 

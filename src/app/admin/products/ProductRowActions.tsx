@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { deleteProduct } from "./actions";
 
@@ -11,18 +12,96 @@ interface ProductRowActionsProps {
 export default function ProductRowActions({ productId }: ProductRowActionsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [menuStyle, setMenuStyle] = useState<{ top: number; left: number; openUpwards: boolean }>({
+    top: 0,
+    left: 0,
+    openUpwards: false,
+  });
+
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    setMounted(true);
+  }, []);
+
+  const updatePosition = useCallback(() => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    
+    // Close if the button is completely offscreen
+    if (rect.bottom < 0 || rect.top > window.innerHeight) {
+      setIsOpen(false);
+      return;
+    }
+
+    const menuHeight = 100;
+    const menuWidth = 192; // w-48 is 12rem = 192px
+    const margin = 6;
+
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUpwards = spaceBelow < menuHeight + margin && rect.top > menuHeight + margin;
+
+    const top = openUpwards 
+      ? Math.max(8, rect.top - menuHeight - margin) 
+      : rect.bottom + margin;
+
+    let left = rect.right - menuWidth;
+    if (left < 8) left = 8;
+    if (left + menuWidth > window.innerWidth - 8) {
+      left = window.innerWidth - menuWidth - 8;
+    }
+
+    setMenuStyle({ top, left, openUpwards });
+  }, []);
+
+  const handleToggle = () => {
+    if (!isOpen) {
+      updatePosition();
+      setIsOpen(true);
+    } else {
+      setIsOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleScrollOrResize = () => {
+      updatePosition();
+    };
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(target) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(target)
+      ) {
         setIsOpen(false);
       }
-    }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScrollOrResize, true);
+    window.addEventListener("resize", handleScrollOrResize);
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [dropdownRef]);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+      window.removeEventListener("resize", handleScrollOrResize);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, updatePosition]);
 
   const handleDelete = async () => {
     if (window.confirm("Atenção: Você tem certeza que deseja excluir permanentemente este produto e todas as suas variações de estoque?")) {
@@ -37,19 +116,33 @@ export default function ProductRowActions({ productId }: ProductRowActionsProps)
   };
 
   return (
-    <div className="relative inline-block text-left" ref={dropdownRef}>
+    <div className="inline-block text-left">
       <button 
-        onClick={() => setIsOpen(!isOpen)}
+        ref={buttonRef}
+        onClick={handleToggle}
         disabled={isDeleting}
-        className="p-2 text-slate-400 hover:text-primary transition-colors rounded-lg hover:bg-slate-100 disabled:opacity-50 flex items-center justify-center"
+        aria-expanded={isOpen}
+        aria-haspopup="true"
+        aria-label="Ações do produto"
+        className="p-2 text-slate-400 hover:text-primary transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 flex items-center justify-center"
       >
         <span className="material-symbols-outlined text-[20px]">{isDeleting ? 'sync' : 'more_vert'}</span>
       </button>
 
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 origin-top-right rounded-lg bg-white dark:bg-slate-800 shadow-lg ring-1 ring-slate-200 dark:ring-slate-700/50 focus:outline-none z-50 overflow-hidden">
+      {mounted && isOpen && createPortal(
+        <div 
+          ref={dropdownRef}
+          style={{ 
+            position: "fixed", 
+            top: `${menuStyle.top}px`, 
+            left: `${menuStyle.left}px`,
+            zIndex: 9999 
+          }}
+          className={`w-48 rounded-lg bg-white dark:bg-slate-800 shadow-xl ring-1 ring-slate-200 dark:ring-slate-700/50 focus:outline-none overflow-hidden transition-all duration-100 ${
+            menuStyle.openUpwards ? "origin-bottom-right" : "origin-top-right"
+          }`}
+        >
           <div className="py-1">
-            {/* Future edit route link */}
             <Link 
               href={`/admin/products/${productId}/edit`}
               onClick={() => setIsOpen(false)}
@@ -67,7 +160,8 @@ export default function ProductRowActions({ productId }: ProductRowActionsProps)
               Excluir Produto
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

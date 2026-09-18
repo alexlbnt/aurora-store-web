@@ -33,7 +33,9 @@ export const authConfig = {
       } 
       
       if (isOnAccount) {
-        if (!isLoggedIn) return false;
+        if (!isLoggedIn) {
+          return Response.redirect(new URL('/login', nextUrl));
+        }
         return true;
       }
       

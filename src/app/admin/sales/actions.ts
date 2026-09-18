@@ -47,6 +47,12 @@ export async function createOrder(formData: FormData) {
     const itemsJson = formData.get("items") as string;
     const stockLocation = (formData.get("stockLocation") as "ESTOQUE_A" | "ESTOQUE_V") || "ESTOQUE_A";
     const paymentMethod = formData.get("paymentMethod") as string | null;
+    const shippingTypeRaw = formData.get("shippingType") as string | null;
+    const validShippingTypes = ["SEM_FRETE", "PAGO_AURORA", "PAGO_CLIENTE"];
+    const shippingType = shippingTypeRaw && validShippingTypes.includes(shippingTypeRaw)
+      ? (shippingTypeRaw as "SEM_FRETE" | "PAGO_AURORA" | "PAGO_CLIENTE")
+      : "SEM_FRETE";
+    const notes = (formData.get("notes") as string)?.trim() || null;
     
     // Discount fields
     const discountType = formData.get("discountType") as string | null;
@@ -102,6 +108,8 @@ export async function createOrder(formData: FormData) {
           customerId: customer.id,
           stockLocation,
           status: "PENDING",
+          shippingType,
+          notes,
           discountType,
           discountValue,
           discountAmount,
@@ -140,10 +148,43 @@ export async function createOrder(formData: FormData) {
       orderId: order.id,
       orderNumber: order.orderNumber,
       totalAmount: order.totalAmount.toNumber(),
-      customerPhone: customerPhone
+      customerPhone: customerPhone,
+      shippingType: order.shippingType,
+      notes: order.notes
     };
   } catch (error) {
     console.error("Error creating order:", error);
     return { error: "Erro ao criar pedido manual." };
   }
 }
+
+export async function updateOrderNotes(orderId: string, notes: string) {
+  try {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { notes: notes.trim() || null }
+    });
+    revalidatePath(`/admin/sales/${orderId}`);
+    revalidatePath("/admin/sales");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating order notes:", error);
+    return { error: "Erro ao atualizar observações do pedido." };
+  }
+}
+
+export async function updateOrderShipping(orderId: string, shippingType: "SEM_FRETE" | "PAGO_AURORA" | "PAGO_CLIENTE") {
+  try {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { shippingType }
+    });
+    revalidatePath(`/admin/sales/${orderId}`);
+    revalidatePath("/admin/sales");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating order shipping:", error);
+    return { error: "Erro ao atualizar frete do pedido." };
+  }
+}
+

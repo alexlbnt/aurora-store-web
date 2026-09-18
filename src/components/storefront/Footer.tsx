@@ -18,17 +18,17 @@ export default function Footer() {
             <div className="flex flex-col gap-4">
               <h4 className="text-primary dark:text-slate-100 font-serif font-semibold text-base">Institucional</h4>
               <nav className="flex flex-col gap-2">
-                <Link href="#" className="text-primary/60 dark:text-slate-400 text-sm hover:text-primary dark:hover:text-white transition-colors">Nossa História</Link>
-                <Link href="#" className="text-primary/60 dark:text-slate-400 text-sm hover:text-primary dark:hover:text-white transition-colors">Sustentabilidade</Link>
-                <Link href="#" className="text-primary/60 dark:text-slate-400 text-sm hover:text-primary dark:hover:text-white transition-colors">Trabalhe Conosco</Link>
+                <Link href="/about" className="text-primary/60 dark:text-slate-400 text-sm hover:text-primary dark:hover:text-white transition-colors">Nossa História</Link>
+                <Link href="/about" className="text-primary/60 dark:text-slate-400 text-sm hover:text-primary dark:hover:text-white transition-colors">Sustentabilidade</Link>
+                <Link href="/faq" className="text-primary/60 dark:text-slate-400 text-sm hover:text-primary dark:hover:text-white transition-colors">Trabalhe Conosco</Link>
               </nav>
             </div>
             <div className="flex flex-col gap-4">
               <h4 className="text-primary dark:text-slate-100 font-serif font-semibold text-base">Ajuda</h4>
               <nav className="flex flex-col gap-2">
-                <Link href="#" className="text-primary/60 dark:text-slate-400 text-sm hover:text-primary dark:hover:text-white transition-colors">Dúvidas Frequentes</Link>
-                <Link href="#" className="text-primary/60 dark:text-slate-400 text-sm hover:text-primary dark:hover:text-white transition-colors">Trocas e Devoluções</Link>
-                <Link href="#" className="text-primary/60 dark:text-slate-400 text-sm hover:text-primary dark:hover:text-white transition-colors">Guia de Tamanhos</Link>
+                <Link href="/faq" className="text-primary/60 dark:text-slate-400 text-sm hover:text-primary dark:hover:text-white transition-colors">Dúvidas Frequentes</Link>
+                <Link href="/faq" className="text-primary/60 dark:text-slate-400 text-sm hover:text-primary dark:hover:text-white transition-colors">Trocas e Devoluções</Link>
+                <Link href="/faq" className="text-primary/60 dark:text-slate-400 text-sm hover:text-primary dark:hover:text-white transition-colors">Guia de Tamanhos</Link>
               </nav>
             </div>
           </div>

@@ -19,17 +19,21 @@ interface WishlistContextType {
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
 
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<WishlistItem[]>([]);
+  const [items, setItems] = useState<WishlistItem[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("aurora_wishlist");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {}
+      }
+    }
+    return [];
+  });
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
-    const saved = localStorage.getItem("aurora_wishlist");
-    if (saved) {
-      try {
-        setItems(JSON.parse(saved));
-      } catch (e) {}
-    }
   }, []);
 
   const toggleWishlist = (item: WishlistItem) => {

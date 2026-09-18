@@ -3,6 +3,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import StatusUpdater from "@/components/admin/sales/StatusUpdater";
+import ShippingUpdater from "@/components/admin/sales/ShippingUpdater";
+import OrderNotesCard from "@/components/admin/sales/OrderNotesCard";
 
 export default async function OrderDetailsPage({ params }: { params: { id: string } }) {
   const param = await params;
@@ -22,6 +24,12 @@ export default async function OrderDetailsPage({ params }: { params: { id: strin
 
   if (!order) return notFound();
 
+  const shippingLabels: Record<string, string> = {
+    SEM_FRETE: "Sem Frete",
+    PAGO_AURORA: "Pago Aurora",
+    PAGO_CLIENTE: "Pago pelo Cliente"
+  };
+
   let itemsText = order.items.map(item => `▫️ ${item.quantity}x ${item.product.name} - R$ ${(Number(item.price) * item.quantity).toFixed(2).replace('.', ',')}`).join('\n');
   let receiptText = `*Resumo do Pedido:*\n${itemsText}\n\n`;
   const subtotal = Number(order.totalAmount) + Number(order.discountAmount || 0);
@@ -30,9 +38,14 @@ export default async function OrderDetailsPage({ params }: { params: { id: strin
     receiptText += `Subtotal: R$ ${subtotal.toFixed(2).replace('.', ',')}\n`;
     receiptText += `Desconto: - R$ ${Number(order.discountAmount).toFixed(2).replace('.', ',')}\n`;
   }
-  receiptText += `*Total: R$ ${Number(order.totalAmount).toFixed(2).replace('.', ',')}*`;
+  receiptText += `*Total: R$ ${Number(order.totalAmount).toFixed(2).replace('.', ',')}*\n`;
+  receiptText += `Frete: ${shippingLabels[order.shippingType] || "Sem Frete"}\n`;
 
-  const textMessage = `Olá, ${order.customer.name}! Seu pedido #${order.orderNumber} foi criado com sucesso.\n\n${receiptText}\n\nEm breve enviaremos atualizações sobre o envio. Muito obrigado(a) pela preferência!`;
+  if (order.notes) {
+    receiptText += `Observações: ${order.notes}\n`;
+  }
+
+  const textMessage = `Olá, ${order.customer.name}! Seu pedido #${order.orderNumber} foi criado com sucesso.\n\n${receiptText}\nEm breve enviaremos atualizações sobre o envio. Muito obrigado(a) pela preferência!`;
   const waLink = order.customer.phone ? `https://wa.me/55${order.customer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(textMessage)}` : null;
 
   return (
@@ -43,7 +56,7 @@ export default async function OrderDetailsPage({ params }: { params: { id: strin
             <span className="material-symbols-outlined text-[16px]">arrow_back</span>
             Voltar para vendas
           </Link>
-          <h1 className="text-2xl font-bold flex items-center gap-3 text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-bold flex flex-wrap items-center gap-3 text-slate-900 dark:text-white">
             Pedido #{order.orderNumber}
             <span className="text-sm font-normal text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
               {new Date(order.createdAt).toLocaleString('pt-BR')}
@@ -53,13 +66,14 @@ export default async function OrderDetailsPage({ params }: { params: { id: strin
             </span>
           </h1>
         </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {waLink && (
             <a href={waLink} target="_blank" rel="noopener noreferrer" className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 h-10 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-sm">
                <span className="material-symbols-outlined text-[18px]">forum</span>
                Compartilhar
             </a>
           )}
+          <ShippingUpdater orderId={order.id} currentShipping={order.shippingType as any} />
           <StatusUpdater orderId={order.id} currentStatus={order.status} />
         </div>
       </div>
@@ -115,6 +129,7 @@ export default async function OrderDetailsPage({ params }: { params: { id: strin
         </div>
 
         <div className="space-y-6">
+          {/* Cliente */}
           <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
             <h3 className="font-bold text-lg mb-4 text-slate-900 dark:text-white flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">person</span>
@@ -136,8 +151,24 @@ export default async function OrderDetailsPage({ params }: { params: { id: strin
               </div>
             )}
           </div>
+
+          {/* Frete e Envio */}
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+            <h3 className="font-bold text-lg mb-4 text-slate-900 dark:text-white flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">local_shipping</span>
+              Condição de Frete
+            </h3>
+            <div className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/50">
+              <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Modalidade:</span>
+              <ShippingUpdater orderId={order.id} currentShipping={order.shippingType as any} />
+            </div>
+          </div>
+
+          {/* Observações do Pedido */}
+          <OrderNotesCard orderId={order.id} initialNotes={order.notes} />
         </div>
       </div>
     </AdminLayout>
   );
 }
+
