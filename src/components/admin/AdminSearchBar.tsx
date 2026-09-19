@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useTransition, Suspense } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 interface AdminSearchBarProps {
@@ -8,7 +8,7 @@ interface AdminSearchBarProps {
   paramName?: string;
 }
 
-export default function AdminSearchBar({
+function AdminSearchBarInner({
   placeholder = "Buscar...",
   paramName = "q",
 }: AdminSearchBarProps) {
@@ -58,5 +58,19 @@ export default function AdminSearchBar({
         </button>
       )}
     </div>
+  );
+}
+
+export default function AdminSearchBar(props: AdminSearchBarProps) {
+  return (
+    <Suspense
+      fallback={
+        <div className="relative w-full">
+          <div className="w-full h-10 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg animate-pulse" />
+        </div>
+      }
+    >
+      <AdminSearchBarInner {...props} />
+    </Suspense>
   );
 }

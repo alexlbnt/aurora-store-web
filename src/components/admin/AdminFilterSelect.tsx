@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useTransition } from "react";
+import React, { useTransition, Suspense } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 interface Option {
@@ -15,7 +15,7 @@ interface AdminFilterSelectProps {
   defaultValue?: string;
 }
 
-export default function AdminFilterSelect({
+function AdminFilterSelectInner({
   paramName,
   options,
   placeholder,
@@ -59,5 +59,17 @@ export default function AdminFilterSelect({
         </option>
       ))}
     </select>
+  );
+}
+
+export default function AdminFilterSelect(props: AdminFilterSelectProps) {
+  return (
+    <Suspense
+      fallback={
+        <div className="h-9 w-32 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg animate-pulse" />
+      }
+    >
+      <AdminFilterSelectInner {...props} />
+    </Suspense>
   );
 }

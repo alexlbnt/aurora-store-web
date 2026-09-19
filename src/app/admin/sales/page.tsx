@@ -57,37 +57,48 @@ export default async function Sales({ searchParams }: SalesPageProps) {
   }
 
   // Fetch paginated orders & total count in parallel with global metrics
-  const [orders, totalOrdersCount, allOrdersForMetrics] = await Promise.all([
-    prisma.order.findMany({
-      where,
-      include: {
-        customer: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      skip: (currentPage - 1) * pageSize,
-      take: pageSize,
-    }),
-    prisma.order.count({ where }),
-    prisma.order.findMany({
-      select: {
-        status: true,
-        totalAmount: true,
-      },
-    }),
-  ]);
+  let orders: any[] = [];
+  let totalOrdersCount = 0;
+  let allOrdersForMetrics: any[] = [];
+
+  try {
+    const [fetchedOrders, fetchedTotal, fetchedMetrics] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        include: {
+          customer: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip: (currentPage - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.order.count({ where }),
+      prisma.order.findMany({
+        select: {
+          status: true,
+          totalAmount: true,
+        },
+      }),
+    ]);
+    orders = fetchedOrders;
+    totalOrdersCount = fetchedTotal;
+    allOrdersForMetrics = fetchedMetrics;
+  } catch (err) {
+    console.error("Error fetching sales data:", err);
+  }
 
   const totalSalesLifetime = allOrdersForMetrics
     .filter((o) => o.status !== "CANCELED")
-    .reduce((acc, order) => acc + Number(order.totalAmount), 0);
+    .reduce((acc, order) => acc + Number(order.totalAmount || 0), 0);
 
   const nonCanceledCount = allOrdersForMetrics.filter((o) => o.status !== "CANCELED").length;
   const pendingCount = allOrdersForMetrics.filter((o) => o.status === "PENDING").length;
   const ticketMedio = nonCanceledCount > 0 ? totalSalesLifetime / nonCanceledCount : 0;
 
   return (
-    <AdminLayout>
+    <AdminLayout pageTitle="Vendas">
       <div className="flex-1">
         {/* Header Override for title */}
         <div className="flex items-center justify-between mb-8">
@@ -232,12 +243,14 @@ export default async function Sales({ searchParams }: SalesPageProps) {
                         break;
                     }
 
-                    const initials = order.customer.name
+                    const customerName = order.customer?.name || "Cliente não informado";
+                    const initials = customerName
                       .split(" ")
+                      .filter(Boolean)
                       .map((n: string) => n[0])
                       .join("")
                       .substring(0, 2)
-                      .toUpperCase();
+                      .toUpperCase() || "CL";
 
                     return (
                       <tr key={order.id} className="hover:bg-slate-50/80 dark:hover:bg-white/5 transition-colors group">
@@ -265,12 +278,12 @@ export default async function Sales({ searchParams }: SalesPageProps) {
                               {initials}
                             </div>
                             <span className="text-sm font-medium text-slate-900 dark:text-white">
-                              {order.customer.name}
+                              {customerName}
                             </span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
-                          {new Date(order.createdAt).toLocaleDateString("pt-BR", { timeZone: "UTC" })}
+                          {order.createdAt ? new Date(order.createdAt).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "-"}
                         </td>
                         <td className="px-6 py-4">
                           {order.shippingType === "PAGO_AURORA" ? (

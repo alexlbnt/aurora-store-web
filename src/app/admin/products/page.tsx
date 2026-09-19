@@ -40,29 +40,40 @@ export default async function ProductsListPage({ searchParams }: ProductsPagePro
   }
 
   // Parallel data fetching: products, count and categories
-  const [products, totalProductsCount, categories] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      include: {
-        category: true,
-        variants: true,
-        images: {
-          orderBy: { order: "asc" },
-          take: 1,
+  let products: any[] = [];
+  let totalProductsCount = 0;
+  let categories: any[] = [];
+
+  try {
+    const [fetchedProducts, fetchedCount, fetchedCategories] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        include: {
+          category: true,
+          variants: true,
+          images: {
+            orderBy: { order: "asc" },
+            take: 1,
+          },
         },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      skip: (currentPage - 1) * pageSize,
-      take: pageSize,
-    }),
-    prisma.product.count({ where }),
-    prisma.category.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-  ]);
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip: (currentPage - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.product.count({ where }),
+      prisma.category.findMany({
+        orderBy: { name: "asc" },
+        select: { id: true, name: true },
+      }),
+    ]);
+    products = fetchedProducts;
+    totalProductsCount = fetchedCount;
+    categories = fetchedCategories;
+  } catch (err) {
+    console.error("Error loading products:", err);
+  }
 
   const categoryOptions = categories.map((c) => ({
     label: c.name,
@@ -70,7 +81,7 @@ export default async function ProductsListPage({ searchParams }: ProductsPagePro
   }));
 
   return (
-    <AdminLayout>
+    <AdminLayout pageTitle="Produtos">
       <div className="flex-1">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -149,8 +160,8 @@ export default async function ProductsListPage({ searchParams }: ProductsPagePro
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                   {products.map((product) => {
-                    const totalStockA = product.variants.reduce((acc, variant) => acc + variant.stockA, 0);
-                    const totalStockV = product.variants.reduce((acc, variant) => acc + variant.stockV, 0);
+                    const totalStockA = (product.variants || []).reduce((acc: number, variant: any) => acc + (variant.stockA || 0), 0);
+                    const totalStockV = (product.variants || []).reduce((acc: number, variant: any) => acc + (variant.stockV || 0), 0);
 
                     return (
                       <tr key={product.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">

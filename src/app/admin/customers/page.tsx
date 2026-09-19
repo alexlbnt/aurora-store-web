@@ -32,43 +32,54 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
     ];
   }
 
-  const [customers, totalCustomersCount, allCustomers] = await Promise.all([
-    prisma.customer.findMany({
-      where,
-      include: {
-        orders: {
-          where: { status: { not: "CANCELED" } },
-          orderBy: { createdAt: "desc" },
+  let customers: any[] = [];
+  let totalCustomersCount = 0;
+  let allCustomers: any[] = [];
+
+  try {
+    const [fetchedCustomers, fetchedCount, fetchedAll] = await Promise.all([
+      prisma.customer.findMany({
+        where,
+        include: {
+          orders: {
+            where: { status: { not: "CANCELED" } },
+            orderBy: { createdAt: "desc" },
+          },
         },
-      },
-      orderBy: { createdAt: "desc" },
-      skip: (currentPage - 1) * pageSize,
-      take: pageSize,
-    }),
-    prisma.customer.count({ where }),
-    prisma.customer.findMany({
-      include: {
-        orders: {
-          where: { status: { not: "CANCELED" } },
-          select: { totalAmount: true },
+        orderBy: { createdAt: "desc" },
+        skip: (currentPage - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.customer.count({ where }),
+      prisma.customer.findMany({
+        include: {
+          orders: {
+            where: { status: { not: "CANCELED" } },
+            select: { totalAmount: true },
+          },
         },
-      },
-    }),
-  ]);
+      }),
+    ]);
+    customers = fetchedCustomers;
+    totalCustomersCount = fetchedCount;
+    allCustomers = fetchedAll;
+  } catch (err) {
+    console.error("Error loading customers:", err);
+  }
 
   const totalSpentByCustomer = customers.map((c) => {
-    return c.orders.reduce((acc, order) => acc + Number(order.totalAmount), 0);
+    return (c.orders || []).reduce((acc: number, order: any) => acc + Number(order.totalAmount || 0), 0);
   });
 
   const allSpentArray = allCustomers.map((c) =>
-    c.orders.reduce((acc, o) => acc + Number(o.totalAmount), 0)
+    (c.orders || []).reduce((acc: number, o: any) => acc + Number(o.totalAmount || 0), 0)
   );
   const totalLifetimeSpent = allSpentArray.reduce((acc, curr) => acc + curr, 0);
   const averageLTV = allCustomers.length > 0 ? totalLifetimeSpent / allCustomers.length : 0;
-  const activeCustomersCount = allCustomers.filter((c) => c.orders.length > 0).length;
+  const activeCustomersCount = allCustomers.filter((c) => (c.orders || []).length > 0).length;
 
   return (
-    <AdminLayout>
+    <AdminLayout pageTitle="Clientes">
       <div className="flex-1">
         {/* Header Override for title */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">

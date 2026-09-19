@@ -19,27 +19,32 @@ export default async function Reports({ searchParams }: ReportsProps) {
   const numDays = is30Days ? 30 : 7;
 
   // Fetch real data for reports including product images
-  const orders = await prisma.order.findMany({
-    where: { status: { not: "CANCELED" } },
-    include: {
-      items: {
-        include: {
-          product: {
-            include: {
-              variants: true,
-              images: {
-                orderBy: { order: "asc" },
-                take: 1,
+  let orders: any[] = [];
+  try {
+    orders = await prisma.order.findMany({
+      where: { status: { not: "CANCELED" } },
+      include: {
+        items: {
+          include: {
+            product: {
+              include: {
+                variants: true,
+                images: {
+                  orderBy: { order: "asc" },
+                  take: 1,
+                },
               },
             },
           },
         },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (err) {
+    console.error("Error loading reports data:", err);
+  }
 
-  const totalRevenue = orders.reduce((acc, order) => acc + Number(order.totalAmount), 0);
+  const totalRevenue = orders.reduce((acc, order) => acc + Number(order.totalAmount || 0), 0);
   const averageTicket = orders.length > 0 ? totalRevenue / orders.length : 0;
 
   // Generate chart data for selected period
@@ -51,10 +56,10 @@ export default async function Reports({ searchParams }: ReportsProps) {
   });
 
   orders.forEach((order) => {
-    const dateStr = order.createdAt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+    const dateStr = order.createdAt ? new Date(order.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "";
     const dayData = chartData.find((d) => d.name === dateStr);
     if (dayData) {
-      dayData.total += Number(order.totalAmount);
+      dayData.total += Number(order.totalAmount || 0);
     }
   });
 
@@ -65,24 +70,25 @@ export default async function Reports({ searchParams }: ReportsProps) {
   > = {};
 
   orders.forEach((order) => {
-    order.items.forEach((item) => {
-      const pid = item.productId;
+    (order.items || []).forEach((item: any) => {
+      const pid = item.productId || item.product?.id;
+      if (!pid) return;
       if (!productSales[pid]) {
-        const firstImg = item.product.images?.[0]?.url || "";
+        const firstImg = item.product?.images?.[0]?.url || "";
         productSales[pid] = {
-          name: item.product.name,
+          name: item.product?.name || "Produto",
           quantity: 0,
           revenue: 0,
-          stock: item.product.variants.reduce(
-            (acc, v) => acc + (v.stockA || 0) + (v.stockV || 0),
+          stock: (item.product?.variants || []).reduce(
+            (acc: number, v: any) => acc + (v.stockA || 0) + (v.stockV || 0),
             0
           ),
           img: firstImg,
-          categoryId: item.product.categoryId,
+          categoryId: item.product?.categoryId || "",
         };
       }
-      productSales[pid].quantity += item.quantity;
-      productSales[pid].revenue += Number(item.price) * item.quantity;
+      productSales[pid].quantity += item.quantity || 0;
+      productSales[pid].revenue += Number(item.price || 0) * (item.quantity || 0);
     });
   });
 
@@ -91,7 +97,7 @@ export default async function Reports({ searchParams }: ReportsProps) {
     .slice(0, 5);
 
   return (
-    <AdminLayout>
+    <AdminLayout pageTitle="Relatórios">
       <div className="flex-1">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
