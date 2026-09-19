@@ -20,7 +20,7 @@ interface SalesPageProps {
 }
 
 export default async function Sales({ searchParams }: SalesPageProps) {
-  const resolvedParams = await searchParams;
+  const resolvedParams = (await searchParams) || {};
   const q = resolvedParams.q?.trim() || "";
   const statusParam = resolvedParams.status?.trim();
   const periodParam = resolvedParams.period?.trim();

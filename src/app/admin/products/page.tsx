@@ -20,7 +20,7 @@ interface ProductsPageProps {
 }
 
 export default async function ProductsListPage({ searchParams }: ProductsPageProps) {
-  const resolvedParams = await searchParams;
+  const resolvedParams = (await searchParams) || {};
   const q = resolvedParams.q?.trim() || "";
   const categoryId = resolvedParams.categoryId?.trim();
   const currentPage = Math.max(1, parseInt(resolvedParams.page || "1", 10) || 1);

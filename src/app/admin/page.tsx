@@ -13,22 +13,31 @@ interface DashboardProps {
 }
 
 export default async function Dashboard({ searchParams }: DashboardProps) {
-  const resolvedParams = await searchParams;
-  const is30Days = resolvedParams.period === "30d";
+  const resolvedParams = (await searchParams) || {};
+  const is30Days = resolvedParams?.period === "30d";
   const numDays = is30Days ? 30 : 7;
 
-  const [orders, customers] = await Promise.all([
-    prisma.order.findMany({
-      include: {
-        customer: true,
-        items: {
-          include: { product: true },
+  let orders: any[] = [];
+  let customers = 0;
+
+  try {
+    const [fetchedOrders, fetchedCustomers] = await Promise.all([
+      prisma.order.findMany({
+        include: {
+          customer: true,
+          items: {
+            include: { product: true },
+          },
         },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.customer.count(),
-  ]);
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.customer.count(),
+    ]);
+    orders = fetchedOrders;
+    customers = fetchedCustomers;
+  } catch (dbErr) {
+    console.error("Error loading dashboard data:", dbErr);
+  }
 
   const totalSales = orders
     .filter((o) => o.status !== "CANCELED")
@@ -208,10 +217,12 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
                           {order.orderNumber}
                         </Link>
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{order.customer.name}</td>
                       <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
-                        {order.items.length > 0 ? order.items[0].product.name : "Vários itens"}
-                        {order.items.length > 1 && ` (+${order.items.length - 1})`}
+                        {order.customer?.name || "Cliente não informado"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
+                        {order.items?.length > 0 ? (order.items[0].product?.name || "Produto") : "Vários itens"}
+                        {(order.items?.length || 0) > 1 && ` (+${order.items.length - 1})`}
                       </td>
                       <td className="px-6 py-4 text-sm font-bold text-slate-800 dark:text-slate-100">
                         R$ {Number(order.totalAmount).toFixed(2).replace(".", ",")}

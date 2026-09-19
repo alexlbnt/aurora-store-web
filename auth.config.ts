@@ -29,7 +29,7 @@ export const authConfig = {
           return Response.redirect(new URL('/', nextUrl));
         }
 
-        return false; // Redirect unauthenticated users to login page
+        return Response.redirect(new URL('/admin/login', nextUrl)); // Redirect unauthenticated users to login page
       } 
       
       if (isOnAccount) {

@@ -17,7 +17,7 @@ interface CustomersPageProps {
 }
 
 export default async function Customers({ searchParams }: CustomersPageProps) {
-  const resolvedParams = await searchParams;
+  const resolvedParams = (await searchParams) || {};
   const q = resolvedParams.q?.trim() || "";
   const currentPage = Math.max(1, parseInt(resolvedParams.page || "1", 10) || 1);
   const pageSize = 10;

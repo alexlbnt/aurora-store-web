@@ -14,8 +14,8 @@ interface ReportsProps {
 }
 
 export default async function Reports({ searchParams }: ReportsProps) {
-  const resolvedParams = await searchParams;
-  const is30Days = resolvedParams.period === "30d";
+  const resolvedParams = (await searchParams) || {};
+  const is30Days = resolvedParams?.period === "30d";
   const numDays = is30Days ? 30 : 7;
 
   // Fetch real data for reports including product images
