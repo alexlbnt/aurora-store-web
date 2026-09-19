@@ -11,18 +11,21 @@ export default async function AccountPage() {
     redirect("/login");
   }
 
-  const customer = await prisma.customer.findUnique({
-    where: { email: session.user.email },
-    include: {
-      orders: {
-        orderBy: { createdAt: 'desc' },
-        include: {
-          items: {
-            include: {
-              product: {
-                include: {
-                  images: {
-                    orderBy: { order: 'asc' }
+  let customer = null;
+  try {
+    customer = await prisma.customer.findUnique({
+      where: { email: session.user.email },
+      include: {
+        orders: {
+          orderBy: { createdAt: 'desc' },
+          include: {
+            items: {
+              include: {
+                product: {
+                  include: {
+                    images: {
+                      orderBy: { order: 'asc' }
+                    }
                   }
                 }
               }
@@ -30,25 +33,58 @@ export default async function AccountPage() {
           }
         }
       }
-    }
-  });
+    });
 
-  // Serialize orders for Client Components
-  const serializedOrders = customer?.orders.map(order => ({
+    // Auto-create customer record if it doesn't exist yet (e.g. admin or pre-existing user)
+    if (!customer && session.user.email) {
+      try {
+        customer = await prisma.customer.create({
+          data: {
+            name: session.user.name || "Cliente",
+            email: session.user.email,
+            phone: "",
+          },
+          include: {
+            orders: {
+              include: {
+                items: {
+                  include: {
+                    product: {
+                      include: {
+                        images: true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        });
+      } catch (createErr) {
+        console.warn("Could not auto-create customer profile:", createErr);
+      }
+    }
+  } catch (err) {
+    console.error("Error retrieving customer account data:", err);
+  }
+
+  // Serialize orders safely for Client Components
+  const rawOrders = customer?.orders || [];
+  const serializedOrders = rawOrders.map(order => ({
     ...order,
-    totalAmount: Number(order.totalAmount),
-    discountAmount: Number(order.discountAmount),
+    totalAmount: Number(order.totalAmount || 0),
+    discountAmount: Number(order.discountAmount || 0),
     discountValue: order.discountValue ? Number(order.discountValue) : null,
-    items: order.items.map(item => ({
+    items: (order.items || []).map(item => ({
       ...item,
-      price: Number(item.price),
+      price: Number(item.price || 0),
       product: {
-        id: item.product.id,
-        name: item.product.name,
-        images: item.product.images.map(img => ({ url: img.url }))
+        id: item.product?.id || item.productId,
+        name: item.product?.name || "Produto",
+        images: (item.product?.images || []).map(img => ({ url: img.url }))
       }
     }))
-  })) || [];
+  }));
 
   return (
     <StorefrontLayout>

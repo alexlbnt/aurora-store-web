@@ -11,9 +11,14 @@ export default async function AccountSettingsPage() {
     redirect("/login");
   }
 
-  const customer = await prisma.customer.findUnique({
-    where: { email: session.user.email },
-  });
+  let customer = null;
+  try {
+    customer = await prisma.customer.findUnique({
+      where: { email: session.user.email },
+    });
+  } catch (err) {
+    console.error("Error fetching customer in settings:", err);
+  }
 
   const initialData = {
     name: customer?.name || session.user.name || "",

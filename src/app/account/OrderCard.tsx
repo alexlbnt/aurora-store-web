@@ -88,23 +88,23 @@ export default function OrderCard({ order }: { order: OrderData }) {
             {new Date(order.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
           </p>
           <div className="flex -space-x-2">
-            {order.items.slice(0, 4).map((item) => {
-              const imgUrl = item.product.images?.[0]?.url;
+            {(order.items || []).slice(0, 4).map((item) => {
+              const imgUrl = item.product?.images?.[0]?.url;
               return (
                 <div
                   key={item.id}
                   className="w-10 h-10 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center shrink-0 shadow-sm overflow-hidden"
-                  title={item.product.name}
+                  title={item.product?.name || "Produto"}
                 >
                   {imgUrl ? (
-                    <img src={imgUrl} alt={item.product.name} className="w-full h-full object-cover" />
+                    <img src={imgUrl} alt={item.product?.name || "Produto"} className="w-full h-full object-cover" />
                   ) : (
                     <span className="material-symbols-outlined text-[16px] text-slate-400">inventory_2</span>
                   )}
                 </div>
               );
             })}
-            {order.items.length > 4 && (
+            {(order.items || []).length > 4 && (
               <div className="w-10 h-10 rounded-full bg-slate-50 border-2 border-white flex items-center justify-center shrink-0 shadow-sm text-xs font-bold text-slate-500">
                 +{order.items.length - 4}
               </div>
@@ -171,20 +171,20 @@ export default function OrderCard({ order }: { order: OrderData }) {
           <div>
             <h4 className="font-bold text-slate-800 text-sm mb-3 uppercase tracking-wider">Produtos Comprados</h4>
             <div className="space-y-3">
-              {order.items.map((item) => {
-                const imgUrl = item.product.images?.[0]?.url;
+              {(order.items || []).map((item) => {
+                const imgUrl = item.product?.images?.[0]?.url;
                 return (
                   <div key={item.id} className="flex items-center justify-between gap-4 p-3 bg-white border border-slate-100 rounded-xl">
                     <div className="flex items-center gap-3">
                       <div className="w-14 h-16 rounded-lg bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
                         {imgUrl ? (
-                          <img src={imgUrl} alt={item.product.name} className="w-full h-full object-cover" />
+                          <img src={imgUrl} alt={item.product?.name || "Produto"} className="w-full h-full object-cover" />
                         ) : (
                           <span className="material-symbols-outlined text-slate-400">image</span>
                         )}
                       </div>
                       <div>
-                        <p className="font-bold text-slate-900 text-sm">{item.product.name}</p>
+                        <p className="font-bold text-slate-900 text-sm">{item.product?.name || "Produto"}</p>
                         <p className="text-xs text-slate-500">Qtd: {item.quantity} un.</p>
                       </div>
                     </div>
