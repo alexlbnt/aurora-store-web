@@ -22,31 +22,35 @@ interface CartContextType {
   clearCart: () => void;
   cartCount: number;
   cartTotal: number;
+  isMounted: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("aurora_cart");
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {}
-      }
-    }
-    return [];
-  });
+  const [items, setItems] = useState<CartItem[]>([]);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
+    try {
+      const saved = localStorage.getItem("aurora_cart");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setItems(parsed.filter((item: any) => item && typeof item === "object" && item.id));
+        }
+      }
+    } catch (e) {
+      console.warn("Aviso ao carregar carrinho:", e);
+    }
   }, []);
 
   const saveCart = (newItems: CartItem[]) => {
     setItems(newItems);
-    localStorage.setItem("aurora_cart", JSON.stringify(newItems));
+    try {
+      localStorage.setItem("aurora_cart", JSON.stringify(newItems));
+    } catch (e) {}
   };
 
   const addToCart = (newItem: CartItem) => {
@@ -78,7 +82,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const cartTotal = isMounted ? items.reduce((acc, item) => acc + (item.numericPrice * item.qty), 0) : 0;
 
   return (
-    <CartContext.Provider value={{ items: isMounted ? items : [], addToCart, removeFromCart, updateQuantity, clearCart, cartCount, cartTotal }}>
+    <CartContext.Provider value={{ items: isMounted ? items : [], addToCart, removeFromCart, updateQuantity, clearCart, cartCount, cartTotal, isMounted }}>
       {children}
     </CartContext.Provider>
   );

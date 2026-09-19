@@ -8,8 +8,16 @@ export default async function StorefrontLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-  const isAdmin = (session?.user as any)?.role === "ADMIN";
+  let isAdmin = false;
+  try {
+    const session = await auth();
+    isAdmin = (session?.user as any)?.role === "ADMIN";
+  } catch (err: any) {
+    if (err?.digest === "DYNAMIC_SERVER_USAGE") {
+      throw err;
+    }
+    console.warn("Aviso ao recuperar sessão em StorefrontLayout:", err);
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
