@@ -18,6 +18,7 @@ export default function SidebarClient({ session }: SidebarClientProps) {
     { label: "Dashboard", href: "/admin", icon: "dashboard", exact: true },
     { label: "Vendas", href: "/admin/sales", icon: "shopping_cart" },
     { label: "Produtos", href: "/admin/products", icon: "inventory_2" },
+    { label: "Categorias", href: "/admin/categories", icon: "category" },
     { label: "Clientes", href: "/admin/customers", icon: "group" },
     { label: "Relatórios", href: "/admin/reports", icon: "bar_chart" },
   ];

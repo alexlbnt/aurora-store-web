@@ -1,14 +1,37 @@
 import { NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs/promises';
+import { auth } from '@/auth';
+
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/svg+xml'
+];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user || (session.user as any).role !== "ADMIN") {
+      return NextResponse.json({ error: "Acesso não autorizado. Apenas administradores podem fazer upload." }, { status: 401 });
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
     
     if (!file) {
       return NextResponse.json({ error: "Nenhum arquivo enviado" }, { status: 400 });
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: "Arquivo muito grande. Limite máximo de 10MB." }, { status: 400 });
+    }
+
+    if (file.type && !ALLOWED_MIME_TYPES.includes(file.type)) {
+      return NextResponse.json({ error: "Formato de arquivo não suportado. Envie apenas imagens (JPG, PNG, WEBP, GIF, SVG)." }, { status: 400 });
     }
 
     const apiKey = process.env.IMGBB_API_KEY;

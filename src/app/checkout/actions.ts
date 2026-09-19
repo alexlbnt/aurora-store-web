@@ -12,6 +12,9 @@ export async function processPaymentAndCreateOrder(prevState: any, formData: For
   const email = formData.get("email") as string;
   const phone = formData.get("phone") as string;
   const name = formData.get("name") as string;
+  const shippingTypeRaw = (formData.get("shippingType") as string) || "SEM_FRETE";
+  const paymentMethodRaw = (formData.get("paymentMethod") as string) || "CREDIT_CARD";
+  const notes = (formData.get("notes") as string) || null;
   
   if (!rawCart) return { error: "Carrinho vazio." };
   
@@ -122,13 +125,14 @@ export async function processPaymentAndCreateOrder(prevState: any, formData: For
           customerId: customer.id,
           stockLocation: "ESTOQUE_A",
           status: "PAID",
-          shippingType: "SEM_FRETE",
+          shippingType: (["SEM_FRETE", "PAGO_AURORA", "PAGO_CLIENTE"].includes(shippingTypeRaw) ? shippingTypeRaw : "SEM_FRETE") as any,
           shippingAddress: address,
           shippingCity: city,
           shippingState: state,
           shippingCep: cep,
+          notes,
           totalAmount,
-          paymentMethod: "CREDIT_CARD",
+          paymentMethod: (["PIX", "CREDIT_CARD", "DEBIT_CARD", "BOLETO", "CASH"].includes(paymentMethodRaw) ? paymentMethodRaw : "CREDIT_CARD") as any,
           items: {
             create: resolvedItems.map(({ item, variant }) => ({
               productId: item.productId,
@@ -146,6 +150,7 @@ export async function processPaymentAndCreateOrder(prevState: any, formData: For
     // Simulação de e-mail transacional
     console.log(`\n📧 [SIMULADOR EMAIL] Enviando confirmação para: ${email || name}`);
     console.log(`Assunto: Aurora Store - Seu pedido #${orderNumber} foi confirmado!`);
+    console.log(`Método de Pagamento: ${paymentMethodRaw} | Tipo de Frete: ${shippingTypeRaw}`);
     console.log(`Entrega para: ${address}, ${city} - ${state} (${cep})\n`);
 
   } catch (error: any) {
@@ -155,6 +160,6 @@ export async function processPaymentAndCreateOrder(prevState: any, formData: For
 
   // Redirecionamento após o bloco try/catch para evitar interceptação de NEXT_REDIRECT
   if (createdOrderNumber) {
-    redirect(`/checkout/success?orderNumber=${createdOrderNumber}`);
+    redirect(`/checkout/success?orderNumber=${createdOrderNumber}&method=${paymentMethodRaw}`);
   }
 }

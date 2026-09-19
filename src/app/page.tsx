@@ -12,8 +12,11 @@ export const revalidate = 60; // Revalidate page every 60 seconds
 export default async function Home() {
 
   const dbEssentialsProducts = await prisma.product.findMany({
-    where: { isFeatured: false },
-    take: 4,
+    take: 8,
+    orderBy: [
+      { isFeatured: 'desc' },
+      { createdAt: 'desc' }
+    ],
     include: {
       category: true,
       images: {

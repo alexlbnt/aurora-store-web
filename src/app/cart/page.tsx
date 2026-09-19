@@ -10,7 +10,7 @@ export default function Cart() {
 
   const formattedSubtotal = `R$ ${cartTotal.toFixed(2).replace('.', ',')}`;
 
-  const phoneNumber = "5562999742701"; 
+  const phoneNumber = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || "5562999742701"; 
   const cartSummaryText = items.map(item => `- ${item.qty}x ${item.name} (${item.color}, tamanho ${item.size})`).join('%0A');
   const message = `Olá, gostaria de finalizar meu pedido da Aurora:%0A%0A${cartSummaryText}%0A%0A*Total: ${formattedSubtotal}*`;
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
@@ -115,10 +115,21 @@ export default function Cart() {
                 <p className="text-right text-xs text-primary/60 dark:text-slate-400">em até 6x sem juros</p>
               </div>
 
-              <Link href="/checkout" className="w-full h-14 bg-primary hover:bg-primary/90 text-white font-bold uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm mb-4">
+              <Link href="/checkout" className="w-full h-14 bg-primary hover:bg-primary/90 text-white font-bold uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm mb-3">
                 <span className="material-symbols-outlined">lock</span>
                 Ir para Pagamento
               </Link>
+
+              <a 
+                href={whatsappUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase tracking-wider text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm mb-4"
+              >
+                <span className="material-symbols-outlined text-lg">chat</span>
+                Finalizar pelo WhatsApp
+              </a>
+
               <p className="text-center text-[10px] uppercase font-bold tracking-widest text-primary/50 dark:text-slate-500 flex items-center justify-center gap-1">
                 <span className="material-symbols-outlined text-sm">lock</span>
                 Pagamento 100% Seguro
