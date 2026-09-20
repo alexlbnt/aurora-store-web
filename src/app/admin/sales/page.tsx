@@ -145,7 +145,28 @@ export default async function Sales({ searchParams }: SalesPageProps) {
             </p>
           </div>
           <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-primary/10 shadow-sm hover:border-primary/20 transition-colors">
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Ticket Médio</p>
+            <div className="relative group inline-flex items-center gap-1 cursor-help">
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Ticket Médio</p>
+              <span className="material-symbols-outlined text-[15px] text-slate-400 group-hover:text-primary transition-colors">
+                help_outline
+              </span>
+
+              {/* Tooltip Pop-up */}
+              <div className="absolute bottom-full left-0 mb-2 hidden group-hover:flex flex-col w-64 p-3 bg-slate-900/95 dark:bg-slate-800 text-white text-xs rounded-xl shadow-xl border border-slate-700/50 z-50 pointer-events-none backdrop-blur-sm">
+                <span className="font-bold text-primary dark:text-primary/90 mb-1 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px]">info</span>
+                  O que é Ticket Médio?
+                </span>
+                <p className="text-slate-300 text-[11px] leading-relaxed">
+                  É o valor médio gasto pelos clientes em cada compra confirmada na sua loja.
+                </p>
+                <div className="mt-2 pt-2 border-t border-slate-700/60 text-[10px] text-slate-400 flex items-center justify-between">
+                  <span>Cálculo:</span>
+                  <span className="font-mono text-slate-200 font-semibold">Total Faturado ÷ Nº Pedidos</span>
+                </div>
+                <div className="absolute top-full left-6 -mt-1 border-4 border-transparent border-t-slate-900/95 dark:border-t-slate-800" />
+              </div>
+            </div>
             <h3 className="text-2xl font-bold mt-1 text-slate-900 dark:text-white">
               R$ {ticketMedio.toFixed(2).replace(".", ",")}
             </h3>
