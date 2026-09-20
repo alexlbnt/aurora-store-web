@@ -14,8 +14,16 @@ interface DashboardProps {
 
 export default async function Dashboard({ searchParams }: DashboardProps) {
   const resolvedParams = (await searchParams) || {};
-  const is30Days = resolvedParams?.period === "30d";
-  const numDays = is30Days ? 30 : 7;
+  const periodParam = resolvedParams?.period?.trim().toLowerCase();
+  const is365Days = periodParam === "365d" || periodParam === "1y" || periodParam === "year";
+  const is30Days = periodParam === "30d";
+  const is7Days = !is30Days && !is365Days;
+
+  const periodDescription = is365Days
+    ? "Desempenho dos últimos 365 dias (12 meses) baseado em pedidos reais"
+    : is30Days
+    ? "Desempenho dos últimos 30 dias baseado em pedidos reais"
+    : "Desempenho dos últimos 7 dias baseado em pedidos reais";
 
   let orders: any[] = [];
   let customers = 0;
@@ -46,22 +54,57 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
   const nonCanceledOrders = orders.filter((o) => o.status !== "CANCELED");
   const ticketMedio = nonCanceledOrders.length > 0 ? totalSales / nonCanceledOrders.length : 0;
 
-  // Generate chart data dynamically for either 7 or 30 days
-  const chartData = Array.from({ length: numDays }).map((_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (numDays - 1 - i));
-    const dateStr = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-    return { name: dateStr, total: 0 };
-  });
+  // Generate chart data dynamically based on period
+  let chartData: Array<{ name: string; total: number }> = [];
 
-  orders.forEach((order) => {
-    if (order.status === "CANCELED") return;
-    const dateStr = order.createdAt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-    const dayData = chartData.find((d) => d.name === dateStr);
-    if (dayData) {
-      dayData.total += Number(order.totalAmount);
-    }
-  });
+  if (is365Days) {
+    // 12 monthly slots covering the trailing 365 days / 1 year
+    const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    const monthlySlots = Array.from({ length: 12 }).map((_, i) => {
+      const d = new Date(currentYear, currentMonth - (11 - i), 1);
+      const m = monthNames[d.getMonth()];
+      const y = String(d.getFullYear()).slice(-2);
+      const label = `${m}/${y}`;
+      const yearMonthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      return { name: label, key: yearMonthKey, total: 0 };
+    });
+
+    orders.forEach((order) => {
+      if (order.status === "CANCELED") return;
+      const orderDate = new Date(order.createdAt);
+      const orderKey = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, "0")}`;
+      const slot = monthlySlots.find((s) => s.key === orderKey);
+      if (slot) {
+        slot.total += Number(order.totalAmount);
+      }
+    });
+
+    chartData = monthlySlots.map(({ name, total }) => ({ name, total }));
+  } else {
+    // 7 or 30 daily slots
+    const numDays = is30Days ? 30 : 7;
+    const dailySlots = Array.from({ length: numDays }).map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (numDays - 1 - i));
+      const dateStr = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+      return { name: dateStr, total: 0 };
+    });
+
+    orders.forEach((order) => {
+      if (order.status === "CANCELED") return;
+      const dateStr = new Date(order.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+      const dayData = dailySlots.find((d) => d.name === dateStr);
+      if (dayData) {
+        dayData.total += Number(order.totalAmount);
+      }
+    });
+
+    chartData = dailySlots;
+  }
 
   return (
     <AdminLayout pageTitle="Visão Geral">
@@ -123,16 +166,16 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
             <div>
               <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Evolução das Vendas</h3>
               <p className="text-sm text-slate-500">
-                Desempenho dos últimos {numDays} dias baseado em pedidos reais
+                {periodDescription}
               </p>
             </div>
             <div className="flex items-center gap-2">
               <Link
                 href="/admin"
                 className={`px-4 py-2 text-xs font-bold rounded transition-colors ${
-                  !is30Days
+                  is7Days
                     ? "bg-primary text-white shadow-sm"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                 }`}
               >
                 7 Dias
@@ -142,10 +185,21 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
                 className={`px-4 py-2 text-xs font-bold rounded transition-colors ${
                   is30Days
                     ? "bg-primary text-white shadow-sm"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                 }`}
               >
                 30 Dias
+              </Link>
+              <Link
+                href="/admin?period=365d"
+                className={`px-4 py-2 text-xs font-bold rounded transition-colors ${
+                  is365Days
+                    ? "bg-primary text-white shadow-sm"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                }`}
+                title="Último ano (365 dias)"
+              >
+                365 Dias
               </Link>
             </div>
           </div>

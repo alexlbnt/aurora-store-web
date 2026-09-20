@@ -16,8 +16,10 @@ interface ReportsProps {
 
 export default async function Reports({ searchParams }: ReportsProps) {
   const resolvedParams = (await searchParams) || {};
-  const is30Days = resolvedParams?.period === "30d";
-  const numDays = is30Days ? 30 : 7;
+  const periodParam = resolvedParams?.period?.trim().toLowerCase();
+  const is365Days = periodParam === "365d" || periodParam === "1y" || periodParam === "year";
+  const is30Days = periodParam === "30d";
+  const is7Days = !is30Days && !is365Days;
 
   // Fetch real data for reports including product images
   let orders: any[] = [];
@@ -49,20 +51,52 @@ export default async function Reports({ searchParams }: ReportsProps) {
   const averageTicket = orders.length > 0 ? totalRevenue / orders.length : 0;
 
   // Generate chart data for selected period
-  const chartData = Array.from({ length: numDays }).map((_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (numDays - 1 - i));
-    const dateStr = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-    return { name: dateStr, total: 0 };
-  });
+  let chartData: Array<{ name: string; total: number }> = [];
 
-  orders.forEach((order) => {
-    const dateStr = order.createdAt ? new Date(order.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "";
-    const dayData = chartData.find((d) => d.name === dateStr);
-    if (dayData) {
-      dayData.total += Number(order.totalAmount || 0);
-    }
-  });
+  if (is365Days) {
+    const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    const monthlySlots = Array.from({ length: 12 }).map((_, i) => {
+      const d = new Date(currentYear, currentMonth - (11 - i), 1);
+      const m = monthNames[d.getMonth()];
+      const y = String(d.getFullYear()).slice(-2);
+      const label = `${m}/${y}`;
+      const yearMonthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      return { name: label, key: yearMonthKey, total: 0 };
+    });
+
+    orders.forEach((order) => {
+      const orderDate = new Date(order.createdAt);
+      const orderKey = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, "0")}`;
+      const slot = monthlySlots.find((s) => s.key === orderKey);
+      if (slot) {
+        slot.total += Number(order.totalAmount || 0);
+      }
+    });
+
+    chartData = monthlySlots.map(({ name, total }) => ({ name, total }));
+  } else {
+    const numDays = is30Days ? 30 : 7;
+    const dailySlots = Array.from({ length: numDays }).map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (numDays - 1 - i));
+      const dateStr = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+      return { name: dateStr, total: 0 };
+    });
+
+    orders.forEach((order) => {
+      const dateStr = order.createdAt ? new Date(order.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "";
+      const dayData = dailySlots.find((d) => d.name === dateStr);
+      if (dayData) {
+        dayData.total += Number(order.totalAmount || 0);
+      }
+    });
+
+    chartData = dailySlots;
+  }
 
   // Calculate top products with real photos
   const productSales: Record<
@@ -153,23 +187,34 @@ export default async function Reports({ searchParams }: ReportsProps) {
               <div className="flex items-center gap-2">
                 <Link
                   href="/admin/reports"
-                  className={`px-3 py-1 text-xs font-bold rounded ${
-                    !is30Days
+                  className={`px-3 py-1 text-xs font-bold rounded transition-colors ${
+                    is7Days
                       ? "bg-primary text-white"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                   }`}
                 >
                   7 Dias
                 </Link>
                 <Link
                   href="/admin/reports?period=30d"
-                  className={`px-3 py-1 text-xs font-bold rounded ${
+                  className={`px-3 py-1 text-xs font-bold rounded transition-colors ${
                     is30Days
                       ? "bg-primary text-white"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                   }`}
                 >
                   30 Dias
+                </Link>
+                <Link
+                  href="/admin/reports?period=365d"
+                  className={`px-3 py-1 text-xs font-bold rounded transition-colors ${
+                    is365Days
+                      ? "bg-primary text-white"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                  }`}
+                  title="Último ano (365 dias)"
+                >
+                  365 Dias
                 </Link>
               </div>
             </div>
