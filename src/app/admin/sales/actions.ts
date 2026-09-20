@@ -41,9 +41,11 @@ interface OrderItemParams {
 
 export async function createOrder(formData: FormData) {
   try {
-    const customerName = formData.get("customerName") as string;
-    const customerEmail = formData.get("customerEmail") as string;
-    const customerPhone = formData.get("customerPhone") as string;
+    const customerId = (formData.get("customerId") as string)?.trim() || null;
+    const customerName = (formData.get("customerName") as string)?.trim();
+    const customerEmailRaw = (formData.get("customerEmail") as string)?.trim();
+    const customerEmail = customerEmailRaw && customerEmailRaw.length > 0 ? customerEmailRaw : null;
+    const customerPhone = (formData.get("customerPhone") as string)?.trim();
     const itemsJson = formData.get("items") as string;
     const stockLocation = (formData.get("stockLocation") as "ESTOQUE_A" | "ESTOQUE_V") || "ESTOQUE_A";
     const paymentMethod = formData.get("paymentMethod") as string | null;
@@ -62,8 +64,12 @@ export async function createOrder(formData: FormData) {
 
     const items: OrderItemParams[] = itemsJson ? JSON.parse(itemsJson) : [];
 
-    if (!customerPhone || !customerName || items.length === 0) {
-      throw new Error("Nome, telefone e itens são obrigatórios");
+    if (!customerPhone || !customerName) {
+      return { error: "Nome e telefone do cliente são obrigatórios." };
+    }
+
+    if (items.length === 0) {
+      return { error: "Adicione pelo menos um produto com quantidade válida ao pedido." };
     }
 
     const subtotal = items.reduce((acc, item) => acc + (parseFloat(item.price) * item.quantity), 0);
@@ -81,23 +87,34 @@ export async function createOrder(formData: FormData) {
 
     const order = await prisma.$transaction(async (tx) => {
       // 1. Find or create Customer
-      let customer = customerEmail ? await tx.customer.findUnique({
-        where: { email: customerEmail }
-      }) : null;
+      let customer = null;
+      if (customerId) {
+        customer = await tx.customer.findUnique({ where: { id: customerId } });
+      }
+      if (!customer && customerEmail) {
+        customer = await tx.customer.findUnique({ where: { email: customerEmail } });
+      }
+      if (!customer && customerPhone) {
+        customer = await tx.customer.findFirst({ where: { phone: customerPhone } });
+      }
 
       if (!customer) {
         customer = await tx.customer.create({
           data: {
             name: customerName,
-            email: customerEmail || null,
+            email: customerEmail,
             phone: customerPhone
           }
         });
-      } else if (customerPhone && customer.phone !== customerPhone) {
-        // Optionally update phone if newly provided
-        customer = await tx.customer.update({
+      } else {
+        // Atualiza dados do cliente se fornecidos
+        await tx.customer.update({
           where: { id: customer.id },
-          data: { phone: customerPhone }
+          data: {
+            name: customerName,
+            phone: customerPhone,
+            ...(customerEmail ? { email: customerEmail } : {})
+          }
         });
       }
 
@@ -129,12 +146,15 @@ export async function createOrder(formData: FormData) {
       // 3. Deduct stock from Variants if applicable
       for (const item of items) {
         if (item.variantId) {
-          await tx.variant.update({
-            where: { id: item.variantId },
-            data: stockLocation === "ESTOQUE_A" 
-              ? { stockA: { decrement: item.quantity } }
-              : { stockV: { decrement: item.quantity } }
-          });
+          const variantExists = await tx.variant.findUnique({ where: { id: item.variantId } });
+          if (variantExists) {
+            await tx.variant.update({
+              where: { id: item.variantId },
+              data: stockLocation === "ESTOQUE_A" 
+                ? { stockA: { decrement: item.quantity } }
+                : { stockV: { decrement: item.quantity } }
+            });
+          }
         }
       }
 
@@ -152,9 +172,9 @@ export async function createOrder(formData: FormData) {
       shippingType: order.shippingType,
       notes: order.notes
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating order:", error);
-    return { error: "Erro ao criar pedido manual." };
+    return { error: error?.message || "Erro ao criar pedido manual. Verifique os dados e tente novamente." };
   }
 }
 

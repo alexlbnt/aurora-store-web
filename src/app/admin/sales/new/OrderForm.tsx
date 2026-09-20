@@ -107,9 +107,27 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (!customerName.trim() || !customerPhone.trim()) {
+      alert("Por favor, preencha o Nome e o Telefone do cliente.");
+      return;
+    }
+
+    // Filter out items that are incomplete
+    const validItems = items.filter(item => item.productId && Number(item.quantity) > 0).map(item => ({
+      ...item,
+      quantity: Number(item.quantity)
+    }));
+
+    if (validItems.length === 0) {
+      alert("Por favor, adicione pelo menos um produto com quantidade válida ao pedido.");
+      return;
+    }
+
     setIsPending(true);
 
     const formData = new FormData();
+    formData.append("customerId", selectedCustomerId);
     formData.append("customerName", customerName);
     formData.append("customerEmail", customerEmail);
     formData.append("customerPhone", customerPhone);
@@ -117,12 +135,6 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
     formData.append("paymentMethod", paymentMethod);
     formData.append("shippingType", shippingType);
     formData.append("notes", notes);
-    
-    // Filter out items that are incomplete
-    const validItems = items.filter(item => item.productId && Number(item.quantity) > 0).map(item => ({
-      ...item,
-      quantity: Number(item.quantity)
-    }));
     formData.append("items", JSON.stringify(validItems));
 
     if (discountType !== "NONE") {
@@ -139,8 +151,8 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
         setSuccessOrder(result);
         setIsPending(false);
       }
-    } catch (error) {
-      alert("Erro crítico ao criar pedido.");
+    } catch (error: any) {
+      alert(error?.message || "Erro crítico ao criar pedido.");
       setIsPending(false);
     }
   };
