@@ -16,10 +16,11 @@ export default function Header({ isAdmin }: { isAdmin?: boolean }) {
     getCategories().then(cats => setCategories(cats)).catch(console.error);
   }, []);
 
-  // Close menu when route changes
-  React.useEffect(() => {
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
     setIsMenuOpen(false);
-  }, [pathname]);
+  }
 
   // Prevent scroll when menu is open
   React.useEffect(() => {

@@ -186,7 +186,7 @@ export default function ProductForm({ categories, initialData }: { categories: a
     setIsPending(true);
 
     try {
-      let uploadedUrls: string[] = [];
+      const uploadedUrls: string[] = [];
       for (const { file } of localFiles) {
         // Compress file to avoid "Request Entity Too Large" on Vercel
         const compressedFile = await compressImage(file);

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { deleteProduct } from "./actions";
@@ -9,10 +9,12 @@ interface ProductRowActionsProps {
   productId: string;
 }
 
+const emptySubscribe = () => () => {};
+
 export default function ProductRowActions({ productId }: ProductRowActionsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [menuStyle, setMenuStyle] = useState<{ top: number; left: number; openUpwards: boolean }>({
     top: 0,
     left: 0,
@@ -21,10 +23,6 @@ export default function ProductRowActions({ productId }: ProductRowActionsProps)
 
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const updatePosition = useCallback(() => {
     if (!buttonRef.current) return;
@@ -129,7 +127,7 @@ export default function ProductRowActions({ productId }: ProductRowActionsProps)
         <span className="material-symbols-outlined text-[20px]">{isDeleting ? 'sync' : 'more_vert'}</span>
       </button>
 
-      {mounted && isOpen && createPortal(
+      {isMounted && isOpen && createPortal(
         <div 
           ref={dropdownRef}
           style={{ 

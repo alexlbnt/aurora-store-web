@@ -6,7 +6,7 @@ import StatusUpdater from "@/components/admin/sales/StatusUpdater";
 import ShippingUpdater from "@/components/admin/sales/ShippingUpdater";
 import OrderNotesCard from "@/components/admin/sales/OrderNotesCard";
 
-export default async function OrderDetailsPage({ params }: { params: { id: string } }) {
+export default async function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const param = await params;
   const order = await prisma.order.findUnique({
     where: { id: param.id },
@@ -30,7 +30,7 @@ export default async function OrderDetailsPage({ params }: { params: { id: strin
     PAGO_CLIENTE: "Pago pelo Cliente"
   };
 
-  let itemsText = order.items.map(item => `▫️ ${item.quantity}x ${item.product.name} - R$ ${(Number(item.price) * item.quantity).toFixed(2).replace('.', ',')}`).join('\n');
+  const itemsText = order.items.map(item => `▫️ ${item.quantity}x ${item.product.name} - R$ ${(Number(item.price) * item.quantity).toFixed(2).replace('.', ',')}`).join('\n');
   let receiptText = `*Resumo do Pedido:*\n${itemsText}\n\n`;
   const subtotal = Number(order.totalAmount) + Number(order.discountAmount || 0);
   

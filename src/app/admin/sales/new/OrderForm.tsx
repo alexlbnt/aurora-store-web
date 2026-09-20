@@ -69,7 +69,7 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
     setItems(prevItems => prevItems.map(item => {
       if (item.id !== id) return item;
 
-      let nextItem = { ...item, [field]: value };
+      const nextItem = { ...item, [field]: value };
       
       // Auto-fill price if product or variant is selected
       if (field === "productId") {
@@ -146,7 +146,7 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
   };
 
   if (successOrder) {
-    let itemsText = items.map(item => {
+    const itemsText = items.map(item => {
       const p = products.find(prod => prod.id === item.productId);
       const itemSubtotal = (parseFloat(item.price) || 0) * (Number(item.quantity) || 0);
       return `▫️ ${item.quantity}x ${p ? p.name : 'Produto'} - R$ ${itemSubtotal.toFixed(2).replace('.', ',')}`;

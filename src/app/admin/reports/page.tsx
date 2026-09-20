@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import DashboardCharts from "@/components/admin/DashboardCharts";
 import Link from "next/link";
 import ReportsClientActions from "./ReportsClientActions";
+import AdminProductImage from "@/components/admin/AdminProductImage";
 
 export const revalidate = 0;
 
@@ -258,10 +259,9 @@ export default async function Reports({ searchParams }: ReportsProps) {
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700">
                               {product.img ? (
-                                <img
+                                <AdminProductImage
                                   src={product.img}
                                   alt={product.name}
-                                  className="w-full h-full object-cover"
                                 />
                               ) : (
                                 <span className="material-symbols-outlined text-slate-400 text-base">
