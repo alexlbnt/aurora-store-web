@@ -135,10 +135,10 @@ export default async function Reports({ searchParams }: ReportsProps) {
     <AdminLayout pageTitle="Relatórios">
       <div className="flex-1">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 sm:mb-8">
           <div>
-            <h2 className="text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Relatórios</h2>
-            <p className="text-slate-500 dark:text-slate-400">
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Relatórios</h2>
+            <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-0.5 sm:mt-1">
               Análise detalhada do desempenho da Aurora em tempo real.
             </p>
           </div>
@@ -146,11 +146,11 @@ export default async function Reports({ searchParams }: ReportsProps) {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/10 shadow-sm">
-            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Receita Total</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl border border-primary/10 shadow-sm">
+            <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-medium mb-1">Receita Total</p>
             <div className="flex items-baseline gap-2">
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
                 R$ {totalRevenue.toFixed(2).replace(".", ",")}
               </h3>
               <span className="text-emerald-600 text-xs font-bold flex items-center">
@@ -158,10 +158,10 @@ export default async function Reports({ searchParams }: ReportsProps) {
               </span>
             </div>
           </div>
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/10 shadow-sm">
-            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Ticket Médio</p>
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl border border-primary/10 shadow-sm">
+            <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-medium mb-1">Ticket Médio</p>
             <div className="flex items-baseline gap-2">
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
                 R$ {averageTicket.toFixed(2).replace(".", ",")}
               </h3>
               <span className="text-emerald-600 text-xs font-bold flex items-center">
@@ -169,10 +169,10 @@ export default async function Reports({ searchParams }: ReportsProps) {
               </span>
             </div>
           </div>
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/10 shadow-sm">
-            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Total Pedidos Válidos</p>
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl border border-primary/10 shadow-sm">
+            <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-medium mb-1">Total Pedidos Válidos</p>
             <div className="flex items-baseline gap-2">
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{orders.length}</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">{orders.length}</h3>
               <span className="text-slate-400 text-xs font-bold flex items-center">Base Real</span>
             </div>
           </div>
@@ -181,13 +181,13 @@ export default async function Reports({ searchParams }: ReportsProps) {
         {/* Main Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Desempenho de Vendas */}
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/10 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between mb-6">
-              <h4 className="text-lg font-bold text-slate-900 dark:text-slate-100">Desempenho de Vendas</h4>
-              <div className="flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl border border-primary/10 shadow-sm flex flex-col">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+              <h4 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">Desempenho de Vendas</h4>
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <Link
                   href="/admin/reports"
-                  className={`px-3 py-1 text-xs font-bold rounded transition-colors ${
+                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
                     is7Days
                       ? "bg-primary text-white"
                       : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
@@ -197,7 +197,7 @@ export default async function Reports({ searchParams }: ReportsProps) {
                 </Link>
                 <Link
                   href="/admin/reports?period=30d"
-                  className={`px-3 py-1 text-xs font-bold rounded transition-colors ${
+                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
                     is30Days
                       ? "bg-primary text-white"
                       : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
@@ -207,7 +207,7 @@ export default async function Reports({ searchParams }: ReportsProps) {
                 </Link>
                 <Link
                   href="/admin/reports?period=365d"
-                  className={`px-3 py-1 text-xs font-bold rounded transition-colors ${
+                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
                     is365Days
                       ? "bg-primary text-white"
                       : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
@@ -218,147 +218,187 @@ export default async function Reports({ searchParams }: ReportsProps) {
                 </Link>
               </div>
             </div>
-            <div className="flex-1 min-h-[250px] relative flex items-end gap-2 px-2">
+            <div className="flex-1 min-h-[240px] sm:min-h-[250px] relative flex items-end gap-2 px-2">
               <DashboardCharts data={chartData} />
             </div>
           </div>
 
           {/* Origem do Tráfego */}
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/10 shadow-sm">
-            <h4 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-6">Canais de Aquisição</h4>
-            <div className="flex items-center justify-center py-4">
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl border border-primary/10 shadow-sm">
+            <h4 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 mb-4 sm:mb-6">Canais de Aquisição</h4>
+            <div className="flex items-center justify-center py-2 sm:py-4">
               <div
-                className="relative w-48 h-48 rounded-full flex items-center justify-center shadow-inner"
+                className="relative w-40 h-40 sm:w-48 sm:h-48 rounded-full flex items-center justify-center shadow-inner"
                 style={{
                   background:
                     "conic-gradient(#5d4a3c 0% 45%, #8a7364 45% 75%, #c5b4a7 75% 90%, #efedec 90% 100%)",
                 }}
               >
-                <div className="absolute w-32 h-32 bg-white dark:bg-slate-900 rounded-full flex flex-col items-center justify-center">
-                  <span className="text-2xl font-black text-slate-900 dark:text-slate-100">100%</span>
-                  <span className="text-[10px] text-slate-400 uppercase">Canais Diretos</span>
+                <div className="absolute w-28 h-28 sm:w-32 sm:h-32 bg-white dark:bg-slate-900 rounded-full flex flex-col items-center justify-center">
+                  <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100">100%</span>
+                  <span className="text-[9px] sm:text-[10px] text-slate-400 uppercase">Canais Diretos</span>
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 mt-6">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-4 sm:mt-6">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-primary"></div>
+                <div className="size-2.5 sm:size-3 rounded-full bg-primary shrink-0"></div>
                 <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Orgânico (45%)</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#8a7364]"></div>
-                <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Social / Instagram (30%)</span>
+                <div className="size-2.5 sm:size-3 rounded-full bg-[#8a7364] shrink-0"></div>
+                <span className="text-xs text-slate-600 dark:text-slate-400 font-medium truncate">Social (30%)</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#c5b4a7]"></div>
+                <div className="size-2.5 sm:size-3 rounded-full bg-[#c5b4a7] shrink-0"></div>
                 <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Direto (15%)</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#efedec]"></div>
-                <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Outros / Referral (10%)</span>
+                <div className="size-2.5 sm:size-3 rounded-full bg-[#efedec] shrink-0"></div>
+                <span className="text-xs text-slate-600 dark:text-slate-400 font-medium truncate">Outros (10%)</span>
               </div>
             </div>
           </div>
 
           {/* Produtos Mais Vendidos */}
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-primary/10 shadow-sm lg:col-span-2">
-            <div className="flex items-center justify-between mb-6">
-              <h4 className="text-lg font-bold text-slate-900 dark:text-slate-100">Produtos Mais Vendidos</h4>
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl border border-primary/10 shadow-sm lg:col-span-2">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <h4 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">Produtos Mais Vendidos</h4>
               <Link
                 href="/admin/products"
-                className="text-primary text-sm font-bold hover:underline flex items-center gap-1"
+                className="text-primary text-xs sm:text-sm font-bold hover:underline flex items-center gap-1"
               >
-                Ver catálogo completo <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                Ver catálogo <span className="material-symbols-outlined text-[14px] sm:text-[16px]">arrow_forward</span>
               </Link>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full whitespace-nowrap">
-                <thead>
-                  <tr className="text-left border-b border-primary/10">
-                    <th className="pb-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Produto</th>
-                    <th className="pb-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-center">
-                      Vendas
-                    </th>
-                    <th className="pb-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-center">
-                      Estoque Total
-                    </th>
-                    <th className="pb-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">
-                      Receita
-                    </th>
-                    <th className="pb-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-primary/5">
-                  {topProducts.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="py-8 text-center text-sm text-slate-500">
-                        Nenhum dado de vendas disponível ainda.
-                      </td>
-                    </tr>
-                  ) : (
-                    topProducts.map((product, idx) => (
-                      <tr key={idx} className="group hover:bg-primary/5 transition-colors">
-                        <td className="py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700">
-                              {product.img ? (
-                                <AdminProductImage
-                                  src={product.img}
-                                  alt={product.name}
-                                />
-                              ) : (
-                                <span className="material-symbols-outlined text-slate-400 text-base">
-                                  inventory_2
-                                </span>
-                              )}
-                            </div>
-                            <div>
-                              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                                {product.name}
-                              </p>
-                              <p className="text-[10px] text-slate-500">
-                                ID Categoria: {product.categoryId.split("-")[0]}
-                              </p>
-                            </div>
+
+            {topProducts.length === 0 ? (
+              <div className="py-8 text-center text-sm text-slate-500">
+                Nenhum dado de vendas disponível ainda.
+              </div>
+            ) : (
+              <>
+                {/* Mobile Cards for Top Products (< md) */}
+                <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+                  {topProducts.map((product, idx) => (
+                    <div key={idx} className="py-3.5 space-y-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-lg bg-slate-100 overflow-hidden flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700">
+                          {product.img ? (
+                            <AdminProductImage src={product.img} alt={product.name} />
+                          ) : (
+                            <span className="material-symbols-outlined text-slate-400 text-base">inventory_2</span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{product.name}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs font-semibold text-primary">{product.quantity} vendidos</span>
+                            <span className="text-[11px] text-slate-400">• Estoque: {product.stock} un</span>
                           </div>
-                        </td>
-                        <td className="py-4 text-center text-sm font-medium">{product.quantity} un</td>
-                        <td className="py-4 text-center text-sm">
-                          <div
-                            className="w-24 bg-slate-100 dark:bg-slate-800 h-2 rounded-full mx-auto overflow-hidden relative"
-                            title={`Estoque total: ${product.stock} un`}
-                          >
-                            <div
-                              className={`h-full rounded-full ${
-                                product.stock > 10 ? "bg-primary" : "bg-rose-500"
-                              }`}
-                              style={{ width: `${Math.min(100, (product.stock / 50) * 100)}%` }}
-                            ></div>
-                          </div>
-                          <span className="text-[10px] text-slate-400 mt-1 block">{product.stock} un</span>
-                        </td>
-                        <td className="py-4 text-right text-sm font-bold">
-                          R$ {product.revenue.toFixed(2).replace(".", ",")}
-                        </td>
-                        <td className="py-4 text-right">
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-extrabold text-slate-900 dark:text-white">
+                            R$ {product.revenue.toFixed(2).replace(".", ",")}
+                          </p>
                           {product.stock > 10 ? (
-                            <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold rounded uppercase tracking-wide">
+                            <span className="px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold rounded uppercase">
                               Em alta
                             </span>
                           ) : (
-                            <span className="px-2 py-1 bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 text-[10px] font-bold rounded uppercase tracking-wide">
-                              Estoque baixo
+                            <span className="px-1.5 py-0.5 bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 text-[10px] font-bold rounded uppercase">
+                              Baixo
                             </span>
                           )}
-                        </td>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop Table (>= md) */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full whitespace-nowrap">
+                    <thead>
+                      <tr className="text-left border-b border-primary/10">
+                        <th className="pb-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Produto</th>
+                        <th className="pb-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-center">
+                          Vendas
+                        </th>
+                        <th className="pb-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-center">
+                          Estoque Total
+                        </th>
+                        <th className="pb-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">
+                          Receita
+                        </th>
+                        <th className="pb-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">
+                          Status
+                        </th>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    </thead>
+                    <tbody className="divide-y divide-primary/5">
+                      {topProducts.map((product, idx) => (
+                        <tr key={idx} className="group hover:bg-primary/5 transition-colors">
+                          <td className="py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700">
+                                {product.img ? (
+                                  <AdminProductImage
+                                    src={product.img}
+                                    alt={product.name}
+                                  />
+                                ) : (
+                                  <span className="material-symbols-outlined text-slate-400 text-base">
+                                    inventory_2
+                                  </span>
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                                  {product.name}
+                                </p>
+                                <p className="text-[10px] text-slate-500">
+                                  ID Categoria: {product.categoryId.split("-")[0]}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 text-center text-sm font-medium">{product.quantity} un</td>
+                          <td className="py-4 text-center text-sm">
+                            <div
+                              className="w-24 bg-slate-100 dark:bg-slate-800 h-2 rounded-full mx-auto overflow-hidden relative"
+                              title={`Estoque total: ${product.stock} un`}
+                            >
+                              <div
+                                className={`h-full rounded-full ${
+                                  product.stock > 10 ? "bg-primary" : "bg-rose-500"
+                                }`}
+                                style={{ width: `${Math.min(100, (product.stock / 50) * 100)}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-[10px] text-slate-400 mt-1 block">{product.stock} un</span>
+                          </td>
+                          <td className="py-4 text-right text-sm font-bold">
+                            R$ {product.revenue.toFixed(2).replace(".", ",")}
+                          </td>
+                          <td className="py-4 text-right">
+                            {product.stock > 10 ? (
+                              <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold rounded uppercase tracking-wide">
+                                Em alta
+                              </span>
+                            ) : (
+                              <span className="px-2 py-1 bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 text-[10px] font-bold rounded uppercase tracking-wide">
+                                Estoque baixo
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

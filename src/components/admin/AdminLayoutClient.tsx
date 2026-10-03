@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import Header from "./Header";
 import { AdminSidebarProvider, useAdminSidebar } from "./AdminSidebarContext";
 
+import AdminMobileNav from "./AdminMobileNav";
+
 function AdminLayoutInner({
   sidebar,
   pageTitle,
@@ -44,10 +46,13 @@ function AdminLayoutInner({
       {/* Conteúdo Principal */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto w-full lg:w-auto transition-all duration-300">
         <Header title={pageTitle} />
-        <div className="flex-1 p-4 lg:p-8 overflow-x-hidden">
+        <div className="flex-1 p-3.5 sm:p-4 lg:p-8 overflow-x-hidden pb-24 lg:pb-8">
           {children}
         </div>
       </main>
+
+      {/* Barra de Navegação Inferior Mobile */}
+      <AdminMobileNav />
     </div>
   );
 }

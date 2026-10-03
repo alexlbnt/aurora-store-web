@@ -101,96 +101,95 @@ export default async function Sales({ searchParams }: SalesPageProps) {
     <AdminLayout pageTitle="Vendas">
       <div className="flex-1">
         {/* Header Override for title */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-xl font-bold text-primary">Vendas</h2>
-            <p className="text-slate-500 text-sm mt-1">Gerencie os pedidos, fretes e acompanhe o faturamento real.</p>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-primary dark:text-white tracking-tight">Vendas</h2>
+            <p className="text-slate-500 text-xs sm:text-sm mt-0.5">Gerencie os pedidos, fretes e faturamento real.</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/api/admin/export/sales"
               target="_blank"
-              className="flex items-center gap-2 border border-primary/20 bg-white dark:bg-slate-900 rounded-lg px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border border-primary/20 bg-white dark:bg-slate-900 rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
               title="Baixar CSV de vendas"
             >
               <span className="material-symbols-outlined text-base text-slate-500">download</span>
-              Exportar CSV
+              <span>CSV</span>
             </Link>
             <Link
               href="/admin/sales/new"
-              className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-primary/90 transition-all shadow-sm"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-primary text-white px-4 py-2 rounded-lg font-bold text-xs sm:text-sm hover:bg-primary/90 transition-all shadow-sm"
             >
-              <span className="material-symbols-outlined text-sm">add</span>
-              Novo Pedido
+              <span className="material-symbols-outlined text-base">add</span>
+              <span>Novo Pedido</span>
             </Link>
           </div>
         </div>
 
-        {/* Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-primary/10 shadow-sm hover:border-primary/20 transition-colors">
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Total de Vendas</p>
-            <h3 className="text-2xl font-bold mt-1 text-slate-900 dark:text-white">
+        {/* Metrics - 2 colunas no celular para caber perfeitamente */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6">
+          <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-5 rounded-xl border border-primary/10 shadow-sm">
+            <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Total Vendas</p>
+            <h3 className="text-lg sm:text-2xl font-bold mt-1 text-slate-900 dark:text-white truncate">
               R$ {totalSalesLifetime.toFixed(2).replace(".", ",")}
             </h3>
-            <p className="text-xs text-emerald-600 mt-2 flex items-center gap-1 font-semibold dark:text-emerald-400">
+            <p className="text-[10px] sm:text-xs text-emerald-600 mt-1 sm:mt-2 flex items-center gap-0.5 font-semibold dark:text-emerald-400">
               <span className="material-symbols-outlined text-xs">trending_up</span> Base Real
             </p>
           </div>
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-primary/10 shadow-sm hover:border-primary/20 transition-colors">
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Total Pedidos</p>
-            <h3 className="text-2xl font-bold mt-1 text-slate-900 dark:text-white">{allOrdersForMetrics.length}</h3>
-            <p className="text-xs text-slate-400 mt-2 flex items-center gap-1 font-semibold">
+          <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-5 rounded-xl border border-primary/10 shadow-sm">
+            <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Total Pedidos</p>
+            <h3 className="text-lg sm:text-2xl font-bold mt-1 text-slate-900 dark:text-white">{allOrdersForMetrics.length}</h3>
+            <p className="text-[10px] sm:text-xs text-slate-400 mt-1 sm:mt-2 flex items-center gap-0.5 font-semibold">
               <span className="material-symbols-outlined text-xs">inventory_2</span> Lifetime
             </p>
           </div>
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-primary/10 shadow-sm hover:border-primary/20 transition-colors">
+          <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-5 rounded-xl border border-primary/10 shadow-sm">
             <div className="relative group inline-flex items-center gap-1 cursor-help">
-              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Ticket Médio</p>
-              <span className="material-symbols-outlined text-[15px] text-slate-400 group-hover:text-primary transition-colors">
+              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Ticket Médio</p>
+              <span className="material-symbols-outlined text-[13px] text-slate-400 group-hover:text-primary transition-colors">
                 help_outline
               </span>
 
               {/* Tooltip Pop-up */}
-              <div className="absolute bottom-full left-0 mb-2 hidden group-hover:flex flex-col w-64 p-3 bg-slate-900/95 dark:bg-slate-800 text-white text-xs rounded-xl shadow-xl border border-slate-700/50 z-50 pointer-events-none backdrop-blur-sm">
+              <div className="absolute bottom-full left-0 mb-2 hidden group-hover:flex flex-col w-56 sm:w-64 p-3 bg-slate-900/95 dark:bg-slate-800 text-white text-xs rounded-xl shadow-xl border border-slate-700/50 z-50 pointer-events-none backdrop-blur-sm">
                 <span className="font-bold text-primary dark:text-primary/90 mb-1 flex items-center gap-1">
                   <span className="material-symbols-outlined text-[14px]">info</span>
                   O que é Ticket Médio?
                 </span>
                 <p className="text-slate-300 text-[11px] leading-relaxed">
-                  É o valor médio gasto pelos clientes em cada compra confirmada na sua loja.
+                  Valor médio gasto pelos clientes em cada compra.
                 </p>
                 <div className="mt-2 pt-2 border-t border-slate-700/60 text-[10px] text-slate-400 flex items-center justify-between">
                   <span>Cálculo:</span>
-                  <span className="font-mono text-slate-200 font-semibold">Total Faturado ÷ Nº Pedidos</span>
+                  <span className="font-mono text-slate-200 font-semibold">Faturado ÷ Pedidos</span>
                 </div>
-                <div className="absolute top-full left-6 -mt-1 border-4 border-transparent border-t-slate-900/95 dark:border-t-slate-800" />
               </div>
             </div>
-            <h3 className="text-2xl font-bold mt-1 text-slate-900 dark:text-white">
+            <h3 className="text-lg sm:text-2xl font-bold mt-1 text-slate-900 dark:text-white truncate">
               R$ {ticketMedio.toFixed(2).replace(".", ",")}
             </h3>
-            <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">Base Real</p>
+            <p className="text-[10px] sm:text-xs text-slate-400 mt-1 sm:mt-2 flex items-center gap-0.5">Base Real</p>
           </div>
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-primary/10 shadow-sm hover:border-primary/20 transition-colors">
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Pendente</p>
-            <h3 className="text-2xl font-bold mt-1 text-slate-900 dark:text-white">{pendingCount}</h3>
-            <p className="text-xs text-amber-600 mt-2 flex items-center gap-1 font-semibold dark:text-amber-400">
-              Aguardando pagamento
+          <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-5 rounded-xl border border-primary/10 shadow-sm">
+            <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Pendente</p>
+            <h3 className="text-lg sm:text-2xl font-bold mt-1 text-slate-900 dark:text-white">{pendingCount}</h3>
+            <p className="text-[10px] sm:text-xs text-amber-600 mt-1 sm:mt-2 flex items-center gap-0.5 font-semibold dark:text-amber-400">
+              Aguardando pgto
             </p>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-primary/10 shadow-sm mb-6 flex flex-wrap items-center gap-4">
-          <div className="flex-1 min-w-[280px]">
-            <AdminSearchBar placeholder="Buscar por cliente, ID do pedido, e-mail ou telefone..." />
+        <div className="bg-white dark:bg-slate-900 p-3 sm:p-4 rounded-xl border border-primary/10 shadow-sm mb-6 flex flex-col md:flex-row items-stretch md:items-center gap-3">
+          <div className="flex-1">
+            <AdminSearchBar placeholder="Buscar cliente, nº pedido, telefone..." />
           </div>
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="grid grid-cols-2 md:flex items-center gap-2 sm:gap-3">
             <AdminFilterSelect
               paramName="period"
               defaultValue="ALL"
-              placeholder="Todo o Período"
+              placeholder="Período"
               options={[
                 { label: "Últimos 7 dias", value: "7d" },
                 { label: "Últimos 30 dias", value: "30d" },
@@ -201,7 +200,7 @@ export default async function Sales({ searchParams }: SalesPageProps) {
             <AdminFilterSelect
               paramName="status"
               defaultValue="ALL"
-              placeholder="Todos os Status"
+              placeholder="Status"
               options={[
                 { label: "Pago", value: "PAID" },
                 { label: "Pendente", value: "PENDING" },
@@ -215,7 +214,134 @@ export default async function Sales({ searchParams }: SalesPageProps) {
 
         {/* Table */}
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-primary/10 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Mobile Cards (md:hidden) */}
+          <div className="md:hidden divide-y divide-primary/5">
+            {orders.length === 0 ? (
+              <div className="p-8 text-center text-sm text-slate-500">
+                Nenhum pedido encontrado.
+              </div>
+            ) : (
+              orders.map((order) => {
+                let statusBg = "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
+                let statusText = "Desconhecido";
+
+                switch (order.status) {
+                  case "PAID":
+                    statusBg = "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400";
+                    statusText = "Pago";
+                    break;
+                  case "PENDING":
+                    statusBg = "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400";
+                    statusText = "Pendente";
+                    break;
+                  case "CANCELED":
+                    statusBg = "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400";
+                    statusText = "Cancelado";
+                    break;
+                  case "SHIPPED":
+                    statusBg = "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400";
+                    statusText = "Enviado";
+                    break;
+                  case "DELIVERED":
+                    statusBg = "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
+                    statusText = "Entregue";
+                    break;
+                }
+
+                const customerName = order.customer?.name || "Cliente não informado";
+                const customerPhone = order.customer?.phone ? order.customer.phone.replace(/\D/g, "") : "";
+                const waLink = customerPhone
+                  ? `https://wa.me/55${customerPhone}?text=${encodeURIComponent(`Olá ${customerName}! Referente ao seu pedido #${order.orderNumber} na Aurora...`)}`
+                  : null;
+
+                return (
+                  <div key={`mob-${order.id}`} className="p-3.5 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <Link
+                        href={`/admin/sales/${order.id}`}
+                        className="font-bold text-sm text-primary dark:text-primary/90 hover:underline flex items-center gap-1"
+                      >
+                        #{order.orderNumber}
+                        <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                      </Link>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusBg}`}>
+                        {statusText}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex flex-col min-w-0 pr-2">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                          {customerName}
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          {order.createdAt ? new Date(order.createdAt).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "-"}
+                        </span>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-base font-extrabold text-slate-900 dark:text-white">
+                          R$ {Number(order.totalAmount).toFixed(2).replace(".", ",")}
+                        </span>
+                      </div>
+                    </div>
+
+                    {order.notes && (
+                      <p className="text-[11px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 p-1.5 rounded-lg flex items-center gap-1 truncate">
+                        <span className="material-symbols-outlined text-[13px] shrink-0">edit_note</span>
+                        <span className="truncate">{order.notes}</span>
+                      </p>
+                    )}
+
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/60">
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                            order.stockLocation === "ESTOQUE_A"
+                              ? "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400"
+                              : "bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/40 dark:text-fuchsia-400"
+                          }`}
+                        >
+                          {order.stockLocation === "ESTOQUE_A" ? "Estoque-A" : "Estoque-V"}
+                        </span>
+                        <span className="text-[10px] font-semibold text-slate-500">
+                          {order.shippingType === "PAGO_AURORA"
+                            ? "Frete Aurora"
+                            : order.shippingType === "PAGO_CLIENTE"
+                            ? "Frete Cliente"
+                            : "Sem Frete"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        {waLink && (
+                          <a
+                            href={waLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="size-8 rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 flex items-center justify-center hover:bg-emerald-100 transition-colors"
+                            title="Mensagem no WhatsApp"
+                          >
+                            <span className="material-symbols-outlined text-base">forum</span>
+                          </a>
+                        )}
+                        <Link
+                          href={`/admin/sales/${order.id}`}
+                          className="size-8 rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 flex items-center justify-center hover:bg-slate-200 transition-colors"
+                          title="Ver Detalhes"
+                        >
+                          <span className="material-symbols-outlined text-base">visibility</span>
+                        </Link>
+                        <DeleteButton orderId={order.id} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Table (hidden md:block) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-primary/10">

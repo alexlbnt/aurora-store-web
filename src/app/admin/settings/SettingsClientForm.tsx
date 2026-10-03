@@ -36,11 +36,11 @@ export default function SettingsClientForm({ initialData }: SettingsClientFormPr
       )}
 
       {/* Formulário de Perfil e Credenciais */}
-      <form action={formAction} className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-primary/10 shadow-sm space-y-6">
+      <form action={formAction} className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 sm:p-8 border border-primary/10 shadow-sm space-y-6">
         <div>
           <div className="flex items-center justify-between pb-3 border-b border-primary/10">
             <div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">admin_panel_settings</span>
                 Perfil Administrativo
               </h3>
@@ -54,7 +54,7 @@ export default function SettingsClientForm({ initialData }: SettingsClientFormPr
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
               Nome do Administrador
@@ -64,7 +64,7 @@ export default function SettingsClientForm({ initialData }: SettingsClientFormPr
               name="name"
               required
               defaultValue={initialData.name}
-              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:border-primary outline-none transition-colors text-sm text-slate-900 dark:text-white"
+              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:border-primary outline-none transition-colors text-base sm:text-sm text-slate-900 dark:text-white"
               placeholder="Ex: Alexandre Lopes"
             />
           </div>
@@ -77,7 +77,7 @@ export default function SettingsClientForm({ initialData }: SettingsClientFormPr
               type="email"
               disabled
               value={initialData.email}
-              className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 dark:text-slate-400 text-sm cursor-not-allowed outline-none"
+              className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 dark:text-slate-400 text-base sm:text-sm cursor-not-allowed outline-none"
               title="O e-mail principal é o identificador único do login."
             />
           </div>
@@ -116,7 +116,7 @@ export default function SettingsClientForm({ initialData }: SettingsClientFormPr
                   type="password"
                   name="currentPassword"
                   placeholder="••••••••"
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-base sm:text-sm outline-none focus:border-primary text-slate-900 dark:text-white"
                 />
               </div>
 
@@ -129,7 +129,7 @@ export default function SettingsClientForm({ initialData }: SettingsClientFormPr
                   name="newPassword"
                   placeholder="Mínimo 6 caracteres"
                   minLength={6}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-base sm:text-sm outline-none focus:border-primary text-slate-900 dark:text-white"
                 />
               </div>
 
@@ -142,7 +142,7 @@ export default function SettingsClientForm({ initialData }: SettingsClientFormPr
                   name="confirmPassword"
                   placeholder="Repita a nova senha"
                   minLength={6}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-base sm:text-sm outline-none focus:border-primary text-slate-900 dark:text-white"
                 />
               </div>
             </div>
@@ -153,7 +153,7 @@ export default function SettingsClientForm({ initialData }: SettingsClientFormPr
           <button
             type="submit"
             disabled={isPending}
-            className="px-6 py-2.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl text-sm transition-all shadow-sm flex items-center gap-2 disabled:opacity-60 cursor-pointer"
+            className="w-full sm:w-auto px-6 py-2.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl text-sm transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer"
           >
             {isPending ? (
               <>
@@ -171,7 +171,7 @@ export default function SettingsClientForm({ initialData }: SettingsClientFormPr
       </form>
 
       {/* Dados Institucionais da Loja */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-primary/10 shadow-sm space-y-6">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 sm:p-8 border border-primary/10 shadow-sm space-y-6">
         <div className="pb-3 border-b border-primary/10">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">storefront</span>

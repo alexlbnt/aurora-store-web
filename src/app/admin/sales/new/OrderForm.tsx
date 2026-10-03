@@ -196,40 +196,40 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
         <p className="text-slate-500 mb-8 max-w-md text-center">
           O pedido <span className="font-bold text-slate-700 dark:text-slate-300">#{successOrder.orderNumber}</span> foi registrado com sucesso. O que você deseja fazer agora?
         </p>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Link href={`/admin/sales/${successOrder.orderId}`} className="px-6 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-bold transition-colors">
-            Ver detalhes do pedido
-          </Link>
-          <a href={waLink} target="_blank" rel="noopener noreferrer" className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold flex items-center gap-2 transition-colors shadow-sm">
-             <span className="material-symbols-outlined">forum</span>
+        <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md px-4">
+          <a href={waLink} target="_blank" rel="noopener noreferrer" className="w-full px-6 py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-sm order-1 sm:order-2">
+             <span className="material-symbols-outlined text-xl">forum</span>
              Compartilhar no WhatsApp
           </a>
+          <Link href={`/admin/sales/${successOrder.orderId}`} className="w-full px-6 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-center transition-colors order-2 sm:order-1">
+            Ver detalhes do pedido
+          </Link>
         </div>
-        <button onClick={() => window.location.href = '/admin/sales/new'} className="mt-8 text-sm text-primary hover:underline font-semibold">
-          Criar outro pedido manual
+        <button onClick={() => window.location.href = '/admin/sales/new'} className="mt-6 text-sm text-primary hover:underline font-semibold cursor-pointer">
+          + Criar outro pedido manual
         </button>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 pb-20 lg:pb-0">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <Link href="/admin/sales" className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 transition-colors">
-            <span className="material-symbols-outlined">arrow_back</span>
+      <div className="flex items-center justify-between mb-6 sm:mb-8 gap-2">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          <Link href="/admin/sales" className="size-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 transition-colors shrink-0">
+            <span className="material-symbols-outlined text-lg">arrow_back</span>
           </Link>
-          <nav className="flex items-center gap-2 text-sm font-medium">
-            <Link href="/admin/sales" className="text-slate-500 hover:text-primary transition-colors">Pedidos</Link>
-            <span className="material-symbols-outlined text-xs text-slate-400">chevron_right</span>
-            <span className="text-slate-900 dark:text-white border-b-2 border-primary pb-0.5">Novo Pedido Manual</span>
+          <nav className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium truncate">
+            <Link href="/admin/sales" className="text-slate-500 hover:text-primary transition-colors shrink-0">Pedidos</Link>
+            <span className="material-symbols-outlined text-[10px] sm:text-xs text-slate-400 shrink-0">chevron_right</span>
+            <span className="text-slate-900 dark:text-white border-b-2 border-primary pb-0.5 truncate font-bold">Novo Pedido</span>
           </nav>
         </div>
-        <div className="flex items-center gap-4">
-           <button type="submit" disabled={isPending || items.length === 0} className="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+           <button type="submit" disabled={isPending || items.length === 0} className="bg-primary hover:bg-primary/90 text-white px-4 sm:px-8 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed">
               <span className="material-symbols-outlined text-sm">{isPending ? 'sync' : 'check_circle'}</span>
-              {isPending ? 'Processando...' : 'Finalizar Pedido'}
+              <span>{isPending ? 'Salvando...' : 'Finalizar'}</span>
            </button>
         </div>
       </div>
@@ -237,14 +237,14 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {/* Cliente Info */}
-          <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all">
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 lg:p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all">
              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
                   <span className="material-symbols-outlined">person</span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Dados do Cliente</h3>
-                  <p className="text-sm text-slate-500">Informações para faturamento e contato</p>
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Dados do Cliente</h3>
+                  <p className="text-xs sm:text-sm text-slate-500">Informações para faturamento e contato</p>
                 </div>
              </div>
 
@@ -301,18 +301,18 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
           </div>
 
           {/* Dados da Venda */}
-          <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all">
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 lg:p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all">
              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
                   <span className="material-symbols-outlined">storefront</span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Dados da Venda</h3>
-                  <p className="text-sm text-slate-500">Selecione o estoque de origem</p>
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Dados da Venda</h3>
+                  <p className="text-xs sm:text-sm text-slate-500">Selecione o estoque de origem</p>
                 </div>
              </div>
              
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Origem do Estoque</label>
                   <select 
@@ -371,51 +371,76 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
           </div>
 
           {/* Itens do Pedido */}
-          <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all">
-             <div className="flex items-center justify-between mb-6">
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 lg:p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all">
+             <div className="flex items-center justify-between mb-6 gap-2">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
                     <span className="material-symbols-outlined">shopping_cart</span>
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Produtos</h3>
-                    <p className="text-sm text-slate-500">Adicione os itens do pedido</p>
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Produtos</h3>
+                    <p className="text-xs sm:text-sm text-slate-500">Adicione os itens do pedido</p>
                   </div>
                 </div>
                 <button 
                   type="button" 
                   onClick={addItem}
-                  className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors"
+                  className="bg-primary/10 hover:bg-primary/20 text-primary dark:text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-colors shrink-0"
                 >
                   <span className="material-symbols-outlined text-sm">add</span>
-                  Adicionar Item
+                  Adicionar
                 </button>
              </div>
 
              {items.length === 0 ? (
-               <div className="text-center py-12 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-                 <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center text-slate-400 mx-auto mb-4">
-                   <span className="material-symbols-outlined text-3xl">inventory_2</span>
+               <div className="text-center py-10 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl px-4">
+                 <div className="w-14 h-14 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center text-slate-400 mx-auto mb-3">
+                   <span className="material-symbols-outlined text-2xl">inventory_2</span>
                  </div>
-                 <p className="text-slate-500 mb-4">Nenhum produto adicionado ainda.</p>
-                 <button type="button" onClick={addItem} className="text-primary font-semibold hover:underline">Adicionar o primeiro produto</button>
+                 <p className="text-slate-500 text-sm mb-3">Nenhum produto adicionado ainda.</p>
+                 <button type="button" onClick={addItem} className="text-primary font-bold hover:underline text-sm inline-flex items-center gap-1">
+                   <span className="material-symbols-outlined text-sm">add</span> Adicionar o primeiro produto
+                 </button>
                </div>
              ) : (
                <div className="space-y-4">
                   {items.map((item, index) => {
                     const selectedProduct = products.find(p => p.id === item.productId);
                     const variants = selectedProduct?.variants || [];
+                    const itemSubtotal = (parseFloat(item.price) || 0) * (Number(item.quantity) || 0);
                     
                     return (
-                      <div key={item.id} className="relative group p-4 border border-slate-200 dark:border-slate-700/50 rounded-xl bg-slate-50/50 dark:bg-slate-800/20 flex flex-col md:flex-row gap-4 items-start md:items-center">
-                        
-                        <div className="flex-1 w-full flex flex-col md:flex-row gap-4">
+                      <div key={item.id} className="relative group p-3.5 sm:p-4 border border-slate-200 dark:border-slate-700/60 rounded-xl bg-slate-50/50 dark:bg-slate-800/30 flex flex-col gap-3">
+                        <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-700/40 pb-2">
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                            <span className="size-5 rounded-full bg-primary/10 text-primary text-[10px] flex items-center justify-center font-bold">
+                              {index + 1}
+                            </span>
+                            Item #{index + 1}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                              Subtotal: R$ {itemSubtotal.toFixed(2).replace('.', ',')}
+                            </span>
+                            <button 
+                              type="button" 
+                              onClick={() => removeItem(item.id)}
+                              className="size-8 flex items-center justify-center rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
+                              title="Remover Item"
+                              aria-label="Remover Item"
+                            >
+                              <span className="material-symbols-outlined text-base">delete</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="w-full flex flex-col md:flex-row gap-3">
                           <div className="flex-1">
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Produto</label>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Produto</label>
                             <select 
                               value={item.productId}
                               onChange={(e) => updateItem(item.id, "productId", e.target.value)}
-                              className="w-full h-11 rounded-lg border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white"
+                              className="w-full h-11 rounded-lg border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white text-sm"
                             >
                               <option value="">Selecione um produto</option>
                               {products.map(p => (
@@ -425,12 +450,12 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                           </div>
                           
                           {variants.length > 0 && (
-                            <div className="w-full md:w-3/12">
-                              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Variação</label>
+                            <div className="w-full md:w-4/12">
+                              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Variação</label>
                               <select 
                                 value={item.variantId}
                                 onChange={(e) => updateItem(item.id, "variantId", e.target.value)}
-                                className="w-full h-11 rounded-lg border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white"
+                                className="w-full h-11 rounded-lg border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white text-sm"
                               >
                                 <option value="">Nenhuma</option>
                                 {variants.map(v => {
@@ -445,9 +470,9 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                             </div>
                           )}
                           
-                          <div className="w-full md:w-auto flex gap-4">
-                            <div className="w-1/2 md:w-[80px] shrink-0">
-                              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Qtd</label>
+                          <div className="w-full md:w-auto flex gap-3">
+                            <div className="w-1/2 md:w-[80px]">
+                              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Qtd</label>
                               <input 
                                 type="number" 
                                 min="1"
@@ -456,31 +481,22 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                                   const rawVal = e.target.value;
                                   updateItem(item.id, "quantity", rawVal === '' ? '' : parseInt(rawVal) || 0);
                                 }}
-                                className="w-full h-11 rounded-lg border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white text-center"
+                                className="w-full h-11 rounded-lg border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white text-center text-sm"
                               />
                             </div>
                             
-                            <div className="w-1/2 md:w-[120px] shrink-0">
-                               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 text-right">Preço (R$)</label>
+                            <div className="w-1/2 md:w-[120px]">
+                               <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1 text-right">Preço (R$)</label>
                                <input 
                                  type="number" 
                                  step="0.01"
                                  value={item.price}
                                  onChange={(e) => updateItem(item.id, "price", e.target.value)}
-                                 className="w-full h-11 rounded-lg border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white text-right font-mono"
+                                 className="w-full h-11 rounded-lg border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white text-right font-mono text-sm"
                                />
                             </div>
                           </div>
                         </div>
-
-                        <button 
-                          type="button" 
-                          onClick={() => removeItem(item.id)}
-                          className="md:mt-6 w-11 h-11 shrink-0 flex items-center justify-center rounded-lg text-red-500 bg-red-50 dark:bg-red-500/10 hover:bg-red-500 hover:text-white transition-all ml-auto md:ml-0"
-                          title="Remover Item"
-                        >
-                          <span className="material-symbols-outlined text-xl">delete</span>
-                        </button>
                       </div>
                     );
                   })}
@@ -489,24 +505,24 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
           </div>
 
           {/* Desconto */}
-          <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all">
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 lg:p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all">
              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
                   <span className="material-symbols-outlined">loyalty</span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Descontos e Acréscimos</h3>
-                  <p className="text-sm text-slate-500">Aplique descontos ao valor total</p>
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Descontos e Acréscimos</h3>
+                  <p className="text-xs sm:text-sm text-slate-500">Aplique descontos ao valor total</p>
                 </div>
              </div>
              
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Tipo de Desconto</label>
                   <select 
                     value={discountType}
                     onChange={(e) => setDiscountType(e.target.value as any)}
-                    className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white"
+                    className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white text-sm"
                   >
                     <option value="NONE">Sem desconto</option>
                     <option value="FIXED">Valor Fixo (R$)</option>
@@ -519,13 +535,13 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                       Valor do Desconto {discountType === 'PERCENTAGE' ? '(%)' : '(R$)'}
                     </label>
                     <input 
-                      type="number"
+                      type="number" 
                       step={discountType === 'PERCENTAGE' ? "1" : "0.01"}
                       required
                       value={discountValue}
                       onChange={(e) => setDiscountValue(e.target.value)}
                       placeholder={discountType === 'PERCENTAGE' ? "10" : "50.00"}
-                      className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white font-mono"
+                      className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white font-mono text-sm"
                     />
                   </div>
                 )}
@@ -535,9 +551,9 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
 
         {/* Resumo Column */}
         <div className="space-y-6">
-           <div className="bg-slate-800 text-white p-6 sm:p-8 rounded-2xl shadow-xl sticky top-6">
-              <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <span className="material-symbols-outlined">receipt_long</span>
+           <div className="bg-slate-800 text-white p-4 sm:p-6 lg:p-8 rounded-2xl shadow-xl sticky top-6">
+              <h3 className="text-lg sm:text-xl font-bold mb-6 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary-light">receipt_long</span>
                 Resumo do Pedido
               </h3>
               
@@ -550,12 +566,12 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                     const subTotalItem = (parseFloat(item.price) || 0) * (Number(item.quantity) || 0);
                     if (!p) return null;
                     return (
-                      <div key={item.id} className="flex justify-between text-sm items-center pb-4 border-b border-white/10 last:border-0 last:pb-0">
-                         <div className="flex-1 pr-4 truncate text-slate-300">
+                      <div key={item.id} className="flex justify-between text-sm items-center pb-3 border-b border-white/10 last:border-0 last:pb-0">
+                         <div className="flex-1 pr-3 truncate text-slate-300 text-xs sm:text-sm">
                            {item.quantity}x {p.name}
                          </div>
-                         <div className="font-medium whitespace-nowrap">
-                           R$ {subTotalItem.toFixed(2)}
+                         <div className="font-medium whitespace-nowrap text-xs sm:text-sm">
+                           R$ {subTotalItem.toFixed(2).replace('.', ',')}
                          </div>
                       </div>
                     );
@@ -563,28 +579,54 @@ export default function OrderForm({ products, customers = [] }: { products: Prod
                 )}
               </div>
 
-              <div className="pt-6 border-t border-white/20">
-                <div className="flex items-center justify-between mb-2">
+              <div className="pt-4 sm:pt-6 border-t border-white/20">
+                <div className="flex items-center justify-between mb-2 text-sm">
                   <span className="text-slate-300">Subtotal</span>
-                  <span className="text-lg font-bold">R$ {subTotalAmount.toFixed(2)}</span>
+                  <span className="text-base sm:text-lg font-bold">R$ {subTotalAmount.toFixed(2).replace('.', ',')}</span>
                 </div>
                 {discountAmount > 0 && (
-                  <div className="flex items-center justify-between mb-4 text-emerald-400">
+                  <div className="flex items-center justify-between mb-3 text-emerald-400 text-sm">
                     <span>Desconto</span>
-                    <span className="font-bold">- R$ {discountAmount.toFixed(2)}</span>
+                    <span className="font-bold">- R$ {discountAmount.toFixed(2).replace('.', ',')}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between border-t border-white/20 pt-4 mt-2">
-                  <span className="text-slate-300">Total calculado</span>
-                  <span className="text-3xl font-black text-rose-300">R$ {totalAmount.toFixed(2)}</span>
+                  <span className="text-slate-300 font-medium">Total a Cobrar</span>
+                  <span className="text-2xl sm:text-3xl font-black text-rose-300">R$ {totalAmount.toFixed(2).replace('.', ',')}</span>
                 </div>
               </div>
               
-              <p className="text-xs text-slate-400 mt-6 text-center">
-                Ao finalizar, o pedido ficará com status <span className="font-bold text-white">PENDENTE</span> e deduzirá instantaneamente os itens do estoque se aplicável.
+              {/* Botão no Resumo */}
+              <button
+                type="submit"
+                disabled={isPending || items.length === 0}
+                className="w-full mt-6 bg-primary hover:bg-primary/90 text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-base">{isPending ? 'sync' : 'check_circle'}</span>
+                {isPending ? 'Processando Pedido...' : 'Finalizar Pedido'}
+              </button>
+
+              <p className="text-[11px] text-slate-400 mt-4 text-center">
+                Ao finalizar, o pedido ficará com status <span className="font-bold text-white">PENDENTE</span> e deduzirá instantaneamente do estoque.
               </p>
            </div>
         </div>
+      </div>
+
+      {/* Barra Fixa Flutuante Inferior no Mobile (acima da Bottom Nav) */}
+      <div className="lg:hidden fixed bottom-14 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 px-4 py-2.5 shadow-[0_-4px_16px_rgba(0,0,0,0.1)] flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">Total</p>
+          <p className="text-lg font-black text-primary dark:text-rose-300 truncate">R$ {totalAmount.toFixed(2).replace('.', ',')}</p>
+        </div>
+        <button
+          type="submit"
+          disabled={isPending || items.length === 0}
+          className="bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+        >
+          <span className="material-symbols-outlined text-sm">{isPending ? 'sync' : 'check_circle'}</span>
+          {isPending ? 'Criando...' : 'Finalizar Pedido'}
+        </button>
       </div>
     </form>
   )
