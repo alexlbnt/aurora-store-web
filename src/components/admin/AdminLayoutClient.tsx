@@ -6,6 +6,7 @@ import Header from "./Header";
 import { AdminSidebarProvider, useAdminSidebar } from "./AdminSidebarContext";
 
 import AdminMobileNav from "./AdminMobileNav";
+import RouteProgressBar from "./RouteProgressBar";
 
 function AdminLayoutInner({
   sidebar,
@@ -26,6 +27,7 @@ function AdminLayoutInner({
 
   return (
     <div className="flex h-[100dvh] overflow-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display relative w-full">
+      <RouteProgressBar />
       {/* Overlay Mobile */}
       {isMobileOpen && (
         <div

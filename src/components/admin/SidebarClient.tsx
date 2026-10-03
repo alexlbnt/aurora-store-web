@@ -80,6 +80,7 @@ export default function SidebarClient({ session }: SidebarClientProps) {
             <div key={item.href} className="relative group">
               <Link
                 href={item.href}
+                prefetch={true}
                 onClick={closeMobile}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
                   active

@@ -25,85 +25,126 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
     ? "Desempenho dos últimos 30 dias baseado em pedidos reais"
     : "Desempenho dos últimos 7 dias baseado em pedidos reais";
 
-  let orders: any[] = [];
-  let customers = 0;
-
-  try {
-    const [fetchedOrders, fetchedCustomers] = await Promise.all([
-      prisma.order.findMany({
-        include: {
-          customer: true,
-          items: {
-            include: { product: true },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.customer.count(),
-    ]);
-    orders = fetchedOrders;
-    customers = fetchedCustomers;
-  } catch (dbErr) {
-    console.error("Error loading dashboard data:", dbErr);
-  }
-
-  const totalSales = orders
-    .filter((o) => o.status !== "CANCELED")
-    .reduce((acc, order) => acc + Number(order.totalAmount), 0);
-
-  const nonCanceledOrders = orders.filter((o) => o.status !== "CANCELED");
-  const ticketMedio = nonCanceledOrders.length > 0 ? totalSales / nonCanceledOrders.length : 0;
-
-  // Generate chart data dynamically based on period
+  let totalSales = 0;
+  let totalOrdersCount = 0;
+  let ticketMedio = 0;
+  let customersCount = 0;
+  let recentOrders: any[] = [];
   let chartData: Array<{ name: string; total: number }> = [];
 
-  if (is365Days) {
-    // 12 monthly slots covering the trailing 365 days / 1 year
-    const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
+  try {
+    const chartStartDate = is365Days
+      ? new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
+      : is30Days
+      ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-    const monthlySlots = Array.from({ length: 12 }).map((_, i) => {
-      const d = new Date(currentYear, currentMonth - (11 - i), 1);
-      const m = monthNames[d.getMonth()];
-      const y = String(d.getFullYear()).slice(-2);
-      const label = `${m}/${y}`;
-      const yearMonthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      return { name: label, key: yearMonthKey, total: 0 };
-    });
+    const [
+      salesAgg,
+      totalOrders,
+      customers,
+      fetchedRecentOrders,
+      periodOrders,
+    ] = await Promise.all([
+      // 1. Aggregated sales lifetime (non-canceled)
+      prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        _count: { _all: true },
+        where: { status: { not: "CANCELED" } },
+      }),
+      // 2. Total orders count
+      prisma.order.count(),
+      // 3. Total customers count
+      prisma.customer.count(),
+      // 4. Only the 5 most recent orders for display
+      prisma.order.findMany({
+        take: 5,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          orderNumber: true,
+          status: true,
+          stockLocation: true,
+          totalAmount: true,
+          createdAt: true,
+          customer: {
+            select: { name: true },
+          },
+          items: {
+            select: {
+              product: {
+                select: { name: true },
+              },
+            },
+          },
+        },
+      }),
+      // 5. Lean data for chart only for selected period
+      prisma.order.findMany({
+        where: {
+          createdAt: { gte: chartStartDate },
+          status: { not: "CANCELED" },
+        },
+        select: {
+          createdAt: true,
+          totalAmount: true,
+        },
+      }),
+    ]);
 
-    orders.forEach((order) => {
-      if (order.status === "CANCELED") return;
-      const orderDate = new Date(order.createdAt);
-      const orderKey = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, "0")}`;
-      const slot = monthlySlots.find((s) => s.key === orderKey);
-      if (slot) {
-        slot.total += Number(order.totalAmount);
-      }
-    });
+    totalSales = Number(salesAgg._sum.totalAmount || 0);
+    const nonCanceledOrdersCount = salesAgg._count._all || 0;
+    ticketMedio = nonCanceledOrdersCount > 0 ? totalSales / nonCanceledOrdersCount : 0;
+    totalOrdersCount = totalOrders;
+    customersCount = customers;
+    recentOrders = fetchedRecentOrders;
 
-    chartData = monthlySlots.map(({ name, total }) => ({ name, total }));
-  } else {
-    // 7 or 30 daily slots
-    const numDays = is30Days ? 30 : 7;
-    const dailySlots = Array.from({ length: numDays }).map((_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - (numDays - 1 - i));
-      const dateStr = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-      return { name: dateStr, total: 0 };
-    });
+    if (is365Days) {
+      const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth();
 
-    orders.forEach((order) => {
-      if (order.status === "CANCELED") return;
-      const dateStr = new Date(order.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-      const dayData = dailySlots.find((d) => d.name === dateStr);
-      if (dayData) {
-        dayData.total += Number(order.totalAmount);
-      }
-    });
+      const monthlySlots = Array.from({ length: 12 }).map((_, i) => {
+        const d = new Date(currentYear, currentMonth - (11 - i), 1);
+        const m = monthNames[d.getMonth()];
+        const y = String(d.getFullYear()).slice(-2);
+        const label = `${m}/${y}`;
+        const yearMonthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        return { name: label, key: yearMonthKey, total: 0 };
+      });
 
-    chartData = dailySlots;
+      periodOrders.forEach((order) => {
+        const orderDate = new Date(order.createdAt);
+        const orderKey = `${orderDate.getFullYear()}-${String(orderDate.getMonth() + 1).padStart(2, "0")}`;
+        const slot = monthlySlots.find((s) => s.key === orderKey);
+        if (slot) {
+          slot.total += Number(order.totalAmount);
+        }
+      });
+
+      chartData = monthlySlots.map(({ name, total }) => ({ name, total }));
+    } else {
+      const numDays = is30Days ? 30 : 7;
+      const dailySlots = Array.from({ length: numDays }).map((_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (numDays - 1 - i));
+        const dateStr = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+        return { name: dateStr, total: 0 };
+      });
+
+      periodOrders.forEach((order) => {
+        const dateStr = new Date(order.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+        const dayData = dailySlots.find((d) => d.name === dateStr);
+        if (dayData) {
+          dayData.total += Number(order.totalAmount);
+        }
+      });
+
+      chartData = dailySlots;
+    }
+  } catch (dbErr) {
+    console.error("Error loading dashboard data:", dbErr);
   }
 
   return (
@@ -131,7 +172,7 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
             <span className="text-emerald-500 text-[10px] sm:text-xs font-bold flex items-center gap-0.5">Lifetime</span>
           </div>
           <p className="text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs font-medium uppercase tracking-wider">Pedidos</p>
-          <p className="text-lg sm:text-2xl font-extrabold mt-1 tracking-tight text-slate-800 dark:text-slate-100">{orders.length}</p>
+          <p className="text-lg sm:text-2xl font-extrabold mt-1 tracking-tight text-slate-800 dark:text-slate-100">{totalOrdersCount}</p>
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-6 rounded-xl border border-primary/5 shadow-sm">
@@ -142,7 +183,7 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
             <span className="text-emerald-500 text-[10px] sm:text-xs font-bold flex items-center gap-0.5">Lifetime</span>
           </div>
           <p className="text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs font-medium uppercase tracking-wider">Clientes</p>
-          <p className="text-lg sm:text-2xl font-extrabold mt-1 tracking-tight text-slate-800 dark:text-slate-100">{customers}</p>
+          <p className="text-lg sm:text-2xl font-extrabold mt-1 tracking-tight text-slate-800 dark:text-slate-100">{customersCount}</p>
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-6 rounded-xl border border-primary/5 shadow-sm">
@@ -239,7 +280,7 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
           </Link>
         </div>
 
-        {orders.length === 0 ? (
+        {recentOrders.length === 0 ? (
           <div className="p-8 text-center text-sm text-slate-500">
             Nenhum pedido recente.
           </div>
@@ -247,7 +288,7 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
           <>
             {/* Mobile Order Cards (< md) */}
             <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
-              {orders.slice(0, 5).map((order) => {
+              {recentOrders.map((order) => {
                 let statusColor = "slate";
                 let statusText = "Desconhecido";
 
@@ -342,7 +383,7 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-primary/5">
-                  {orders.slice(0, 5).map((order) => {
+                  {recentOrders.map((order) => {
                     let statusColor = "slate";
                     let statusText = "Desconhecido";
 

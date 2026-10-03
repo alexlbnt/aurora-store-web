@@ -24,17 +24,38 @@ export default async function Reports({ searchParams }: ReportsProps) {
   // Fetch real data for reports including product images
   let orders: any[] = [];
   try {
+    const reportStartDate = is365Days
+      ? new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
+      : is30Days
+      ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
     orders = await prisma.order.findMany({
-      where: { status: { not: "CANCELED" } },
-      include: {
+      where: {
+        status: { not: "CANCELED" },
+        createdAt: { gte: reportStartDate },
+      },
+      select: {
+        id: true,
+        totalAmount: true,
+        createdAt: true,
         items: {
-          include: {
+          select: {
+            productId: true,
+            quantity: true,
+            price: true,
             product: {
-              include: {
-                variants: true,
+              select: {
+                id: true,
+                name: true,
+                categoryId: true,
+                variants: {
+                  select: { stockA: true, stockV: true },
+                },
                 images: {
                   orderBy: { order: "asc" },
                   take: 1,
+                  select: { url: true },
                 },
               },
             },

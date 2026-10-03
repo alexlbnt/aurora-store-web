@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Search, Bell, HelpCircle, Menu, PanelLeftClose, PanelLeft } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useAdminSidebar } from "./AdminSidebarContext";
 
 export default function Header({
@@ -10,7 +11,26 @@ export default function Header({
   title?: string;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const pathname = usePathname();
   const { isCollapsed, toggleCollapsed, toggleMobile } = useAdminSidebar();
+
+  const displayTitle = useMemo(() => {
+    if (title && title !== "Visão Geral") return title;
+    if (pathname === "/admin") return "Visão Geral";
+    if (pathname === "/admin/sales/new") return "Nova Venda";
+    if (pathname.startsWith("/admin/sales/")) return "Detalhes do Pedido";
+    if (pathname.startsWith("/admin/sales")) return "Vendas";
+    if (pathname === "/admin/products/new") return "Novo Produto";
+    if (pathname.includes("/edit")) return "Editar Produto";
+    if (pathname.startsWith("/admin/products")) return "Produtos";
+    if (pathname === "/admin/customers/new") return "Novo Cliente";
+    if (pathname.startsWith("/admin/customers/")) return "Editar Cliente";
+    if (pathname.startsWith("/admin/customers")) return "Clientes";
+    if (pathname.startsWith("/admin/categories")) return "Categorias";
+    if (pathname.startsWith("/admin/reports")) return "Relatórios";
+    if (pathname.startsWith("/admin/settings")) return "Configurações";
+    return title || "Visão Geral";
+  }, [pathname, title]);
 
   return (
     <header className="h-16 bg-white dark:bg-background-dark border-b border-primary/10 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-10 w-full transition-colors">
@@ -39,7 +59,7 @@ export default function Header({
         </button>
 
         <h2 className="text-lg lg:text-xl font-bold text-primary truncate max-w-[200px] sm:max-w-md">
-          {title}
+          {displayTitle}
         </h2>
       </div>
 

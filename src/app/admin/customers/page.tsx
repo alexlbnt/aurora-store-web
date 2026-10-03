@@ -34,16 +34,30 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
 
   let customers: any[] = [];
   let totalCustomersCount = 0;
-  let allCustomers: any[] = [];
+  let totalCustomersAll = 0;
+  let totalLifetimeSpent = 0;
+  let activeCustomersCount = 0;
+  let averageLTV = 0;
 
   try {
-    const [fetchedCustomers, fetchedCount, fetchedAll] = await Promise.all([
+    const [
+      fetchedCustomers,
+      fetchedCount,
+      countAll,
+      salesAgg,
+      activeCount,
+    ] = await Promise.all([
       prisma.customer.findMany({
         where,
         include: {
           orders: {
             where: { status: { not: "CANCELED" } },
             orderBy: { createdAt: "desc" },
+            select: {
+              id: true,
+              totalAmount: true,
+              createdAt: true,
+            },
           },
         },
         orderBy: { createdAt: "desc" },
@@ -51,18 +65,26 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
         take: pageSize,
       }),
       prisma.customer.count({ where }),
-      prisma.customer.findMany({
-        include: {
+      prisma.customer.count(),
+      prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        where: { status: { not: "CANCELED" } },
+      }),
+      prisma.customer.count({
+        where: {
           orders: {
-            where: { status: { not: "CANCELED" } },
-            select: { totalAmount: true },
+            some: { status: { not: "CANCELED" } },
           },
         },
       }),
     ]);
+
     customers = fetchedCustomers;
     totalCustomersCount = fetchedCount;
-    allCustomers = fetchedAll;
+    totalCustomersAll = countAll;
+    totalLifetimeSpent = Number(salesAgg._sum.totalAmount || 0);
+    activeCustomersCount = activeCount;
+    averageLTV = totalCustomersAll > 0 ? totalLifetimeSpent / totalCustomersAll : 0;
   } catch (err) {
     console.error("Error loading customers:", err);
   }
@@ -70,13 +92,6 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
   const totalSpentByCustomer = customers.map((c) => {
     return (c.orders || []).reduce((acc: number, order: any) => acc + Number(order.totalAmount || 0), 0);
   });
-
-  const allSpentArray = allCustomers.map((c) =>
-    (c.orders || []).reduce((acc: number, o: any) => acc + Number(o.totalAmount || 0), 0)
-  );
-  const totalLifetimeSpent = allSpentArray.reduce((acc, curr) => acc + curr, 0);
-  const averageLTV = allCustomers.length > 0 ? totalLifetimeSpent / allCustomers.length : 0;
-  const activeCustomersCount = allCustomers.filter((c) => (c.orders || []).length > 0).length;
 
   return (
     <AdminLayout pageTitle="Clientes">
@@ -329,7 +344,7 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
           <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-5 rounded-xl border border-primary/10 shadow-sm">
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Clientes Base</p>
             <div className="flex items-end justify-between mt-2">
-              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{allCustomers.length}</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{totalCustomersAll}</h3>
               <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded flex items-center">
                 <span className="material-symbols-outlined text-sm">database</span> Base Real
               </span>

@@ -59,14 +59,23 @@ export default async function Sales({ searchParams }: SalesPageProps) {
   // Fetch paginated orders & total count in parallel with global metrics
   let orders: any[] = [];
   let totalOrdersCount = 0;
-  let allOrdersForMetrics: any[] = [];
+  let totalSalesLifetime = 0;
+  let pendingCount = 0;
+  let ticketMedio = 0;
 
   try {
-    const [fetchedOrders, fetchedTotal, fetchedMetrics] = await Promise.all([
+    const [fetchedOrders, fetchedTotal, salesAgg, fetchedPending] = await Promise.all([
       prisma.order.findMany({
         where,
         include: {
-          customer: true,
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+            },
+          },
         },
         orderBy: {
           createdAt: "desc",
@@ -75,27 +84,23 @@ export default async function Sales({ searchParams }: SalesPageProps) {
         take: pageSize,
       }),
       prisma.order.count({ where }),
-      prisma.order.findMany({
-        select: {
-          status: true,
-          totalAmount: true,
-        },
+      prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        _count: { _all: true },
+        where: { status: { not: "CANCELED" } },
       }),
+      prisma.order.count({ where: { status: "PENDING" } }),
     ]);
+
     orders = fetchedOrders;
     totalOrdersCount = fetchedTotal;
-    allOrdersForMetrics = fetchedMetrics;
+    totalSalesLifetime = Number(salesAgg._sum.totalAmount || 0);
+    const nonCanceledCount = salesAgg._count._all || 0;
+    ticketMedio = nonCanceledCount > 0 ? totalSalesLifetime / nonCanceledCount : 0;
+    pendingCount = fetchedPending;
   } catch (err) {
     console.error("Error fetching sales data:", err);
   }
-
-  const totalSalesLifetime = allOrdersForMetrics
-    .filter((o) => o.status !== "CANCELED")
-    .reduce((acc, order) => acc + Number(order.totalAmount || 0), 0);
-
-  const nonCanceledCount = allOrdersForMetrics.filter((o) => o.status !== "CANCELED").length;
-  const pendingCount = allOrdersForMetrics.filter((o) => o.status === "PENDING").length;
-  const ticketMedio = nonCanceledCount > 0 ? totalSalesLifetime / nonCanceledCount : 0;
 
   return (
     <AdminLayout pageTitle="Vendas">
@@ -139,7 +144,7 @@ export default async function Sales({ searchParams }: SalesPageProps) {
           </div>
           <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-5 rounded-xl border border-primary/10 shadow-sm">
             <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Total Pedidos</p>
-            <h3 className="text-lg sm:text-2xl font-bold mt-1 text-slate-900 dark:text-white">{allOrdersForMetrics.length}</h3>
+            <h3 className="text-lg sm:text-2xl font-bold mt-1 text-slate-900 dark:text-white">{totalOrdersCount}</h3>
             <p className="text-[10px] sm:text-xs text-slate-400 mt-1 sm:mt-2 flex items-center gap-0.5 font-semibold">
               <span className="material-symbols-outlined text-xs">inventory_2</span> Lifetime
             </p>
