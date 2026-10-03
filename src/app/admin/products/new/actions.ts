@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { handleDatabaseError } from "@/lib/error-handler";
 
 export async function createProduct(formData: FormData) {
   const name = formData.get("name") as string;
@@ -121,7 +122,7 @@ export async function createProduct(formData: FormData) {
     console.error("Prisma Error:", error);
     return { 
       success: false, 
-      error: "Erro no Banco de Dados: " + (error.message || String(error))
+      error: handleDatabaseError(error, "Não foi possível cadastrar o produto.")
     };
   }
 }

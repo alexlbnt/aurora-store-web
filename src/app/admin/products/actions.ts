@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { handleDatabaseError } from "@/lib/error-handler";
 
 export async function deleteProduct(productId: string) {
   try {
@@ -138,7 +139,7 @@ export async function editProduct(productId: string, formData: FormData) {
     return { success: true, productId: product.id };
   } catch (error: any) {
     console.error("Failed to edit product:", error);
-    return { success: false, error: "Falha ao editar produto: " + (error?.message || String(error)) };
+    return { success: false, error: handleDatabaseError(error, "Falha ao editar produto.") };
   }
 }
 
@@ -173,7 +174,7 @@ export async function quickUpdateCategory(id: string, newName: string) {
     revalidatePath("/admin/products/[id]"); 
     return { success: true };
   } catch (error) {
-    return { error: "Erro ao atualizar categoria." };
+    return { error: handleDatabaseError(error, "Não foi possível atualizar o nome da categoria. Tente novamente.") };
   }
 }
 
@@ -184,7 +185,7 @@ export async function quickDeleteCategory(id: string) {
     revalidatePath("/admin/products/[id]");
     return { success: true };
   } catch (error) {
-    return { error: "Não foi possível excluir a categoria, pois ela possui produtos vinculados." };
+    return { error: handleDatabaseError(error, "Não é possível excluir esta categoria porque ainda existem produtos usando ela. Remova os produtos primeiro.") };
   }
 }
 
@@ -210,7 +211,7 @@ export async function getProductVariants(productId: string) {
     return { product };
   } catch (error) {
     console.error("Error getting product variants:", error);
-    return { error: "Erro ao buscar variações do produto." };
+    return { error: handleDatabaseError(error, "Não foi possível carregar as variações de cores e tamanhos deste produto.") };
   }
 }
 

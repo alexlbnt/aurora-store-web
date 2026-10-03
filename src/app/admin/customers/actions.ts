@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { handleDatabaseError } from "@/lib/error-handler";
 
 export async function createCustomer(formData: FormData) {
   try {
@@ -11,7 +12,7 @@ export async function createCustomer(formData: FormData) {
     const socialMedia = formData.get("socialMedia") as string;
 
     if (!name || !phone) {
-      return { error: "Nome e telefone são obrigatórios." };
+      return { error: "O nome e o telefone do cliente são obrigatórios." };
     }
 
     const emailValue = email ? email : null;
@@ -39,7 +40,7 @@ export async function createCustomer(formData: FormData) {
     return { success: true, customerId: newCustomer.id };
   } catch (error) {
     console.error("Error creating customer:", error);
-    return { error: "Erro interno ao cadastrar cliente." };
+    return { error: handleDatabaseError(error, "Não foi possível cadastrar o cliente. Tente novamente.") };
   }
 }
 
@@ -51,7 +52,7 @@ export async function updateCustomer(id: string, formData: FormData) {
     const socialMedia = formData.get("socialMedia") as string;
 
     if (!name || !phone) {
-      return { error: "Nome e telefone são obrigatórios." };
+      return { error: "O nome e o telefone do cliente são obrigatórios." };
     }
 
     const emailValue = email ? email : null;
@@ -80,7 +81,7 @@ export async function updateCustomer(id: string, formData: FormData) {
     return { success: true };
   } catch (error) {
     console.error("Error updating customer:", error);
-    return { error: "Erro interno ao atualizar cliente." };
+    return { error: handleDatabaseError(error, "Não foi possível atualizar o cliente. Tente novamente.") };
   }
 }
 
@@ -89,7 +90,7 @@ export async function deleteCustomer(id: string) {
     // Check if customer has orders
     const orders = await prisma.order.count({ where: { customerId: id } });
     if (orders > 0) {
-      return { error: "Não é possível excluir um cliente que possui pedidos cadastrados." };
+      return { error: "Não é possível excluir um cliente que já possui pedidos registrados." };
     }
 
     await prisma.customer.delete({ where: { id } });
@@ -97,6 +98,6 @@ export async function deleteCustomer(id: string) {
     return { success: true };
   } catch (error) {
     console.error("Error deleting customer:", error);
-    return { error: "Erro interno ao excluir cliente." };
+    return { error: handleDatabaseError(error, "Não foi possível excluir o cliente.") };
   }
 }

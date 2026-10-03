@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { handleDatabaseError } from "@/lib/error-handler";
 
 export async function updateOrderStatus(orderId: string, status: "PENDING" | "PAID" | "SHIPPED" | "DELIVERED" | "CANCELED") {
   try {
@@ -14,7 +15,7 @@ export async function updateOrderStatus(orderId: string, status: "PENDING" | "PA
     revalidatePath("/admin");
     return { success: true };
   } catch (error) {
-    return { error: "Erro ao atualizar status do pedido." };
+    return { error: handleDatabaseError(error, "Não foi possível alterar o status deste pedido.") };
   }
 }
 
@@ -28,7 +29,7 @@ export async function deleteOrder(orderId: string) {
     return { success: true };
   } catch (error) {
     console.error("Error deleting order:", error);
-    return { error: "Erro ao excluir pedido." };
+    return { error: handleDatabaseError(error, "Não foi possível excluir o pedido. Verifique se existem dependências.") };
   }
 }
 
@@ -65,7 +66,7 @@ export async function createOrder(formData: FormData) {
     const items: OrderItemParams[] = itemsJson ? JSON.parse(itemsJson) : [];
 
     if (!customerPhone || !customerName) {
-      return { error: "Nome e telefone do cliente são obrigatórios." };
+      return { error: "O nome e o telefone do cliente são obrigatórios." };
     }
 
     if (items.length === 0) {
@@ -174,7 +175,7 @@ export async function createOrder(formData: FormData) {
     };
   } catch (error: any) {
     console.error("Error creating order:", error);
-    return { error: error?.message || "Erro ao criar pedido manual. Verifique os dados e tente novamente." };
+    return { error: handleDatabaseError(error, "Não foi possível criar o pedido manual. Verifique os dados e tente novamente.") };
   }
 }
 
@@ -189,7 +190,7 @@ export async function updateOrderNotes(orderId: string, notes: string) {
     return { success: true };
   } catch (error) {
     console.error("Error updating order notes:", error);
-    return { error: "Erro ao atualizar observações do pedido." };
+    return { error: handleDatabaseError(error, "Não foi possível atualizar as observações do pedido.") };
   }
 }
 
@@ -204,7 +205,6 @@ export async function updateOrderShipping(orderId: string, shippingType: "SEM_FR
     return { success: true };
   } catch (error) {
     console.error("Error updating order shipping:", error);
-    return { error: "Erro ao atualizar frete do pedido." };
+    return { error: handleDatabaseError(error, "Não foi possível atualizar o frete do pedido.") };
   }
 }
-
