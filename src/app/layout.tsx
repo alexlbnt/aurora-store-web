@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Playfair_Display, Montserrat } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
@@ -18,10 +18,22 @@ const montserrat = Montserrat({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#b45309",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXTAUTH_URL || "http://localhost:3000"),
   title: "Aurora | Premium Sleepwear",
   description: "Ressignificando o seu descanso com elegância e conforto.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Aurora Admin",
+  },
 };
 
 export default function RootLayout({

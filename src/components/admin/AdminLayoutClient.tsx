@@ -7,6 +7,7 @@ import { AdminSidebarProvider, useAdminSidebar } from "./AdminSidebarContext";
 
 import AdminMobileNav from "./AdminMobileNav";
 import RouteProgressBar from "./RouteProgressBar";
+import ToastContainer from "@/components/ui/Toast";
 
 function AdminLayoutInner({
   sidebar,
@@ -28,6 +29,7 @@ function AdminLayoutInner({
   return (
     <div className="flex h-[100dvh] overflow-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display relative w-full">
       <RouteProgressBar />
+      <ToastContainer />
       {/* Overlay Mobile */}
       {isMobileOpen && (
         <div

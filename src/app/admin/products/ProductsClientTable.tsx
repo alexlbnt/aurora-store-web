@@ -259,7 +259,7 @@ export default function ProductsClientTable({
                           <h3 className="font-bold text-sm text-slate-900 dark:text-white line-clamp-2 leading-tight">
                             {product.name}
                           </h3>
-                          <ProductRowActions productId={product.id} />
+                          <ProductRowActions productId={product.id} productName={product.name} />
                         </div>
                         <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                           <span className="font-mono text-[11px] text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
@@ -386,7 +386,7 @@ export default function ProductsClientTable({
                           R$ {product.basePrice.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <ProductRowActions productId={product.id} />
+                          <ProductRowActions productId={product.id} productName={product.name} />
                         </td>
                       </tr>
                     );

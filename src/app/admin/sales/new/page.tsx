@@ -4,44 +4,56 @@ import { prisma } from "@/lib/prisma";
 
 export const revalidate = 0;
 
-export default async function NewOrderPage() {
-  const products = await prisma.product.findMany({
-    include: {
-      variants: true,
-      images: {
-        where: { isDisplay: true },
-        take: 1
-      }
-    },
-    orderBy: { name: 'asc' }
-  });
+interface NewOrderPageProps {
+  searchParams: Promise<{ customerId?: string }>;
+}
 
-  const customers = await prisma.customer.findMany({
-    select: { id: true, name: true, email: true, phone: true },
-    orderBy: { name: 'asc' }
-  });
+export default async function NewOrderPage({ searchParams }: NewOrderPageProps) {
+  const resolvedParams = (await searchParams) || {};
+  const initialCustomerId = resolvedParams.customerId || "";
+
+  const [products, customers] = await Promise.all([
+    prisma.product.findMany({
+      include: {
+        variants: true,
+        images: {
+          orderBy: { order: "asc" },
+          take: 1,
+        },
+      },
+      orderBy: { name: "asc" },
+    }),
+    prisma.customer.findMany({
+      select: { id: true, name: true, email: true, phone: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   // Serialize objects to fix Prisma Decimal and Date issues
-  const serializedProducts = products.map(p => ({
+  const serializedProducts = products.map((p) => ({
     ...p,
-    basePrice: p.basePrice ? p.basePrice.toString() : '0',
+    basePrice: p.basePrice ? p.basePrice.toString() : "0",
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
-    variants: p.variants.map(v => ({
+    variants: p.variants.map((v) => ({
       ...v,
       price: v.price ? v.price.toString() : null,
       createdAt: v.createdAt.toISOString(),
       updatedAt: v.updatedAt.toISOString(),
     })),
-    images: p.images.map(img => ({
+    images: p.images.map((img) => ({
       ...img,
-      createdAt: img.createdAt.toISOString()
-    }))
+      createdAt: img.createdAt.toISOString(),
+    })),
   }));
 
   return (
-    <AdminLayout>
-      <OrderForm products={serializedProducts} customers={customers} />
+    <AdminLayout pageTitle="Novo Pedido">
+      <OrderForm
+        products={serializedProducts}
+        customers={customers}
+        initialCustomerId={initialCustomerId}
+      />
     </AdminLayout>
   );
 }

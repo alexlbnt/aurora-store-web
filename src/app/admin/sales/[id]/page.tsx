@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import StatusUpdater from "@/components/admin/sales/StatusUpdater";
 import ShippingUpdater from "@/components/admin/sales/ShippingUpdater";
 import OrderNotesCard from "@/components/admin/sales/OrderNotesCard";
+import AdminProductImage from "@/components/admin/AdminProductImage";
 
 export default async function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const param = await params;
@@ -96,8 +97,11 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
             <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
               {order.items.map(item => (
                 <div key={item.id} className="py-3 sm:py-4 flex items-center gap-3 sm:gap-4">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700">
-                    <span className="material-symbols-outlined text-slate-400">image</span>
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 overflow-hidden relative">
+                    <AdminProductImage
+                      src={item.product.images && item.product.images.length > 0 ? item.product.images[0].url : ""}
+                      alt={item.product.name}
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100 truncate">{item.product.name}</p>

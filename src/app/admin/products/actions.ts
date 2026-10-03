@@ -188,3 +188,53 @@ export async function quickDeleteCategory(id: string) {
   }
 }
 
+export async function getProductVariants(productId: string) {
+  try {
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      select: {
+        id: true,
+        name: true,
+        variants: {
+          orderBy: [{ size: "asc" }, { color: "asc" }],
+          select: {
+            id: true,
+            size: true,
+            color: true,
+            stockA: true,
+            stockV: true,
+          },
+        },
+      },
+    });
+    return { product };
+  } catch (error) {
+    console.error("Error getting product variants:", error);
+    return { error: "Erro ao buscar variações do produto." };
+  }
+}
+
+export async function quickUpdateProductVariantStock(
+  variantId: string,
+  stockA: number,
+  stockV: number
+) {
+  try {
+    await prisma.variant.update({
+      where: { id: variantId },
+      data: {
+        stockA: Math.max(0, Math.floor(stockA)),
+        stockV: Math.max(0, Math.floor(stockV)),
+      },
+    });
+
+    revalidatePath("/admin/products");
+    revalidatePath("/admin/sales/new");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating variant stock:", error);
+    return { error: "Erro ao atualizar estoque da variação." };
+  }
+}
+
+

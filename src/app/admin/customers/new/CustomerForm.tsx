@@ -2,10 +2,13 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createCustomer, updateCustomer } from "../actions";
 import { formatPhone } from "@/lib/formatters";
+import { showToast } from "@/components/ui/Toast";
 
 export default function CustomerForm({ initialData }: { initialData?: any }) {
+  const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [phone, setPhone] = useState(initialData?.phone || "");
 
@@ -17,13 +20,14 @@ export default function CustomerForm({ initialData }: { initialData?: any }) {
     try {
       const result = await (initialData ? updateCustomer(initialData.id, formData) : createCustomer(formData));
       if (result.error) {
-        alert(result.error);
+        showToast(result.error, "error");
         setIsPending(false);
       } else {
-        window.location.href = '/admin/customers';
+        showToast(initialData ? "Cliente atualizado com sucesso!" : "Cliente cadastrado com sucesso!", "success");
+        router.push("/admin/customers");
       }
     } catch (error) {
-      alert("Erro ao cadastrar cliente.");
+      showToast("Erro ao cadastrar cliente.", "error");
       setIsPending(false);
     }
   };

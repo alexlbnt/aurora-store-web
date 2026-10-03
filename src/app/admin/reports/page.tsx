@@ -38,6 +38,8 @@ export default async function Reports({ searchParams }: ReportsProps) {
       select: {
         id: true,
         totalAmount: true,
+        paymentMethod: true,
+        stockLocation: true,
         createdAt: true,
         items: {
           select: {
@@ -70,6 +72,31 @@ export default async function Reports({ searchParams }: ReportsProps) {
 
   const totalRevenue = orders.reduce((acc, order) => acc + Number(order.totalAmount || 0), 0);
   const averageTicket = orders.length > 0 ? totalRevenue / orders.length : 0;
+
+  // Real payment methods breakdown
+  const paymentMethodsStats = [
+    { key: "PIX", label: "PIX", color: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400", count: 0, total: 0 },
+    { key: "CREDIT_CARD", label: "Cartão de Crédito", color: "bg-amber-500", text: "text-amber-600 dark:text-amber-400", count: 0, total: 0 },
+    { key: "DEBIT_CARD", label: "Cartão de Débito", color: "bg-sky-500", text: "text-sky-600 dark:text-sky-400", count: 0, total: 0 },
+    { key: "CASH", label: "Dinheiro", color: "bg-indigo-500", text: "text-indigo-600 dark:text-indigo-400", count: 0, total: 0 },
+    { key: "OTHER", label: "Outros / Transferência", color: "bg-slate-400", text: "text-slate-600 dark:text-slate-400", count: 0, total: 0 },
+  ];
+
+  const stockLocationStats = {
+    ESTOQUE_A: { count: 0, total: 0, label: "Estoque-A (Principal)" },
+    ESTOQUE_V: { count: 0, total: 0, label: "Estoque-V (Showroom)" },
+  };
+
+  orders.forEach((o) => {
+    const pm = (o as any).paymentMethod || "OTHER";
+    const found = paymentMethodsStats.find((p) => p.key === pm) || paymentMethodsStats[4];
+    found.count += 1;
+    found.total += Number(o.totalAmount || 0);
+
+    const loc = (o as any).stockLocation === "ESTOQUE_V" ? "ESTOQUE_V" : "ESTOQUE_A";
+    stockLocationStats[loc].count += 1;
+    stockLocationStats[loc].total += Number(o.totalAmount || 0);
+  });
 
   // Generate chart data for selected period
   let chartData: Array<{ name: string; total: number }> = [];
@@ -244,39 +271,75 @@ export default async function Reports({ searchParams }: ReportsProps) {
             </div>
           </div>
 
-          {/* Origem do Tráfego */}
-          <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl border border-primary/10 shadow-sm">
-            <h4 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 mb-4 sm:mb-6">Canais de Aquisição</h4>
-            <div className="flex items-center justify-center py-2 sm:py-4">
-              <div
-                className="relative w-40 h-40 sm:w-48 sm:h-48 rounded-full flex items-center justify-center shadow-inner"
-                style={{
-                  background:
-                    "conic-gradient(#5d4a3c 0% 45%, #8a7364 45% 75%, #c5b4a7 75% 90%, #efedec 90% 100%)",
-                }}
-              >
-                <div className="absolute w-28 h-28 sm:w-32 sm:h-32 bg-white dark:bg-slate-900 rounded-full flex flex-col items-center justify-center">
-                  <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100">100%</span>
-                  <span className="text-[9px] sm:text-[10px] text-slate-400 uppercase">Canais Diretos</span>
-                </div>
+          {/* Métodos de Pagamento e Estoque */}
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl border border-primary/10 shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
+                  Formas de Pagamento
+                </h4>
+                <span className="text-[11px] text-slate-400 font-medium">No período</span>
+              </div>
+
+              <div className="space-y-3">
+                {paymentMethodsStats.map((item) => {
+                  const percent = totalRevenue > 0 ? (item.total / totalRevenue) * 100 : 0;
+                  return (
+                    <div key={item.key} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                          <span className={`size-2 rounded-full ${item.color}`}></span>
+                          {item.label} ({item.count})
+                        </span>
+                        <div className="text-right">
+                          <span className="font-bold text-slate-900 dark:text-white">
+                            R$ {item.total.toFixed(2).replace(".", ",")}
+                          </span>
+                          <span className="text-[10px] text-slate-400 ml-1.5 font-mono">
+                            {percent.toFixed(0)}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className={`h-full ${item.color} rounded-full transition-all duration-500`}
+                          style={{ width: `${percent}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-4 sm:mt-6">
-              <div className="flex items-center gap-2">
-                <div className="size-2.5 sm:size-3 rounded-full bg-primary shrink-0"></div>
-                <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Orgânico (45%)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="size-2.5 sm:size-3 rounded-full bg-[#8a7364] shrink-0"></div>
-                <span className="text-xs text-slate-600 dark:text-slate-400 font-medium truncate">Social (30%)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="size-2.5 sm:size-3 rounded-full bg-[#c5b4a7] shrink-0"></div>
-                <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Direto (15%)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="size-2.5 sm:size-3 rounded-full bg-[#efedec] shrink-0"></div>
-                <span className="text-xs text-slate-600 dark:text-slate-400 font-medium truncate">Outros (10%)</span>
+
+            {/* Divisão por Origem de Estoque */}
+            <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">
+                Vendas por Origem de Estoque
+              </p>
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="p-2.5 rounded-lg bg-purple-50 dark:bg-purple-950/30 border border-purple-200/50 dark:border-purple-800/40">
+                  <span className="text-[10px] uppercase font-bold text-purple-700 dark:text-purple-300 block">
+                    Estoque-A (Loja)
+                  </span>
+                  <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white block mt-0.5">
+                    R$ {stockLocationStats.ESTOQUE_A.total.toFixed(2).replace(".", ",")}
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    {stockLocationStats.ESTOQUE_A.count} vendas
+                  </span>
+                </div>
+                <div className="p-2.5 rounded-lg bg-fuchsia-50 dark:bg-fuchsia-950/30 border border-fuchsia-200/50 dark:border-fuchsia-800/40">
+                  <span className="text-[10px] uppercase font-bold text-fuchsia-700 dark:text-fuchsia-300 block">
+                    Estoque-V (Showroom)
+                  </span>
+                  <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white block mt-0.5">
+                    R$ {stockLocationStats.ESTOQUE_V.total.toFixed(2).replace(".", ",")}
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    {stockLocationStats.ESTOQUE_V.count} vendas
+                  </span>
+                </div>
               </div>
             </div>
           </div>
