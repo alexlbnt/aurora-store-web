@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Search, Bell, HelpCircle, Menu, PanelLeftClose, PanelLeft } from "lucide-react";
+import { Search, Menu, PanelLeftClose, PanelLeft } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useAdminSidebar } from "./AdminSidebarContext";
+import AdminNotificationsPopover from "./AdminNotificationsPopover";
 
 export default function Header({
   title = "Visão Geral",
@@ -79,21 +80,7 @@ export default function Header({
           />
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
-          <button
-            aria-label="Notificações"
-            className="relative size-9 flex items-center justify-center rounded-lg hover:bg-primary/10 text-slate-600 dark:text-slate-400 hover:text-primary transition-colors cursor-pointer"
-            title="Notificações"
-          >
-            <Bell className="w-5 h-5" aria-hidden="true" />
-            <span className="absolute top-2 right-2.5 w-2 h-2 bg-emerald-500 rounded-full border-2 border-white dark:border-background-dark"></span>
-          </button>
-          <button
-            aria-label="Central de Ajuda"
-            className="size-9 flex items-center justify-center rounded-lg hover:bg-primary/10 text-slate-600 dark:text-slate-400 hover:text-primary transition-colors cursor-pointer"
-            title="Ajuda e Documentação"
-          >
-            <HelpCircle className="w-5 h-5" aria-hidden="true" />
-          </button>
+          <AdminNotificationsPopover />
         </div>
       </div>
     </header>
