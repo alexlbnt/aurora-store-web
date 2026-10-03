@@ -6,6 +6,7 @@ import DeleteButton from "./DeleteButton";
 import AdminSearchBar from "@/components/admin/AdminSearchBar";
 import AdminFilterSelect from "@/components/admin/AdminFilterSelect";
 import AdminPagination from "@/components/admin/AdminPagination";
+import SalesExportButton from "@/components/admin/sales/SalesExportButton";
 import { OrderStatus, Prisma } from "@prisma/client";
 
 export const revalidate = 0; // Don't cache admin pages
@@ -112,15 +113,7 @@ export default async function Sales({ searchParams }: SalesPageProps) {
             <p className="text-slate-500 text-xs sm:text-sm mt-0.5">Gerencie os pedidos, fretes e faturamento real.</p>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/api/admin/export/sales"
-              target="_blank"
-              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border border-primary/20 bg-white dark:bg-slate-900 rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
-              title="Baixar CSV de vendas"
-            >
-              <span className="material-symbols-outlined text-base text-slate-500">download</span>
-              <span>CSV</span>
-            </Link>
+            <SalesExportButton />
             <Link
               href="/admin/sales/new"
               className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-primary text-white px-4 py-2 rounded-lg font-bold text-xs sm:text-sm hover:bg-primary/90 transition-all shadow-sm"
