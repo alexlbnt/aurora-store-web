@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { updateOrderShipping } from "@/app/admin/sales/actions";
+import { showToast } from "@/components/ui/Toast";
 
 interface ShippingUpdaterProps {
   orderId: string;
@@ -21,7 +22,11 @@ export default function ShippingUpdater({ orderId, currentShipping }: ShippingUp
     const newShipping = e.target.value as "SEM_FRETE" | "PAGO_AURORA" | "PAGO_CLIENTE";
     setIsPending(true);
     const result = await updateOrderShipping(orderId, newShipping);
-    if (result.error) alert(result.error);
+    if (result.error) {
+      showToast(result.error, "error");
+    } else {
+      showToast("Modalidade de frete atualizada!", "success");
+    }
     setIsPending(false);
   };
 

@@ -78,8 +78,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     saveCart([]);
   };
 
-  const cartCount = isMounted ? items.reduce((acc, item) => acc + item.qty, 0) : 0;
-  const cartTotal = isMounted ? items.reduce((acc, item) => acc + (item.numericPrice * item.qty), 0) : 0;
+  const cartCount = isMounted ? items.reduce((acc, item) => acc + (Number(item.qty) || 0), 0) : 0;
+  const cartTotal = isMounted ? items.reduce((acc, item) => {
+    const rawPrice = item.numericPrice ?? (parseFloat(String(item.price || "0").replace(/[^0-9,-]+/g, "").replace(",", ".")) || 0);
+    const validPrice = typeof rawPrice === "number" && !isNaN(rawPrice) ? rawPrice : 0;
+    const validQty = typeof item.qty === "number" && !isNaN(item.qty) && item.qty > 0 ? item.qty : 1;
+    return acc + (validPrice * validQty);
+  }, 0) : 0;
 
   return (
     <CartContext.Provider value={{ items: isMounted ? items : [], addToCart, removeFromCart, updateQuantity, clearCart, cartCount, cartTotal, isMounted }}>

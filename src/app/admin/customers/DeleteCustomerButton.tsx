@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { deleteCustomer } from "./actions";
+import { showToast } from "@/components/ui/Toast";
 
 export default function DeleteCustomerButton({ id }: { id: string }) {
   const [isDeleting, setIsDeleting] = useState(false);
@@ -13,10 +14,11 @@ export default function DeleteCustomerButton({ id }: { id: string }) {
     const result = await deleteCustomer(id);
     
     if (result.error) {
-      alert(result.error);
+      showToast(result.error, "error");
       setIsDeleting(false);
+    } else {
+      showToast("Cliente excluído com sucesso!", "success");
     }
-    // if success, the page will revalidate automatically
   };
 
   return (

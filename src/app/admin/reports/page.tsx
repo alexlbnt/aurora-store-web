@@ -24,11 +24,15 @@ export default async function Reports({ searchParams }: ReportsProps) {
   // Fetch real data for reports including product images
   let orders: any[] = [];
   try {
-    const reportStartDate = is365Days
-      ? new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
-      : is30Days
-      ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-      : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const reportStartDate = new Date();
+    if (is365Days) {
+      reportStartDate.setDate(reportStartDate.getDate() - 365);
+    } else if (is30Days) {
+      reportStartDate.setDate(reportStartDate.getDate() - 29);
+    } else {
+      reportStartDate.setDate(reportStartDate.getDate() - 6);
+    }
+    reportStartDate.setHours(0, 0, 0, 0);
 
     orders = await prisma.order.findMany({
       where: {
@@ -131,12 +135,12 @@ export default async function Reports({ searchParams }: ReportsProps) {
     const dailySlots = Array.from({ length: numDays }).map((_, i) => {
       const d = new Date();
       d.setDate(d.getDate() - (numDays - 1 - i));
-      const dateStr = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+      const dateStr = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" });
       return { name: dateStr, total: 0 };
     });
 
     orders.forEach((order) => {
-      const dateStr = order.createdAt ? new Date(order.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "";
+      const dateStr = order.createdAt ? new Date(order.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" }) : "";
       const dayData = dailySlots.find((d) => d.name === dateStr);
       if (dayData) {
         dayData.total += Number(order.totalAmount || 0);

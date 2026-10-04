@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { deleteOrder } from "./actions";
+import { showToast } from "@/components/ui/Toast";
 
 export default function DeleteButton({ orderId }: { orderId: string }) {
   const [isPending, startTransition] = useTransition();
@@ -9,7 +10,12 @@ export default function DeleteButton({ orderId }: { orderId: string }) {
   const handleDelete = () => {
     if (confirm("Tem certeza que deseja excluir este pedido? Esta ação não pode ser desfeita.")) {
       startTransition(async () => {
-        await deleteOrder(orderId);
+        const res = await deleteOrder(orderId);
+        if (res.error) {
+          showToast(res.error, "error");
+        } else {
+          showToast("Pedido excluído com sucesso!", "success");
+        }
       });
     }
   };

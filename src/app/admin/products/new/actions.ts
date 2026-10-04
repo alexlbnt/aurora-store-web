@@ -49,9 +49,6 @@ export async function createProduct(formData: FormData) {
   if (imagesRaw) {
     try { images = JSON.parse(imagesRaw); } catch(e) {}
   }
-  if (images.length === 0) {
-    images = ["https://d2qs1z4gndokv4.cloudfront.net/Custom/Content/Products/99/65/996545_calcinha-conforto-em-tecido-canelado-sem-costura-my-lady-6229_m5_638519965223030386.jpg"];
-  }
   
   const hasVariants = formData.get("hasVariants") === "true";
   const variantsMatrixRaw = formData.get("variantsMatrix") as string;

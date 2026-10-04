@@ -23,8 +23,9 @@ export async function GET() {
   const header = "ID;Nome;Email;Telefone;Endereco;Cidade;Estado;CEP;Qtd_Pedidos;Total_Gasto_R$;Data_Cadastro\n";
   const rows = customers.map((c) => {
     const totalSpent = c.orders.reduce((acc, o) => acc + Number(o.totalAmount), 0).toFixed(2);
-    const date = new Date(c.createdAt).toLocaleDateString("pt-BR");
-    return `"${c.id}";"${c.name}";"${c.email || ""}";"${c.phone}";"${c.address || ""}";"${c.city || ""}";"${c.state || ""}";"${c.cep || ""}";${c.orders.length};${totalSpent};"${date}"`;
+    const date = new Date(c.createdAt).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+    const escapeCsv = (str?: string | null) => (str || "").replace(/"/g, '""');
+    return `"${c.id}";"${escapeCsv(c.name)}";"${escapeCsv(c.email)}";"${escapeCsv(c.phone)}";"${escapeCsv(c.address)}";"${escapeCsv(c.city)}";"${escapeCsv(c.state)}";"${escapeCsv(c.cep)}";${c.orders.length};${totalSpent};"${date}"`;
   });
 
   // UTF-8 BOM for Excel compatibility

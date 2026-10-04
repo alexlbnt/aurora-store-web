@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { deleteProduct } from "./actions";
 import { showToast } from "@/components/ui/Toast";
 import QuickStockModal from "@/components/admin/products/QuickStockModal";
@@ -10,11 +11,19 @@ import QuickStockModal from "@/components/admin/products/QuickStockModal";
 interface ProductRowActionsProps {
   productId: string;
   productName?: string;
+  onStockUpdated?: () => void;
+  onProductDeleted?: (id: string) => void;
 }
 
 const emptySubscribe = () => () => {};
 
-export default function ProductRowActions({ productId, productName = "Produto" }: ProductRowActionsProps) {
+export default function ProductRowActions({
+  productId,
+  productName = "Produto",
+  onStockUpdated,
+  onProductDeleted,
+}: ProductRowActionsProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
@@ -116,6 +125,8 @@ export default function ProductRowActions({ productId, productName = "Produto" }
         setIsDeleting(false);
       } else {
         showToast("Produto excluído com sucesso", "success");
+        if (onProductDeleted) onProductDeleted(productId);
+        router.refresh();
       }
       setIsOpen(false);
     }
@@ -194,6 +205,10 @@ export default function ProductRowActions({ productId, productName = "Produto" }
         onClose={() => setIsStockModalOpen(false)}
         productId={productId}
         productName={productName}
+        onStockSaved={() => {
+          if (onStockUpdated) onStockUpdated();
+          router.refresh();
+        }}
       />
     </div>
   );

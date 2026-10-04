@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { deleteCategory } from "@/app/admin/categories/actions";
+import { showToast } from "@/components/ui/Toast";
 
 export default function CategoryRowActions({ categoryId }: { categoryId: string }) {
   const [isDeleting, setIsDeleting] = useState(false);
@@ -12,8 +13,10 @@ export default function CategoryRowActions({ categoryId }: { categoryId: string 
     setIsDeleting(true);
     const result = await deleteCategory(categoryId);
     if (result.error) {
-      alert(result.error);
+      showToast(result.error, "error");
       setIsDeleting(false);
+    } else {
+      showToast("Categoria excluída com sucesso!", "success");
     }
   };
 

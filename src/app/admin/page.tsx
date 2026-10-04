@@ -33,11 +33,15 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
   let chartData: Array<{ name: string; total: number }> = [];
 
   try {
-    const chartStartDate = is365Days
-      ? new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
-      : is30Days
-      ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-      : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const chartStartDate = new Date();
+    if (is365Days) {
+      chartStartDate.setDate(chartStartDate.getDate() - 365);
+    } else if (is30Days) {
+      chartStartDate.setDate(chartStartDate.getDate() - 29);
+    } else {
+      chartStartDate.setDate(chartStartDate.getDate() - 6);
+    }
+    chartStartDate.setHours(0, 0, 0, 0);
 
     const [
       salesAgg,
@@ -129,12 +133,12 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
       const dailySlots = Array.from({ length: numDays }).map((_, i) => {
         const d = new Date();
         d.setDate(d.getDate() - (numDays - 1 - i));
-        const dateStr = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+        const dateStr = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" });
         return { name: dateStr, total: 0 };
       });
 
       periodOrders.forEach((order) => {
-        const dateStr = new Date(order.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+        const dateStr = new Date(order.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" });
         const dayData = dailySlots.find((d) => d.name === dateStr);
         if (dayData) {
           dayData.total += Number(order.totalAmount);

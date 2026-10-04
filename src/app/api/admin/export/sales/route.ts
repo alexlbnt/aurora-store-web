@@ -30,9 +30,11 @@ const formatPaymentMethod = (pm?: string | null) => {
     case "PIX":
       return "PIX";
     case "CREDIT_CARD":
-      return "Cartão Crédito";
+      return "Cartão de Crédito";
     case "DEBIT_CARD":
-      return "Cartão Débito";
+      return "Cartão de Débito";
+    case "BOLETO":
+      return "Boleto Bancário";
     case "CASH":
       return "Dinheiro";
     case "BANK_TRANSFER":
@@ -46,6 +48,12 @@ const formatPaymentMethod = (pm?: string | null) => {
 
 const formatShippingType = (st?: string | null) => {
   switch (st) {
+    case "SEM_FRETE":
+      return "Sem Frete (Retirada)";
+    case "PAGO_AURORA":
+      return "Pago Aurora (Grátis)";
+    case "PAGO_CLIENTE":
+      return "Pago pelo Cliente";
     case "CORREIOS_PAC":
       return "Correios PAC";
     case "CORREIOS_SEDEX":
@@ -56,8 +64,6 @@ const formatShippingType = (st?: string | null) => {
       return "Retirada";
     case "TRANSPORTADORA":
       return "Transportadora";
-    case "SEM_FRETE":
-      return "Sem Frete";
     default:
       return st || "Padrão";
   }

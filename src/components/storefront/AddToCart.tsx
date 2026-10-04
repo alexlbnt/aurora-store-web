@@ -19,7 +19,8 @@ export default function AddToCart({ product }: { product: any }) {
   const handleAddToCart = () => {
     setIsAdding(true);
 
-    const numericPrice = parseFloat(product.price.replace("R$ ", "").replace(",", "."));
+    const cleanPriceStr = String(product.price).replace("R$", "").trim().replace(/\./g, "").replace(",", ".");
+    const numericPrice = parseFloat(cleanPriceStr) || 0;
     
     addToCart({
       id: `${product.id}-${selectedColor}-${selectedSize}`,

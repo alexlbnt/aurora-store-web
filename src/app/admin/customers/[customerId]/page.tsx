@@ -273,7 +273,7 @@ export default async function CustomerDetailsPage({
 
           {/* Right Column: Edit Customer Form */}
           <div className="lg:col-span-5">
-            <CustomerForm initialData={customer} />
+            <CustomerForm initialData={customer} embedded={true} />
           </div>
         </div>
       </div>

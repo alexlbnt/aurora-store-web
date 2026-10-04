@@ -7,7 +7,7 @@ import { createCustomer, updateCustomer } from "../actions";
 import { formatPhone } from "@/lib/formatters";
 import { showToast } from "@/components/ui/Toast";
 
-export default function CustomerForm({ initialData }: { initialData?: any }) {
+export default function CustomerForm({ initialData, embedded = false }: { initialData?: any; embedded?: boolean }) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [phone, setPhone] = useState(initialData?.phone || "");
@@ -24,37 +24,44 @@ export default function CustomerForm({ initialData }: { initialData?: any }) {
         setIsPending(false);
       } else {
         showToast(initialData ? "Cliente atualizado com sucesso!" : "Cliente cadastrado com sucesso!", "success");
-        router.push("/admin/customers");
+        if (embedded) {
+          router.refresh();
+          setIsPending(false);
+        } else {
+          router.push("/admin/customers");
+        }
       }
-    } catch (error) {
+    } catch {
       showToast("Erro ao cadastrar cliente.", "error");
       setIsPending(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 pb-20 lg:pb-0">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6 sm:mb-8 gap-2">
-        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-          <Link href="/admin/customers" className="size-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 transition-colors shrink-0">
-            <span className="material-symbols-outlined text-lg">arrow_back</span>
-          </Link>
-          <nav className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium truncate">
-            <Link href="/admin/customers" className="text-slate-500 hover:text-primary transition-colors shrink-0">Clientes</Link>
-            <span className="material-symbols-outlined text-[10px] sm:text-xs text-slate-400 shrink-0">chevron_right</span>
-            <span className="text-slate-900 dark:text-white border-b-2 border-primary pb-0.5 truncate font-bold">{initialData ? 'Editar' : 'Novo'}</span>
-          </nav>
+    <form onSubmit={handleSubmit} className={`space-y-6 ${embedded ? "" : "pb-20 lg:pb-0"}`}>
+      {/* Header - Only display when not embedded */}
+      {!embedded && (
+        <div className="flex items-center justify-between mb-6 sm:mb-8 gap-2">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            <Link href="/admin/customers" className="size-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 transition-colors shrink-0">
+              <span className="material-symbols-outlined text-lg">arrow_back</span>
+            </Link>
+            <nav className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium truncate">
+              <Link href="/admin/customers" className="text-slate-500 hover:text-primary transition-colors shrink-0">Clientes</Link>
+              <span className="material-symbols-outlined text-[10px] sm:text-xs text-slate-400 shrink-0">chevron_right</span>
+              <span className="text-slate-900 dark:text-white border-b-2 border-primary pb-0.5 truncate font-bold">{initialData ? 'Editar' : 'Novo'}</span>
+            </nav>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+             <button type="submit" disabled={isPending} className="bg-primary hover:bg-primary/90 text-white px-4 sm:px-8 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                <span className="material-symbols-outlined text-sm">{isPending ? 'sync' : (initialData ? 'save' : 'person_add')}</span>
+                <span>{isPending ? 'Salvando...' : 'Salvar'}</span>
+             </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-           <button type="submit" disabled={isPending} className="bg-primary hover:bg-primary/90 text-white px-4 sm:px-8 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-              <span className="material-symbols-outlined text-sm">{isPending ? 'sync' : (initialData ? 'save' : 'person_add')}</span>
-              <span>{isPending ? 'Salvando...' : 'Salvar'}</span>
-           </button>
-        </div>
-      </div>
+      )}
 
-      <div className="max-w-3xl mx-auto w-full">
+      <div className={embedded ? "w-full" : "max-w-3xl mx-auto w-full"}>
         <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 lg:p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all">
             <div className="flex items-center gap-3 mb-6 pb-6 border-b border-slate-100 dark:border-slate-800">
               <div className="size-10 sm:size-12 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">

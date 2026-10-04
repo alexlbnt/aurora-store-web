@@ -5,7 +5,6 @@ import Link from "next/link";
 import { createOrder } from "../actions";
 import { formatPhone } from "@/lib/formatters";
 import { showToast } from "@/components/ui/Toast";
-import AdminProductImage from "@/components/admin/AdminProductImage";
 
 interface Product {
   id: string;
@@ -156,7 +155,7 @@ export default function OrderForm({
   );
 
   let discountAmount = 0;
-  const numDiscountValue = parseFloat(discountValue.replace(",", ".")) || 0;
+  const numDiscountValue = parseFloat(discountValue.replace(/\./g, "").replace(",", ".")) || 0;
   if (discountType === "FIXED") {
     discountAmount = numDiscountValue;
   } else if (discountType === "PERCENTAGE") {
@@ -184,19 +183,24 @@ export default function OrderForm({
       return;
     }
 
-    // Check stock warnings
+    // Validate variants and stock availability strictly
     for (const item of validItems) {
       const p = products.find((prod) => prod.id === item.productId);
+      if (p && p.variants.length > 0 && !item.variantId) {
+        showToast(`Por favor, selecione o tamanho e a cor para o produto "${p.name}".`, "warning");
+        return;
+      }
+
       const v = p?.variants.find((varnt) => varnt.id === item.variantId);
       if (v) {
         const availableStock = stockLocation === "ESTOQUE_A" ? v.stockA : v.stockV;
-        if (availableStock <= 0) {
+        if (availableStock < item.quantity) {
+          const stockName = stockLocation === "ESTOQUE_A" ? "Estoque Principal (A)" : "Estoque Secundário (V)";
           showToast(
-            `Atenção: A variação selecionada de "${p?.name}" está sem estoque no ${
-              stockLocation === "ESTOQUE_A" ? "Estoque-A" : "Estoque-V"
-            }.`,
-            "warning"
+            `Estoque insuficiente no ${stockName} para "${p?.name}" (${v.color} - ${v.size}). Disponível: ${availableStock} un., Solicitado: ${item.quantity} un.`,
+            "error"
           );
+          return;
         }
       }
     }
@@ -531,9 +535,8 @@ export default function OrderForm({
                   <option value="PIX">PIX</option>
                   <option value="CREDIT_CARD">Cartão de Crédito</option>
                   <option value="DEBIT_CARD">Cartão de Débito</option>
+                  <option value="BOLETO">Boleto Bancário</option>
                   <option value="CASH">Dinheiro</option>
-                  <option value="BANK_TRANSFER">Transferência</option>
-                  <option value="OTHER">Outro</option>
                 </select>
               </div>
 

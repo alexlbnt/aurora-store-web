@@ -47,13 +47,17 @@ export default async function Sales({ searchParams }: SalesPageProps) {
   if (periodParam) {
     const now = new Date();
     if (periodParam === "7d") {
-      where.createdAt = { gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) };
+      const d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      d.setHours(0, 0, 0, 0);
+      where.createdAt = { gte: d };
     } else if (periodParam === "30d") {
-      where.createdAt = { gte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) };
+      const d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      d.setHours(0, 0, 0, 0);
+      where.createdAt = { gte: d };
     } else if (periodParam === "month") {
-      where.createdAt = { gte: new Date(now.getFullYear(), now.getMonth(), 1) };
+      where.createdAt = { gte: new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0) };
     } else if (periodParam === "year") {
-      where.createdAt = { gte: new Date(now.getFullYear(), 0, 1) };
+      where.createdAt = { gte: new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0) };
     }
   }
 

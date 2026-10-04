@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { updateOrderStatus } from "@/app/admin/sales/actions";
+import { showToast } from "@/components/ui/Toast";
 
 export default function StatusUpdater({ orderId, currentStatus }: { orderId: string, currentStatus: string }) {
   const [isPending, setIsPending] = useState(false);
@@ -18,7 +19,11 @@ export default function StatusUpdater({ orderId, currentStatus }: { orderId: str
     const newStatus = e.target.value as any;
     setIsPending(true);
     const result = await updateOrderStatus(orderId, newStatus);
-    if (result.error) alert(result.error);
+    if (result.error) {
+      showToast(result.error, "error");
+    } else {
+      showToast("Status do pedido atualizado!", "success");
+    }
     setIsPending(false);
   };
 

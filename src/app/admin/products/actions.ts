@@ -6,8 +6,25 @@ import { handleDatabaseError } from "@/lib/error-handler";
 
 export async function deleteProduct(productId: string) {
   try {
+    // Check if product is part of any order
+    const orderItemsCount = await prisma.orderItem.count({
+      where: { productId }
+    });
+
+    if (orderItemsCount > 0) {
+      return {
+        success: false,
+        error: "Este produto não pode ser excluído pois possui pedidos e histórico de vendas registrados. Recomendamos zerar seu estoque para retirá-lo da loja."
+      };
+    }
+
     // Delete variants associated with the product first (or rely on Cascade if configured)
     await prisma.variant.deleteMany({
+      where: { productId }
+    });
+
+    // Delete images
+    await prisma.productImage.deleteMany({
       where: { productId }
     });
 
@@ -18,9 +35,9 @@ export async function deleteProduct(productId: string) {
 
     revalidatePath("/admin/products");
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to delete product:", error);
-    return { success: false, error: "Falha ao excluir o produto. Tente novamente." };
+    return { success: false, error: handleDatabaseError(error, "Falha ao excluir o produto.") };
   }
 }
 
@@ -112,16 +129,14 @@ export async function editProduct(productId: string, formData: FormData) {
         basePrice: parseFloat(price),
         categoryId,
         details,
-        ...(images.length > 0 && { 
-          images: {
-            deleteMany: {},
-            create: images.map((url, i) => ({
-              url,
-              order: i,
-              isDisplay: i === 0
-            }))
-          } 
-        }),
+        images: {
+          deleteMany: {},
+          create: images.map((url, i) => ({
+            url,
+            order: i,
+            isDisplay: i === 0
+          }))
+        },
         variants: {
           create: variantsMatrix.map((v: any) => ({
             sku: v.sku || `AUR-${v.size}-${v.color}-${Math.random().toString(36).substring(7).toUpperCase()}`,

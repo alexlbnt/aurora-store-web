@@ -25,13 +25,27 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
 
   if (!order) return notFound();
 
+  const variantIds = order.items.map(i => i.variantId).filter(Boolean) as string[];
+  const variants = variantIds.length > 0
+    ? await prisma.variant.findMany({
+        where: { id: { in: variantIds } },
+        select: { id: true, color: true, size: true, sku: true }
+      })
+    : [];
+  const variantMap = new Map(variants.map(v => [v.id, v]));
+
   const shippingLabels: Record<string, string> = {
-    SEM_FRETE: "Sem Frete",
-    PAGO_AURORA: "Pago Aurora",
+    SEM_FRETE: "Sem Frete (Retirada)",
+    PAGO_AURORA: "Pago Aurora (Grátis)",
     PAGO_CLIENTE: "Pago pelo Cliente"
   };
 
-  const itemsText = order.items.map(item => `▫️ ${item.quantity}x ${item.product.name} - R$ ${(Number(item.price) * item.quantity).toFixed(2).replace('.', ',')}`).join('\n');
+  const itemsText = order.items.map(item => {
+    const v = item.variantId ? variantMap.get(item.variantId) : null;
+    const vInfo = v ? ` (${v.color} - ${v.size})` : "";
+    return `▫️ ${item.quantity}x ${item.product.name}${vInfo} - R$ ${(Number(item.price) * item.quantity).toFixed(2).replace('.', ',')}`;
+  }).join('\n');
+
   let receiptText = `*Resumo do Pedido:*\n${itemsText}\n\n`;
   const subtotal = Number(order.totalAmount) + Number(order.discountAmount || 0);
   
@@ -95,24 +109,34 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
               Itens do Pedido ({order.items.length})
             </h3>
             <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
-              {order.items.map(item => (
-                <div key={item.id} className="py-3 sm:py-4 flex items-center gap-3 sm:gap-4">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 overflow-hidden relative">
-                    <AdminProductImage
-                      src={item.product.images && item.product.images.length > 0 ? item.product.images[0].url : ""}
-                      alt={item.product.name}
-                    />
+              {order.items.map(item => {
+                const v = item.variantId ? variantMap.get(item.variantId) : null;
+                return (
+                  <div key={item.id} className="py-3 sm:py-4 flex items-center gap-3 sm:gap-4">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 overflow-hidden relative">
+                      <AdminProductImage
+                        src={item.product.images && item.product.images.length > 0 ? item.product.images[0].url : ""}
+                        alt={item.product.name}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100 truncate">{item.product.name}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-xs sm:text-sm text-slate-500">Qtd: <span className="font-medium text-slate-700 dark:text-slate-300">{item.quantity}</span></p>
+                        {v && (
+                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            {v.color} • {v.size}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100">R$ {Number(item.price).toFixed(2).replace('.', ',')}</p>
+                      <p className="text-[11px] sm:text-xs text-slate-500 font-medium mt-0.5">Total: R$ {((Number(item.price) * item.quantity)).toFixed(2).replace('.', ',')}</p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100 truncate">{item.product.name}</p>
-                    <p className="text-xs sm:text-sm text-slate-500">Qtd: <span className="font-medium text-slate-700 dark:text-slate-300">{item.quantity}</span></p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100">R$ {Number(item.price).toFixed(2).replace('.', ',')}</p>
-                    <p className="text-[11px] sm:text-xs text-slate-500 font-medium mt-0.5">Total: R$ {((Number(item.price) * item.quantity)).toFixed(2).replace('.', ',')}</p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div className="mt-6 pt-5 bg-slate-50 dark:bg-slate-800/20 -mx-4 -mb-4 sm:-mx-6 sm:-mb-6 p-4 sm:p-6 rounded-b-xl border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2 font-bold">
               {order.discountAmount && Number(order.discountAmount) > 0 ? (
@@ -148,12 +172,24 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
               Cliente
             </h3>
             <div className="flex items-center gap-3 mb-4">
-              <div className="size-11 sm:size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-base sm:text-lg border border-primary/20 shrink-0">
+              <Link
+                href={`/admin/customers/${order.customer.id}`}
+                className="size-11 sm:size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-base sm:text-lg border border-primary/20 shrink-0 hover:bg-primary/20 transition-colors"
+                title="Ver perfil completo do cliente"
+              >
                 {order.customer.name.substring(0, 2).toUpperCase()}
-              </div>
+              </Link>
               <div className="min-w-0 flex-1">
-                <p className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100 truncate">{order.customer.name}</p>
-                <p className="text-xs sm:text-sm text-slate-500 truncate">{order.customer.email}</p>
+                <Link
+                  href={`/admin/customers/${order.customer.id}`}
+                  className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100 truncate hover:text-primary transition-colors block"
+                  title="Ver perfil completo do cliente"
+                >
+                  {order.customer.name}
+                </Link>
+                <p className="text-xs sm:text-sm text-slate-500 truncate">
+                  {order.customer.email || "E-mail não informado"}
+                </p>
               </div>
             </div>
             {order.customer.phone && (

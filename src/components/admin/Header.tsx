@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { Search, Menu, PanelLeftClose, PanelLeft } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAdminSidebar } from "./AdminSidebarContext";
 import AdminNotificationsPopover from "./AdminNotificationsPopover";
 
@@ -11,9 +11,23 @@ export default function Header({
 }: {
   title?: string;
 }) {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const pathname = usePathname();
   const { isCollapsed, toggleCollapsed, toggleMobile } = useAdminSidebar();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    const q = encodeURIComponent(searchQuery.trim());
+    if (pathname.startsWith("/admin/products")) {
+      router.push(`/admin/products?q=${q}`);
+    } else if (pathname.startsWith("/admin/customers")) {
+      router.push(`/admin/customers?q=${q}`);
+    } else {
+      router.push(`/admin/sales?q=${q}`);
+    }
+  };
 
   const displayTitle = useMemo(() => {
     if (title && title !== "Visão Geral") return title;
@@ -65,7 +79,7 @@ export default function Header({
       </div>
 
       <div className="flex items-center gap-4 lg:gap-6">
-        <div className="relative hidden md:block group">
+        <form onSubmit={handleSearch} className="relative hidden md:block group">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"
             aria-hidden="true"
@@ -78,7 +92,7 @@ export default function Header({
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 pr-4 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 rounded-lg text-sm focus:ring-1 focus:ring-primary focus:border-primary w-56 lg:w-64 outline-none transition-all placeholder:text-slate-400 text-slate-900 dark:text-white"
           />
-        </div>
+        </form>
         <div className="flex items-center gap-2 sm:gap-3">
           <AdminNotificationsPopover />
         </div>

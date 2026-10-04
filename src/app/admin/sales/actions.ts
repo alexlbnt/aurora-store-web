@@ -6,28 +6,109 @@ import { handleDatabaseError } from "@/lib/error-handler";
 
 export async function updateOrderStatus(orderId: string, status: "PENDING" | "PAID" | "SHIPPED" | "DELIVERED" | "CANCELED") {
   try {
-    await prisma.order.update({
+    const currentOrder = await prisma.order.findUnique({
       where: { id: orderId },
-      data: { status }
+      include: { items: true }
     });
+
+    if (!currentOrder) {
+      return { error: "Pedido não encontrado." };
+    }
+
+    if (currentOrder.status === status) {
+      return { success: true };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Se estava CANCELADO e agora vai para outro status (reativação): debitar do estoque
+      if (currentOrder.status === "CANCELED" && status !== "CANCELED") {
+        for (const item of currentOrder.items) {
+          if (item.variantId) {
+            const v = await tx.variant.findUnique({ where: { id: item.variantId }, include: { product: true } });
+            if (v) {
+              const currentStock = currentOrder.stockLocation === "ESTOQUE_A" ? v.stockA : v.stockV;
+              if (currentStock < item.quantity) {
+                const stockName = currentOrder.stockLocation === "ESTOQUE_A" ? "Estoque Principal (A)" : "Estoque Secundário (V)";
+                throw new Error(
+                  `Estoque insuficiente no ${stockName} para reativar "${v.product.name}" (${v.color} - ${v.size}). Disponível: ${currentStock} un., Solicitado: ${item.quantity} un.`
+                );
+              }
+              await tx.variant.update({
+                where: { id: item.variantId },
+                data: currentOrder.stockLocation === "ESTOQUE_A"
+                  ? { stockA: { decrement: item.quantity } }
+                  : { stockV: { decrement: item.quantity } }
+              });
+            }
+          }
+        }
+      }
+
+      // Se NÃO estava cancelado e agora está sendo CANCELADO: devolver ao estoque
+      if (currentOrder.status !== "CANCELED" && status === "CANCELED") {
+        for (const item of currentOrder.items) {
+          if (item.variantId) {
+            await tx.variant.update({
+              where: { id: item.variantId },
+              data: currentOrder.stockLocation === "ESTOQUE_A"
+                ? { stockA: { increment: item.quantity } }
+                : { stockV: { increment: item.quantity } }
+            });
+          }
+        }
+      }
+
+      await tx.order.update({
+        where: { id: orderId },
+        data: { status }
+      });
+    });
+
     revalidatePath(`/admin/sales/${orderId}`);
     revalidatePath("/admin/sales");
     revalidatePath("/admin");
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
+    console.error("Error updating order status:", error);
     return { error: handleDatabaseError(error, "Não foi possível alterar o status deste pedido.") };
   }
 }
 
 export async function deleteOrder(orderId: string) {
   try {
-    await prisma.order.delete({
-      where: { id: orderId }
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { items: true }
     });
+
+    if (!order) {
+      return { error: "Pedido não encontrado." };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Se o pedido não estava cancelado, devolver os itens ao estoque antes de excluir
+      if (order.status !== "CANCELED") {
+        for (const item of order.items) {
+          if (item.variantId) {
+            await tx.variant.update({
+              where: { id: item.variantId },
+              data: order.stockLocation === "ESTOQUE_A"
+                ? { stockA: { increment: item.quantity } }
+                : { stockV: { increment: item.quantity } }
+            });
+          }
+        }
+      }
+
+      await tx.order.delete({
+        where: { id: orderId }
+      });
+    });
+
     revalidatePath("/admin/sales");
     revalidatePath("/admin");
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error deleting order:", error);
     return { error: handleDatabaseError(error, "Não foi possível excluir o pedido. Verifique se existem dependências.") };
   }
@@ -49,7 +130,12 @@ export async function createOrder(formData: FormData) {
     const customerPhone = (formData.get("customerPhone") as string)?.trim();
     const itemsJson = formData.get("items") as string;
     const stockLocation = (formData.get("stockLocation") as "ESTOQUE_A" | "ESTOQUE_V") || "ESTOQUE_A";
-    const paymentMethod = formData.get("paymentMethod") as string | null;
+    const paymentMethodRaw = formData.get("paymentMethod") as string | null;
+    const validPaymentMethods = ["CREDIT_CARD", "DEBIT_CARD", "PIX", "BOLETO", "CASH"];
+    const paymentMethod = paymentMethodRaw && validPaymentMethods.includes(paymentMethodRaw)
+      ? (paymentMethodRaw as "CREDIT_CARD" | "DEBIT_CARD" | "PIX" | "BOLETO" | "CASH")
+      : (paymentMethodRaw === "BANK_TRANSFER" ? "PIX" : "PIX");
+
     const shippingTypeRaw = formData.get("shippingType") as string | null;
     const validShippingTypes = ["SEM_FRETE", "PAGO_AURORA", "PAGO_CLIENTE"];
     const shippingType = shippingTypeRaw && validShippingTypes.includes(shippingTypeRaw)
@@ -60,7 +146,7 @@ export async function createOrder(formData: FormData) {
     // Discount fields
     const discountType = formData.get("discountType") as string | null;
     const discountValueStr = formData.get("discountValue") as string | null;
-    let discountValue = discountValueStr ? parseFloat(discountValueStr.replace(',', '.')) : null;
+    let discountValue = discountValueStr ? parseFloat(discountValueStr.replace(/\./g, "").replace(",", ".")) : null;
     if (isNaN(discountValue as number)) discountValue = null;
 
     const items: OrderItemParams[] = itemsJson ? JSON.parse(itemsJson) : [];
@@ -119,7 +205,41 @@ export async function createOrder(formData: FormData) {
         });
       }
 
-      // 2. Create Order
+      // 2. Validate Variants & Stock Availability
+      for (const item of items) {
+        if (!item.variantId) {
+          const product = await tx.product.findUnique({
+            where: { id: item.productId },
+            include: { variants: true }
+          });
+          if (product && product.variants.length > 0) {
+            throw new Error(`Por favor, selecione o tamanho e a cor para o produto "${product.name}".`);
+          }
+        } else {
+          const variant = await tx.variant.findUnique({
+            where: { id: item.variantId },
+            include: { product: true }
+          });
+          if (!variant) {
+            throw new Error("Variação do produto não encontrada.");
+          }
+          const availableStock = stockLocation === "ESTOQUE_A" ? variant.stockA : variant.stockV;
+          if (availableStock < item.quantity) {
+            const stockName = stockLocation === "ESTOQUE_A" ? "Estoque Principal (A)" : "Estoque Secundário (V)";
+            throw new Error(
+              `Estoque insuficiente no ${stockName} para "${variant.product.name}" (${variant.color} - ${variant.size}). Disponível: ${availableStock} un., Solicitado: ${item.quantity} un.`
+            );
+          }
+          await tx.variant.update({
+            where: { id: item.variantId },
+            data: stockLocation === "ESTOQUE_A" 
+              ? { stockA: { decrement: item.quantity } }
+              : { stockV: { decrement: item.quantity } }
+          });
+        }
+      }
+
+      // 3. Create Order
       const newOrder = await tx.order.create({
         data: {
           orderNumber,
@@ -132,7 +252,7 @@ export async function createOrder(formData: FormData) {
           discountValue,
           discountAmount,
           totalAmount: totalAmount,
-          paymentMethod: paymentMethod as any,
+          paymentMethod: paymentMethod,
           items: {
             create: items.map(item => ({
               productId: item.productId,
@@ -143,21 +263,6 @@ export async function createOrder(formData: FormData) {
           }
         }
       });
-
-      // 3. Deduct stock from Variants if applicable
-      for (const item of items) {
-        if (item.variantId) {
-          const variantExists = await tx.variant.findUnique({ where: { id: item.variantId } });
-          if (variantExists) {
-            await tx.variant.update({
-              where: { id: item.variantId },
-              data: stockLocation === "ESTOQUE_A" 
-                ? { stockA: { decrement: item.quantity } }
-                : { stockV: { decrement: item.quantity } }
-            });
-          }
-        }
-      }
 
       return newOrder;
     });

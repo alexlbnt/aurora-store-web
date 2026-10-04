@@ -34,7 +34,7 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
     basePrice: Number(product.basePrice),
     variants: product.variants.map(v => ({
       ...v,
-      price: Number(v.price)
+      price: v.price !== null ? Number(v.price) : null
     }))
   };
 
