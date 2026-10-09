@@ -9,6 +9,8 @@ import AdminMobileNav from "./AdminMobileNav";
 import RouteProgressBar from "./RouteProgressBar";
 import ToastContainer from "@/components/ui/Toast";
 import { ConfirmProvider } from "./ui/ConfirmDialog";
+import ConnectionBanner from "./pwa/ConnectionBanner";
+import InstallAppBanner from "./pwa/InstallAppBanner";
 
 function AdminLayoutInner({
   sidebar,
@@ -61,7 +63,9 @@ function AdminLayoutInner({
       {/* Conteúdo Principal */}
       <main id="conteudo" tabIndex={-1} className="flex-1 flex flex-col min-w-0 overflow-y-auto w-full lg:w-auto transition-all duration-300 focus:outline-none">
         <Header title={pageTitle} />
+        <ConnectionBanner />
         <div className="flex-1 p-3.5 sm:p-4 lg:p-8 overflow-x-hidden pb-24 lg:pb-8">
+          <InstallAppBanner />
           {children}
         </div>
       </main>
