@@ -72,7 +72,7 @@ function AdminPaginationInner({
 
   if (totalItems === 0) {
     return (
-      <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/20 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
+      <div className="px-6 py-4 bg-accent-cream border-t border-primary/10 flex items-center justify-between text-sm text-primary/70">
         <span>Nenhum registro encontrado</span>
       </div>
     );
@@ -91,15 +91,15 @@ function AdminPaginationInner({
   }
 
   return (
-    <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/20 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div className="px-6 py-4 bg-accent-cream border-t border-primary/10 flex flex-col sm:flex-row items-center justify-between gap-4">
       <div className="flex items-center gap-3">
-        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+        <p className="text-sm text-primary/70">
           Mostrando{" "}
-          <span className="font-bold text-slate-700 dark:text-slate-200">
+          <span className="font-semibold text-primary">
             {startItem} a {endItem}
           </span>{" "}
           de{" "}
-          <span className="font-bold text-slate-700 dark:text-slate-200">
+          <span className="font-semibold text-primary">
             {totalItems}
           </span>{" "}
           {itemLabel}
@@ -122,8 +122,9 @@ function AdminPaginationInner({
             <button
               type="button"
               onClick={() => onPageChange(currentPage - 1)}
-              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center cursor-pointer shadow-sm hover:border-slate-300 active:scale-95"
-              title="Página Anterior"
+              className="size-10 rounded-lg border border-primary/20 bg-white text-primary hover:bg-primary/5 transition-colors flex items-center justify-center cursor-pointer"
+              title="Página anterior"
+              aria-label="Página anterior"
             >
               <span className="material-symbols-outlined text-sm">
                 chevron_left
@@ -134,10 +135,11 @@ function AdminPaginationInner({
               href={createPageUrl(currentPage - 1)}
               prefetch={true}
               onClick={(e) => handleLinkClick(e, currentPage - 1)}
-              className={`p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center cursor-pointer shadow-sm ${
+              className={`size-10 rounded-lg border border-primary/20 bg-white text-primary hover:bg-primary/5 transition-colors flex items-center justify-center cursor-pointer ${
                 isPending ? "opacity-60 cursor-wait" : ""
               }`}
-              title="Página Anterior"
+              title="Página anterior"
+              aria-label="Página anterior"
             >
               {targetPage === currentPage - 1 ? (
                 <span className="material-symbols-outlined text-sm animate-spin text-primary">
@@ -154,7 +156,8 @@ function AdminPaginationInner({
           <button
             type="button"
             disabled
-            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-300 dark:text-slate-600 bg-white dark:bg-slate-800 opacity-50 cursor-not-allowed"
+            aria-label="Página anterior"
+            className="size-10 rounded-lg border border-primary/10 text-primary/40 bg-white opacity-50 cursor-not-allowed flex items-center justify-center"
           >
             <span className="material-symbols-outlined text-sm">
               chevron_left
@@ -171,17 +174,17 @@ function AdminPaginationInner({
           return (
             <React.Fragment key={p}>
               {showEllipsis && (
-                <span className="text-xs text-slate-400 px-1">...</span>
+                <span className="text-sm text-primary/50 px-1" aria-hidden="true">…</span>
               )}
               {p === currentPage && (!isPending || onPageChange) ? (
-                <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white text-xs font-bold shadow-sm select-none">
+                <span className="size-10 flex items-center justify-center rounded-lg bg-primary text-white text-sm font-semibold select-none" aria-current="page">
                   {p}
                 </span>
               ) : onPageChange ? (
                 <button
                   type="button"
                   onClick={() => onPageChange(p)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-transparent hover:border-slate-200 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-medium transition-all cursor-pointer active:scale-95"
+                  className="size-10 flex items-center justify-center rounded-lg border border-transparent hover:border-primary/20 hover:bg-white text-primary text-sm font-medium transition-colors cursor-pointer"
                 >
                   {p}
                 </button>
@@ -190,10 +193,10 @@ function AdminPaginationInner({
                   href={createPageUrl(p)}
                   prefetch={true}
                   onClick={(e) => handleLinkClick(e, p)}
-                  className={`w-8 h-8 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${
+                  className={`size-10 flex items-center justify-center rounded-lg border text-sm font-medium transition-colors ${
                     isTarget
                       ? "bg-primary/20 text-primary border-primary/30 font-bold animate-pulse"
-                      : "border-transparent hover:border-slate-200 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+                      : "border-transparent hover:border-primary/20 hover:bg-white text-primary"
                   } ${isPending ? "cursor-wait" : ""}`}
                 >
                   {isTarget ? (
@@ -215,8 +218,9 @@ function AdminPaginationInner({
             <button
               type="button"
               onClick={() => onPageChange(currentPage + 1)}
-              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center cursor-pointer shadow-sm hover:border-slate-300 active:scale-95"
-              title="Próxima Página"
+              className="size-10 rounded-lg border border-primary/20 bg-white text-primary hover:bg-primary/5 transition-colors flex items-center justify-center cursor-pointer"
+              title="Próxima página"
+              aria-label="Próxima página"
             >
               <span className="material-symbols-outlined text-sm">
                 chevron_right
@@ -227,10 +231,11 @@ function AdminPaginationInner({
               href={createPageUrl(currentPage + 1)}
               prefetch={true}
               onClick={(e) => handleLinkClick(e, currentPage + 1)}
-              className={`p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center cursor-pointer shadow-sm ${
+              className={`size-10 rounded-lg border border-primary/20 bg-white text-primary hover:bg-primary/5 transition-colors flex items-center justify-center cursor-pointer ${
                 isPending ? "opacity-60 cursor-wait" : ""
               }`}
-              title="Próxima Página"
+              title="Próxima página"
+              aria-label="Próxima página"
             >
               {targetPage === currentPage + 1 ? (
                 <span className="material-symbols-outlined text-sm animate-spin text-primary">
@@ -247,7 +252,8 @@ function AdminPaginationInner({
           <button
             type="button"
             disabled
-            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-300 dark:text-slate-600 bg-white dark:bg-slate-800 opacity-50 cursor-not-allowed"
+            aria-label="Próxima página"
+            className="size-10 rounded-lg border border-primary/10 text-primary/40 bg-white opacity-50 cursor-not-allowed flex items-center justify-center"
           >
             <span className="material-symbols-outlined text-sm">
               chevron_right
@@ -263,7 +269,7 @@ export default function AdminPagination(props: AdminPaginationProps) {
   return (
     <Suspense
       fallback={
-        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/20 border-t border-slate-200 dark:border-slate-800 h-14 animate-pulse" />
+        <div className="px-6 py-4 bg-accent-cream border-t border-primary/10 h-14 animate-pulse" />
       }
     >
       <AdminPaginationInner {...props} />

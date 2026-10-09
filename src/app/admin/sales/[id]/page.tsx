@@ -6,6 +6,12 @@ import StatusUpdater from "@/components/admin/sales/StatusUpdater";
 import ShippingUpdater from "@/components/admin/sales/ShippingUpdater";
 import OrderNotesCard from "@/components/admin/sales/OrderNotesCard";
 import AdminProductImage from "@/components/admin/AdminProductImage";
+import { StockBadge } from "@/components/admin/ui/StatusBadge";
+import { formatBRL, formatDateTime, whatsappToCustomer } from "@/lib/format";
+import { PAYMENT_LABEL, SHIPPING_LABEL } from "@/lib/order-meta";
+
+const cardClass = "rounded-lg border border-primary/10 bg-white p-4 sm:p-6";
+const cardTitleClass = "mb-4 flex items-center gap-2 text-lg font-semibold text-primary";
 
 export default async function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const param = await params;
@@ -16,227 +22,229 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
       items: {
         include: {
           product: {
-            include: { images: true }
-          }
-        }
-      }
-    }
+            include: { images: true },
+          },
+        },
+      },
+    },
   });
 
   if (!order) return notFound();
 
-  const variantIds = order.items.map(i => i.variantId).filter(Boolean) as string[];
-  const variants = variantIds.length > 0
-    ? await prisma.variant.findMany({
-        where: { id: { in: variantIds } },
-        select: { id: true, color: true, size: true, sku: true }
-      })
-    : [];
-  const variantMap = new Map(variants.map(v => [v.id, v]));
+  const variantIds = order.items.map((i) => i.variantId).filter(Boolean) as string[];
+  const variants =
+    variantIds.length > 0
+      ? await prisma.variant.findMany({
+          where: { id: { in: variantIds } },
+          select: { id: true, color: true, size: true, sku: true },
+        })
+      : [];
+  const variantMap = new Map(variants.map((v) => [v.id, v]));
 
-  const shippingLabels: Record<string, string> = {
-    SEM_FRETE: "Sem Frete (Retirada)",
-    PAGO_AURORA: "Pago Aurora (Grátis)",
-    PAGO_CLIENTE: "Pago pelo Cliente"
-  };
+  const itemsText = order.items
+    .map((item) => {
+      const v = item.variantId ? variantMap.get(item.variantId) : null;
+      const vInfo = v ? ` (${v.color} - ${v.size})` : "";
+      return `▫️ ${item.quantity}x ${item.product.name}${vInfo} - ${formatBRL(Number(item.price) * item.quantity)}`;
+    })
+    .join("\n");
 
-  const itemsText = order.items.map(item => {
-    const v = item.variantId ? variantMap.get(item.variantId) : null;
-    const vInfo = v ? ` (${v.color} - ${v.size})` : "";
-    return `▫️ ${item.quantity}x ${item.product.name}${vInfo} - R$ ${(Number(item.price) * item.quantity).toFixed(2).replace('.', ',')}`;
-  }).join('\n');
+  const discount = Number(order.discountAmount || 0);
+  const subtotal = Number(order.totalAmount) + discount;
 
-  let receiptText = `*Resumo do Pedido:*\n${itemsText}\n\n`;
-  const subtotal = Number(order.totalAmount) + Number(order.discountAmount || 0);
-  
-  if (order.discountAmount && Number(order.discountAmount) > 0) {
-    receiptText += `Subtotal: R$ ${subtotal.toFixed(2).replace('.', ',')}\n`;
-    receiptText += `Desconto: - R$ ${Number(order.discountAmount).toFixed(2).replace('.', ',')}\n`;
+  let receiptText = `*Resumo do pedido:*\n${itemsText}\n\n`;
+  if (discount > 0) {
+    receiptText += `Subtotal: ${formatBRL(subtotal)}\n`;
+    receiptText += `Desconto: - ${formatBRL(discount)}\n`;
   }
-  receiptText += `*Total: R$ ${Number(order.totalAmount).toFixed(2).replace('.', ',')}*\n`;
-  receiptText += `Frete: ${shippingLabels[order.shippingType] || "Sem Frete"}\n`;
+  receiptText += `*Total: ${formatBRL(order.totalAmount)}*\n`;
+  receiptText += `Frete: ${SHIPPING_LABEL[order.shippingType] || "Sem frete"}\n`;
+  if (order.notes) receiptText += `Observações: ${order.notes}\n`;
 
-  if (order.notes) {
-    receiptText += `Observações: ${order.notes}\n`;
-  }
+  const textMessage = `Olá, ${order.customer.name}! Recebemos o seu pedido ${order.orderNumber}.\n\n${receiptText}\nVamos combinar os próximos passos por aqui. Muito obrigada pela preferência!`;
+  const waLink = whatsappToCustomer(order.customer.phone, textMessage);
+  const waPlainLink = whatsappToCustomer(order.customer.phone);
 
-  const textMessage = `Olá, ${order.customer.name}! Seu pedido #${order.orderNumber} foi criado com sucesso.\n\n${receiptText}\nEm breve enviaremos atualizações sobre o envio. Muito obrigado(a) pela preferência!`;
-  const waLink = order.customer.phone ? `https://wa.me/55${order.customer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(textMessage)}` : null;
+  // Pedido do site traz o endereço no próprio pedido; o do painel usa o cadastro do cliente, se houver.
+  const address = order.shippingAddress || order.customer.address;
+  const city = order.shippingCity || order.customer.city;
+  const state = order.shippingState || order.customer.state;
+  const cep = order.shippingCep || order.customer.cep;
+  const hasAddress = Boolean(address || city || cep);
+  const addressText = [address, [city, state].filter(Boolean).join(" - "), cep].filter(Boolean).join("\n");
 
   return (
     <AdminLayout>
-      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <Link href="/admin/sales" className="text-xs sm:text-sm text-primary hover:underline flex items-center gap-1 mb-2 w-max transition-colors">
-            <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+          <Link
+            href="/admin/sales"
+            className="mb-2 flex w-max items-center gap-1 text-sm text-accent-blue underline-offset-4 hover:text-primary hover:underline"
+          >
+            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_back</span>
             Voltar para vendas
           </Link>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-              Pedido #{order.orderNumber}
-            </h1>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <h2 className="text-2xl font-semibold text-primary">Pedido {order.orderNumber}</h2>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-normal text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
-                {new Date(order.createdAt).toLocaleString('pt-BR')}
-              </span>
-              <span className={`text-xs font-bold px-2 py-0.5 rounded uppercase ${order.stockLocation === 'ESTOQUE_A' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400' : 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/40 dark:text-fuchsia-400'}`}>
-                {order.stockLocation === 'ESTOQUE_A' ? 'Estoque-A' : 'Estoque-V'}
-              </span>
+              <span className="text-sm text-primary/70">{formatDateTime(order.createdAt)}</span>
+              <StockBadge location={order.stockLocation} />
             </div>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {waLink && (
-            <a href={waLink} target="_blank" rel="noopener noreferrer" className="flex-1 sm:flex-none bg-emerald-500 hover:bg-emerald-600 text-white px-3 sm:px-4 h-10 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm">
-               <span className="material-symbols-outlined text-[18px]">forum</span>
-               <span>WhatsApp</span>
+            <a
+              href={waLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/25 bg-white px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary/5 sm:flex-none"
+            >
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">forum</span>
+              Enviar resumo no WhatsApp
             </a>
           )}
-          <div className="flex-1 sm:flex-none">
-            <ShippingUpdater orderId={order.id} currentShipping={order.shippingType as any} />
-          </div>
           <div className="flex-1 sm:flex-none">
             <StatusUpdater orderId={order.id} currentStatus={order.status} />
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-4 sm:p-6">
-            <h3 className="font-bold text-base sm:text-lg mb-4 text-slate-900 dark:text-white flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">inventory_2</span>
-              Itens do Pedido ({order.items.length})
-            </h3>
-            <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
-              {order.items.map(item => {
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <section className={cardClass} aria-labelledby="itens">
+            <h2 id="itens" className={cardTitleClass}>
+              <span className="material-symbols-outlined text-primary" aria-hidden="true">inventory_2</span>
+              Itens do pedido ({order.items.length})
+            </h2>
+            <ul className="divide-y divide-primary/10">
+              {order.items.map((item) => {
                 const v = item.variantId ? variantMap.get(item.variantId) : null;
                 return (
-                  <div key={item.id} className="py-3 sm:py-4 flex items-center gap-3 sm:gap-4">
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 overflow-hidden relative">
+                  <li key={item.id} className="flex items-center gap-3 py-3 sm:gap-4 sm:py-4">
+                    <div className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-primary/10 bg-accent-soft sm:size-16">
                       <AdminProductImage
                         src={item.product.images && item.product.images.length > 0 ? item.product.images[0].url : ""}
                         alt={item.product.name}
                       />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100 truncate">{item.product.name}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-xs sm:text-sm text-slate-500">Qtd: <span className="font-medium text-slate-700 dark:text-slate-300">{item.quantity}</span></p>
-                        {v && (
-                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                            {v.color} • {v.size}
-                          </span>
-                        )}
-                      </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium text-primary">{item.product.name}</p>
+                      <p className="mt-0.5 text-sm text-primary/70">
+                        {item.quantity} {item.quantity === 1 ? "unidade" : "unidades"}
+                        {v && ` · ${v.color}, tamanho ${v.size}`}
+                      </p>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100">R$ {Number(item.price).toFixed(2).replace('.', ',')}</p>
-                      <p className="text-[11px] sm:text-xs text-slate-500 font-medium mt-0.5">Total: R$ {((Number(item.price) * item.quantity)).toFixed(2).replace('.', ',')}</p>
+                    <div className="shrink-0 text-right">
+                      <p className="font-semibold text-primary">{formatBRL(Number(item.price) * item.quantity)}</p>
+                      {item.quantity > 1 && <p className="mt-0.5 text-sm text-primary/60">{formatBRL(item.price)} cada</p>}
                     </div>
-                  </div>
+                  </li>
                 );
               })}
-            </div>
-            <div className="mt-6 pt-5 bg-slate-50 dark:bg-slate-800/20 -mx-4 -mb-4 sm:-mx-6 sm:-mb-6 p-4 sm:p-6 rounded-b-xl border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2 font-bold">
-              {order.discountAmount && Number(order.discountAmount) > 0 ? (
+            </ul>
+            <dl className="-mx-4 -mb-4 mt-6 flex flex-col gap-2 rounded-b-lg border-t border-primary/10 bg-accent-cream p-4 sm:-mx-6 sm:-mb-6 sm:p-6">
+              {discount > 0 && (
                 <>
-                  <div className="flex justify-between items-center text-xs sm:text-sm font-medium text-slate-500">
-                    <span>Subtotal</span>
-                    <span>R$ {(Number(order.totalAmount) + Number(order.discountAmount)).toFixed(2).replace('.', ',')}</span>
+                  <div className="flex items-center justify-between text-sm text-primary/70">
+                    <dt>Subtotal</dt>
+                    <dd>{formatBRL(subtotal)}</dd>
                   </div>
-                  <div className="flex justify-between items-center text-xs sm:text-sm font-bold text-emerald-500">
-                    <span>Desconto</span>
-                    <span>- R$ {Number(order.discountAmount).toFixed(2).replace('.', ',')}</span>
-                  </div>
-                  <div className="border-t border-slate-200 dark:border-slate-700/50 mt-2 pt-2 flex justify-between items-center">
-                    <span className="text-sm sm:text-base text-slate-700 dark:text-slate-300">Total do Pedido</span>
-                    <span className="text-primary text-xl sm:text-2xl tracking-tight">R$ {Number(order.totalAmount).toFixed(2).replace('.', ',')}</span>
+                  <div className="flex items-center justify-between text-sm text-primary/70">
+                    <dt>Desconto</dt>
+                    <dd>− {formatBRL(discount)}</dd>
                   </div>
                 </>
-              ) : (
-                <div className="flex justify-between items-center">
-                  <span className="text-sm sm:text-base text-slate-700 dark:text-slate-300">Total do Pedido</span>
-                  <span className="text-primary text-xl sm:text-2xl tracking-tight">R$ {Number(order.totalAmount).toFixed(2).replace('.', ',')}</span>
-                </div>
               )}
-            </div>
-          </div>
+              <div className="flex items-center justify-between">
+                <dt className="font-semibold text-primary">Total do pedido</dt>
+                <dd className="text-2xl font-semibold text-primary">{formatBRL(order.totalAmount)}</dd>
+              </div>
+            </dl>
+          </section>
         </div>
 
         <div className="space-y-6">
-          {/* Cliente */}
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-4 sm:p-6">
-            <h3 className="font-bold text-base sm:text-lg mb-4 text-slate-900 dark:text-white flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">person</span>
+          <section className={cardClass} aria-labelledby="cliente">
+            <h2 id="cliente" className={cardTitleClass}>
+              <span className="material-symbols-outlined text-primary" aria-hidden="true">person</span>
               Cliente
-            </h3>
-            <div className="flex items-center gap-3 mb-4">
+            </h2>
+            <div className="mb-4 flex items-center gap-3">
               <Link
                 href={`/admin/customers/${order.customer.id}`}
-                className="size-11 sm:size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-base sm:text-lg border border-primary/20 shrink-0 hover:bg-primary/20 transition-colors"
-                title="Ver perfil completo do cliente"
+                className="flex size-11 shrink-0 items-center justify-center rounded-full bg-accent-soft font-semibold text-primary transition-colors hover:bg-primary/15"
+                aria-label={`Abrir o cadastro de ${order.customer.name}`}
+                title="Abrir o cadastro do cliente"
               >
                 {order.customer.name.substring(0, 2).toUpperCase()}
               </Link>
               <div className="min-w-0 flex-1">
                 <Link
                   href={`/admin/customers/${order.customer.id}`}
-                  className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100 truncate hover:text-primary transition-colors block"
-                  title="Ver perfil completo do cliente"
+                  className="block truncate font-medium text-primary hover:underline"
                 >
                   {order.customer.name}
                 </Link>
-                <p className="text-xs sm:text-sm text-slate-500 truncate">
-                  {order.customer.email || "E-mail não informado"}
-                </p>
+                <p className="truncate text-sm text-primary/70">{order.customer.email || "Sem e-mail cadastrado"}</p>
               </div>
             </div>
             {order.customer.phone && (
               <div className="space-y-2">
-                <div className="text-xs sm:text-sm flex items-center gap-2 text-slate-600 dark:text-slate-400 p-2.5 sm:p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-700/50">
-                  <span className="material-symbols-outlined text-base text-slate-400">call</span>
-                  <span className="font-semibold">{order.customer.phone}</span>
-                </div>
+                <p className="flex items-center gap-2 rounded-lg bg-accent-cream p-3 text-sm text-primary">
+                  <span className="material-symbols-outlined text-base text-primary/60" aria-hidden="true">call</span>
+                  <span className="font-medium">{order.customer.phone}</span>
+                </p>
                 <div className="grid grid-cols-2 gap-2">
+                  {waPlainLink && (
+                    <a
+                      href={waPlainLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-primary/25 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"
+                    >
+                      <span className="material-symbols-outlined text-[18px]" aria-hidden="true">chat</span>
+                      WhatsApp
+                    </a>
+                  )}
                   <a
-                    href={`https://wa.me/55${order.customer.phone.replace(/\D/g, '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 font-bold text-xs hover:bg-emerald-100 transition-colors"
+                    href={`tel:${order.customer.phone.replace(/\D/g, "")}`}
+                    className="flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-primary/25 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"
                   >
-                    <span className="material-symbols-outlined text-[15px]">chat</span>
-                    <span>WhatsApp</span>
-                  </a>
-                  <a
-                    href={`tel:${order.customer.phone.replace(/\D/g, '')}`}
-                    className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 font-bold text-xs hover:bg-blue-100 transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-[15px]">call</span>
-                    <span>Ligar</span>
+                    <span className="material-symbols-outlined text-[18px]" aria-hidden="true">call</span>
+                    Ligar
                   </a>
                 </div>
               </div>
             )}
-          </div>
+          </section>
 
-          {/* Frete e Envio */}
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-4 sm:p-6">
-            <h3 className="font-bold text-base sm:text-lg mb-4 text-slate-900 dark:text-white flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">local_shipping</span>
-              Condição de Frete
-            </h3>
-            <div className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/50">
-              <span className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400">Modalidade:</span>
-              <ShippingUpdater orderId={order.id} currentShipping={order.shippingType as any} />
-            </div>
-          </div>
+          <section className={cardClass} aria-labelledby="entrega">
+            <h2 id="entrega" className={cardTitleClass}>
+              <span className="material-symbols-outlined text-primary" aria-hidden="true">local_shipping</span>
+              Entrega e pagamento
+            </h2>
+            {hasAddress ? (
+              <p className="mb-4 whitespace-pre-line rounded-lg bg-accent-cream p-3 text-sm text-primary">{addressText}</p>
+            ) : (
+              <p className="mb-4 rounded-lg bg-accent-cream p-3 text-sm text-primary/70">
+                Sem endereço neste pedido. Combine a entrega com o cliente.
+              </p>
+            )}
+            <dl className="mb-4 space-y-2 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-primary/70">Pagamento</dt>
+                <dd className="font-medium text-primary">
+                  {order.paymentMethod ? PAYMENT_LABEL[order.paymentMethod] ?? order.paymentMethod : "A combinar"}
+                </dd>
+              </div>
+            </dl>
+            <ShippingUpdater orderId={order.id} currentShipping={order.shippingType as "SEM_FRETE" | "PAGO_AURORA" | "PAGO_CLIENTE"} />
+          </section>
 
-          {/* Observações do Pedido */}
           <OrderNotesCard orderId={order.id} initialNotes={order.notes} />
         </div>
       </div>
     </AdminLayout>
   );
 }
-

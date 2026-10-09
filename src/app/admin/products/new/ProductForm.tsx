@@ -4,8 +4,11 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { createProduct } from "./actions";
 import { quickUpdateCategory, quickDeleteCategory } from "../actions";
+import { showToast } from "@/components/ui/Toast";
+import { useConfirm } from "@/components/admin/ui/ConfirmDialog";
 
 export default function ProductForm({ categories, initialData }: { categories: any[], initialData?: any }) {
+  const confirm = useConfirm();
   const isEditing = !!initialData;
   const [isPending, setIsPending] = useState(false);
   const [hasVariants, setHasVariants] = useState(initialData ? initialData.variants.length > 0 : true);
@@ -260,7 +263,7 @@ export default function ProductForm({ categories, initialData }: { categories: a
     } catch (error: any) {
       console.error("Failed to create/edit product:", error);
       const msg = error?.message || (typeof error === 'string' ? error : JSON.stringify(error));
-      alert(msg || "Erro desconhecido ao processar produto.");
+      showToast(msg || "Não foi possível salvar o produto. Confira os campos e tente de novo.", "error");
     } finally {
       setIsPending(false);
     }
@@ -667,9 +670,15 @@ export default function ProductForm({ categories, initialData }: { categories: a
                           <span className="material-symbols-outlined text-[18px]">edit</span>
                         </button>
                         <button type="button" onClick={async () => {
-                          if (confirm("Tem certeza que deseja excluir esta categoria?")) {
+                          const ok = await confirm({
+                            title: "Excluir esta categoria?",
+                            description: "Só dá para excluir categorias sem produtos. Não dá para desfazer.",
+                            confirmLabel: "Excluir categoria",
+                            tone: "danger",
+                          });
+                          if (ok) {
                             const res = await quickDeleteCategory(selectedCategoryId);
-                            if (res?.error) alert(res.error);
+                            if (res?.error) showToast(res.error, "error");
                             else { setSelectedCategoryId(""); setIsNewCategory(false); }
                           }
                         }} className="p-1.5 sm:p-2 text-slate-400 hover:text-rose-500 transition-colors rounded-md hover:bg-rose-50 dark:hover:bg-rose-500/10" title="Excluir Categoria">
@@ -684,7 +693,7 @@ export default function ProductForm({ categories, initialData }: { categories: a
                       <div className="flex gap-2 shrink-0">
                         <button type="button" onClick={async () => {
                           const res = await quickUpdateCategory(selectedCategoryId, editingCategoryName);
-                          if (res?.error) alert(res.error);
+                          if (res?.error) showToast(res.error, "error");
                           else setIsEditingCategory(false);
                         }} className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors text-center">Salvar</button>
                         <button type="button" onClick={() => setIsEditingCategory(false)} className="flex-1 sm:flex-none bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors text-center">Cancelar</button>

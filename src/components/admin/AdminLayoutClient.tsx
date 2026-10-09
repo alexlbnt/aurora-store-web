@@ -8,6 +8,7 @@ import { AdminSidebarProvider, useAdminSidebar } from "./AdminSidebarContext";
 import AdminMobileNav from "./AdminMobileNav";
 import RouteProgressBar from "./RouteProgressBar";
 import ToastContainer from "@/components/ui/Toast";
+import { ConfirmProvider } from "./ui/ConfirmDialog";
 
 function AdminLayoutInner({
   sidebar,
@@ -27,13 +28,21 @@ function AdminLayoutInner({
   }, [pathname, closeMobile]);
 
   return (
-    <div className="flex h-[100dvh] overflow-hidden bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display relative w-full">
+    <ConfirmProvider>
+    <div className="flex h-[100dvh] overflow-hidden bg-background-light text-primary font-display relative w-full">
+      <a
+        href="#conteudo"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100000] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
+      >
+        Ir para o conteúdo
+      </a>
       <RouteProgressBar />
       <ToastContainer />
       {/* Overlay Mobile */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm transition-opacity"
+          aria-hidden="true"
+          className="fixed inset-0 bg-primary/60 z-40 lg:hidden transition-opacity"
           onClick={closeMobile}
         />
       )}
@@ -42,13 +51,15 @@ function AdminLayoutInner({
       <div
         className={`fixed inset-y-0 left-0 transform ${
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out z-50 flex h-full shadow-2xl lg:shadow-none shrink-0`}
+        } lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out z-50 flex h-full lg:shadow-none shrink-0 ${
+          isMobileOpen ? "shadow-2xl" : ""
+        }`}
       >
         {sidebar}
       </div>
 
       {/* Conteúdo Principal */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto w-full lg:w-auto transition-all duration-300">
+      <main id="conteudo" tabIndex={-1} className="flex-1 flex flex-col min-w-0 overflow-y-auto w-full lg:w-auto transition-all duration-300 focus:outline-none">
         <Header title={pageTitle} />
         <div className="flex-1 p-3.5 sm:p-4 lg:p-8 overflow-x-hidden pb-24 lg:pb-8">
           {children}
@@ -58,6 +69,7 @@ function AdminLayoutInner({
       {/* Barra de Navegação Inferior Mobile */}
       <AdminMobileNav />
     </div>
+    </ConfirmProvider>
   );
 }
 

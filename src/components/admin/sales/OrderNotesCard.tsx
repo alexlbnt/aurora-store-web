@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { updateOrderNotes } from "@/app/admin/sales/actions";
+import { showToast } from "@/components/ui/Toast";
 
 interface OrderNotesCardProps {
   orderId: string;
@@ -18,8 +19,9 @@ export default function OrderNotesCard({ orderId, initialNotes }: OrderNotesCard
     setIsPending(true);
     const res = await updateOrderNotes(orderId, notes);
     if (res.error) {
-      alert(res.error);
+      showToast(res.error, "error");
     } else {
+      showToast("Observações salvas.", "success");
       setCurrentNotes(notes);
       setIsEditing(false);
     }

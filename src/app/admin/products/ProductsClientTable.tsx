@@ -40,6 +40,10 @@ interface ProductsClientTableProps {
   initialPage?: number;
 }
 
+const stockClass = (n: number) =>
+  n === 0 ? "text-primary/50" : n <= 2 ? "font-semibold text-amber-700" : "font-semibold text-primary";
+const stockDot = (n: number) => (n === 0 ? "bg-primary/25" : n <= 2 ? "bg-amber-500" : "bg-dew");
+
 export default function ProductsClientTable({
   initialProducts,
   categories,
@@ -135,32 +139,29 @@ export default function ProductsClientTable({
     <div>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Produtos</h1>
-          <p className="text-slate-500 text-xs sm:text-sm mt-0.5 sm:mt-1">Gerencie o catálogo de produtos, preços e estoque.</p>
-        </div>
+        <p className="max-w-xl text-sm text-primary/70">Gerencie o catálogo, os preços e o estoque.</p>
         <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/api/admin/export/products"
             target="_blank"
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
+            className="flex-1 sm:flex-none min-h-11 flex items-center justify-center gap-1.5 border border-primary/25 bg-white rounded-lg px-4 text-sm font-semibold text-primary hover:bg-primary/5 transition-colors"
             title="Baixar CSV do catálogo"
           >
             <span className="material-symbols-outlined text-base text-slate-500">download</span>
-            <span>Exportar CSV</span>
+            <span>Baixar planilha (CSV)</span>
           </Link>
           <Link
             href="/admin/products/new"
-            className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-white px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all whitespace-nowrap"
+            className="flex-1 sm:flex-none min-h-11 bg-primary hover:bg-accent-blue text-white px-5 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
           >
             <span className="material-symbols-outlined text-base">add</span>
-            <span>Novo Produto</span>
+            <span>Novo produto</span>
           </Link>
         </div>
       </div>
 
       {/* Filters and Search */}
-      <div className="bg-white dark:bg-slate-900 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+      <div className="bg-white p-3 sm:p-4 rounded-lg border border-primary/10 mb-6 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
         <div className="flex-1 w-full min-w-0">
           <div className="relative w-full">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base">
@@ -170,7 +171,7 @@ export default function ProductsClientTable({
               type="text"
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Buscar por nome, SKU..."
+              placeholder="Buscar por nome ou SKU"
               className="w-full pl-9 pr-9 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-primary focus:border-primary text-base sm:text-sm transition-all outline-none text-slate-900 dark:text-white placeholder:text-slate-400"
             />
             {search && (
@@ -192,7 +193,7 @@ export default function ProductsClientTable({
             onChange={(e) => handleCategoryChange(e.target.value)}
             className="w-full sm:w-auto bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg py-2 pl-3 pr-8 text-base sm:text-sm focus:ring-primary focus:border-primary outline-none cursor-pointer"
           >
-            <option value="ALL">Todas as Categorias</option>
+            <option value="ALL">Todas as categorias</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -203,7 +204,7 @@ export default function ProductsClientTable({
       </div>
 
       {/* Products Content Container */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-lg border border-primary/10 overflow-hidden">
         {totalItems === 0 ? (
           <div className="p-8 sm:p-12 text-center flex flex-col items-center">
             <div className="w-14 h-14 sm:w-16 sm:h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
@@ -212,8 +213,8 @@ export default function ProductsClientTable({
             <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">Nenhum produto encontrado</h3>
             <p className="text-slate-500 text-xs sm:text-sm mb-6 max-w-sm">
               {search || selectedCategory !== "ALL"
-                ? "Tente ajustar os filtros ou termo de busca."
-                : "Adicione seu primeiro produto para começar a vender online."}
+                ? "Mude a busca ou limpe os filtros."
+                : "Cadastre o primeiro produto para ele aparecer na loja."}
             </p>
             {search || selectedCategory !== "ALL" ? (
               <button
@@ -233,7 +234,7 @@ export default function ProductsClientTable({
                 href="/admin/products/new"
                 className="px-5 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors rounded-lg font-bold text-xs sm:text-sm"
               >
-                Cadastrar Produto
+                Cadastrar produto
               </Link>
             )}
           </div>
@@ -286,13 +287,13 @@ export default function ProductsClientTable({
                     {/* Stock & Price info */}
                     <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 dark:border-slate-800/60">
                       <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-purple-50 dark:bg-purple-950/30 border border-purple-200/50 dark:border-purple-800/40">
-                          <span className="text-[10px] uppercase font-bold text-purple-600 dark:text-purple-400">Est. A</span>
-                          <span className={`font-bold text-xs ${totalStockA === 0 ? "text-red-500" : "text-slate-900 dark:text-white"}`}>{totalStockA}</span>
+                        <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-accent-cream border border-primary/10">
+                          <span className="text-xs text-primary/60">Estoque A</span>
+                          <span className={`text-sm ${stockClass(totalStockA)}`}>{totalStockA}</span>
                         </div>
-                        <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-fuchsia-50 dark:bg-fuchsia-950/30 border border-fuchsia-200/50 dark:border-fuchsia-800/40">
-                          <span className="text-[10px] uppercase font-bold text-fuchsia-600 dark:text-fuchsia-400">Est. V</span>
-                          <span className={`font-bold text-xs ${totalStockV === 0 ? "text-red-500" : "text-slate-900 dark:text-white"}`}>{totalStockV}</span>
+                        <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-accent-cream border border-primary/10">
+                          <span className="text-xs text-primary/60">Estoque V</span>
+                          <span className={`text-sm ${stockClass(totalStockV)}`}>{totalStockV}</span>
                         </div>
                       </div>
 
@@ -300,7 +301,7 @@ export default function ProductsClientTable({
                         <span className="text-base font-extrabold text-slate-900 dark:text-white">
                           R$ {product.basePrice.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                         </span>
-                        <p className="text-[11px] text-slate-400">
+                        <p className="text-xs text-primary/60">
                           {product.variants.length} {product.variants.length === 1 ? 'variação' : 'variações'}
                         </p>
                       </div>
@@ -313,15 +314,15 @@ export default function ProductsClientTable({
             {/* Desktop Table (>= md) */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 border-b border-slate-200 dark:border-slate-800">
+                <thead className="bg-accent-cream text-primary/70 border-b border-primary/10">
                   <tr>
-                    <th className="px-6 py-4 font-bold uppercase tracking-wider text-xs">Produto</th>
-                    <th className="px-6 py-4 font-bold uppercase tracking-wider text-xs">SKU</th>
-                    <th className="px-6 py-4 font-bold uppercase tracking-wider text-xs">Categoria</th>
-                    <th className="px-6 py-4 font-bold uppercase tracking-wider text-xs">Estoque A</th>
-                    <th className="px-6 py-4 font-bold uppercase tracking-wider text-xs">Estoque V</th>
-                    <th className="px-6 py-4 font-bold uppercase tracking-wider text-xs">Preço</th>
-                    <th className="px-6 py-4 font-bold uppercase tracking-wider text-xs text-right">Ações</th>
+                    <th className="px-6 py-4 font-medium text-sm">Produto</th>
+                    <th className="px-6 py-4 font-medium text-sm">SKU</th>
+                    <th className="px-6 py-4 font-medium text-sm">Categoria</th>
+                    <th className="px-6 py-4 font-medium text-sm">Estoque A</th>
+                    <th className="px-6 py-4 font-medium text-sm">Estoque V</th>
+                    <th className="px-6 py-4 font-medium text-sm">Preço</th>
+                    <th className="px-6 py-4 font-medium text-sm text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -346,8 +347,8 @@ export default function ProductsClientTable({
                               />
                             </div>
                             <div>
-                              <p className="font-bold text-slate-900 dark:text-white">{product.name}</p>
-                              <p className="text-xs text-slate-500">{product.variants.length} variações</p>
+                              <p className="font-semibold text-primary">{product.name}</p>
+                              <p className="text-sm text-primary/60">{product.variants.length} {product.variants.length === 1 ? "variação" : "variações"}</p>
                             </div>
                           </div>
                         </td>
@@ -364,36 +365,28 @@ export default function ProductsClientTable({
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
                             <div
-                              className={`w-2 h-2 rounded-full ${
-                                totalStockA === 0 ? "bg-red-500" : "bg-purple-500"
-                              }`}
+                              className={`w-2 h-2 rounded-full ${stockDot(totalStockA)}`}
                             ></div>
                             <span
-                              className={`font-semibold ${
-                                totalStockA === 0 ? "text-red-600" : "text-slate-700 dark:text-slate-300"
-                              }`}
+                              className={`${stockClass(totalStockA)}`}
                             >
-                              {totalStockA} un
+                              {totalStockA} {totalStockA === 1 ? "unidade" : "unidades"}
                             </span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
                             <div
-                              className={`w-2 h-2 rounded-full ${
-                                totalStockV === 0 ? "bg-red-500" : "bg-fuchsia-500"
-                              }`}
+                              className={`w-2 h-2 rounded-full ${stockDot(totalStockV)}`}
                             ></div>
                             <span
-                              className={`font-semibold ${
-                                totalStockV === 0 ? "text-red-600" : "text-slate-700 dark:text-slate-300"
-                              }`}
+                              className={`${stockClass(totalStockV)}`}
                             >
-                              {totalStockV} un
+                              {totalStockV} {totalStockV === 1 ? "unidade" : "unidades"}
                             </span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">
+                        <td className="px-6 py-4 font-semibold text-primary">
                           R$ {product.basePrice.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                         </td>
                         <td className="px-6 py-4 text-right">

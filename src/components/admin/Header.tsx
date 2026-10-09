@@ -73,9 +73,9 @@ export default function Header({
           )}
         </button>
 
-        <h2 className="text-lg lg:text-xl font-bold text-primary truncate max-w-[200px] sm:max-w-md">
+        <h1 className="text-lg lg:text-xl font-semibold text-primary truncate max-w-[200px] sm:max-w-md">
           {displayTitle}
-        </h2>
+        </h1>
       </div>
 
       <div className="flex items-center gap-4 lg:gap-6">

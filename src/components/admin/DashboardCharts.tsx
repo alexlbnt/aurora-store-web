@@ -9,7 +9,7 @@ type ChartDataPoint = {
 
 export default function DashboardCharts({ data }: { data: ChartDataPoint[] }) {
   if (!data || data.length === 0) {
-    return <div className="h-full w-full flex items-center justify-center text-slate-500 text-sm">Nenhum dado disponível</div>;
+    return <div className="h-full w-full flex items-center justify-center text-primary/70 text-sm">Sem vendas neste período</div>;
   }
 
   return (
@@ -17,36 +17,36 @@ export default function DashboardCharts({ data }: { data: ChartDataPoint[] }) {
       <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
         <defs>
           <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#4C648B" stopOpacity={0.3}/>
-            <stop offset="95%" stopColor="#4C648B" stopOpacity={0}/>
+            <stop offset="5%" stopColor="#4b5a8c" stopOpacity={0.3}/>
+            <stop offset="95%" stopColor="#4b5a8c" stopOpacity={0}/>
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e4e0ec" />
         <XAxis 
           dataKey="name" 
           axisLine={false} 
           tickLine={false} 
-          tick={{ fontSize: 12, fill: '#64748b' }} 
+          tick={{ fontSize: 12, fill: '#6b6f85' }} 
           dy={10} 
         />
         <YAxis 
           axisLine={false} 
           tickLine={false} 
           tick={{ fontSize: 12, fill: '#64748b' }} 
-          tickFormatter={(value) => `R$ ${value}`}
+          tickFormatter={(value) => `R$ ${Number(value).toLocaleString('pt-BR')}`}
         />
         <Tooltip 
           contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-          formatter={(value: any) => [`R$ ${Number(value).toFixed(2).replace('.', ',')}`, 'Vendas']}
-          labelStyle={{ color: '#0f172a', fontWeight: 'bold', marginBottom: '4px' }}
+          formatter={(value) => [Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 'Vendas']}
+          labelStyle={{ color: '#232a3e', fontWeight: 600, marginBottom: '4px' }}
         />
         <Line 
           type="monotone" 
           dataKey="total" 
-          stroke="#4C648B" 
+          stroke="#4b5a8c" 
           strokeWidth={3}
           dot={{ r: 4, fill: '#fff', strokeWidth: 2 }}
-          activeDot={{ r: 6, fill: '#4C648B', stroke: '#fff', strokeWidth: 2 }}
+          activeDot={{ r: 6, fill: '#4b5a8c', stroke: '#fff', strokeWidth: 2 }}
         />
       </LineChart>
     </ResponsiveContainer>

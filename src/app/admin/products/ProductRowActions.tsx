@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { deleteProduct } from "./actions";
 import { showToast } from "@/components/ui/Toast";
 import QuickStockModal from "@/components/admin/products/QuickStockModal";
+import { useConfirm } from "@/components/admin/ui/ConfirmDialog";
 
 interface ProductRowActionsProps {
   productId: string;
@@ -24,6 +25,7 @@ export default function ProductRowActions({
   onProductDeleted,
 }: ProductRowActionsProps) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
@@ -113,18 +115,22 @@ export default function ProductRowActions({
   }, [isOpen, updatePosition]);
 
   const handleDelete = async () => {
-    if (
-      window.confirm(
-        "Atenção: Você tem certeza que deseja excluir permanentemente este produto e todas as suas variações de estoque?"
-      )
-    ) {
+    setIsOpen(false);
+    const ok = await confirm({
+      title: `Excluir ${productName}?`,
+      description:
+        "O produto e todas as variações de cor e tamanho saem do catálogo. Produtos que já têm vendas não podem ser excluídos. Não dá para desfazer.",
+      confirmLabel: "Excluir produto",
+      tone: "danger",
+    });
+    if (ok) {
       setIsDeleting(true);
       const res = await deleteProduct(productId);
       if (!res.success) {
         showToast(res.error || "Erro ao excluir produto", "error");
         setIsDeleting(false);
       } else {
-        showToast("Produto excluído com sucesso", "success");
+        showToast("Produto excluído.", "success");
         if (onProductDeleted) onProductDeleted(productId);
         router.refresh();
       }

@@ -1,89 +1,96 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { authenticate } from "./actions";
 import Link from "next/link";
 
+const fieldClass =
+  "w-full min-h-12 rounded-lg border border-primary/25 bg-accent-cream px-4 text-primary placeholder:text-primary/40";
+
 export default function LoginPage() {
   const [errorMessage, formAction, isPending] = useActionState(authenticate, undefined);
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4">
-      <Link href="/" className="mb-8 font-display text-4xl font-black text-primary tracking-tighter">aurora.</Link>
-      
-      <div className="bg-white p-8 rounded-2xl shadow-xl shadow-primary/5 w-full max-w-md border border-primary/10">
-        <h1 className="text-2xl font-bold text-slate-800 mb-2">Painel Administrativo</h1>
-        <p className="text-slate-500 mb-8 text-sm">Faça login com suas credenciais de acesso para gerenciar a loja.</p>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background-light p-4">
+      <Link href="/" className="mb-8 font-serif text-5xl text-primary">
+        Aurora
+      </Link>
+
+      <div className="w-full max-w-md rounded-lg border border-primary/10 bg-white p-8">
+        <h1 className="mb-1 text-2xl font-semibold text-primary">Entrar no painel</h1>
+        <p className="mb-8 text-sm text-primary/70">Use o e-mail e a senha da sua conta de administrador.</p>
 
         <form action={formAction} className="flex flex-col gap-5">
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1" htmlFor="email">
+            <label className="mb-1.5 block text-sm font-semibold text-primary" htmlFor="email">
               E-mail
             </label>
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">mail</span>
-              <input
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                id="email"
-                type="email"
-                name="email"
-                placeholder="admin@aurora.com.br"
-                required
-              />
-            </div>
+            <input
+              className={fieldClass}
+              id="email"
+              type="email"
+              name="email"
+              autoComplete="username"
+              placeholder="voce@aurora.com.br"
+              required
+            />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1" htmlFor="password">
+            <label className="mb-1.5 block text-sm font-semibold text-primary" htmlFor="password">
               Senha
             </label>
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">lock</span>
               <input
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className={`${fieldClass} pr-12`}
                 id="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
-                placeholder="••••••••"
+                autoComplete="current-password"
                 required
                 minLength={6}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                aria-pressed={showPassword}
+                className="absolute right-1 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-lg text-primary/70 hover:bg-primary/10"
+              >
+                <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+                  {showPassword ? "visibility_off" : "visibility"}
+                </span>
+              </button>
             </div>
           </div>
 
           {errorMessage && (
-            <div className="bg-rose-50 text-rose-600 p-3 rounded-lg text-sm flex items-start gap-2 border border-rose-100 mb-2">
-              <span className="material-symbols-outlined mt-0.5 text-[18px]">error</span>
+            <div role="alert" className="flex items-start gap-2 rounded-lg border border-dawn-ink/40 bg-dawn/10 p-3 text-sm text-dawn-ink">
+              <span className="material-symbols-outlined mt-0.5 text-[18px]" aria-hidden="true">error</span>
               <p>{errorMessage}</p>
             </div>
           )}
 
           <button
-            className="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-4 rounded-lg w-full transition-all flex items-center justify-center gap-2 group disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 font-semibold text-white transition-colors hover:bg-accent-blue disabled:cursor-not-allowed disabled:opacity-70"
             type="submit"
             disabled={isPending}
           >
             {isPending ? (
-              <span className="material-symbols-outlined animate-spin hidden sm:inline-block">progress_activity</span>
-            ) : (
               <>
-                Entrar no Painel
-                <span className="material-symbols-outlined transform group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                <span className="material-symbols-outlined animate-spin" aria-hidden="true">progress_activity</span>
+                Entrando…
               </>
+            ) : (
+              "Entrar"
             )}
           </button>
-          
-          <div className="text-center mt-2">
-            <Link href="#" className="text-sm text-primary/70 hover:text-primary transition-colors font-medium">
-              Esqueci minha senha
-            </Link>
-          </div>
-        </form>
-      </div>
 
-      <div className="mt-12 text-center text-slate-400 text-xs">
-        <p>© 2024 Aurora Sleepwear. Todos os direitos reservados.</p>
-        <p className="mt-1">Ambiente Seguro</p>
+          <p className="text-center text-sm text-primary/70">
+            Esqueceu a senha? Fale com quem cuida do sistema.
+          </p>
+        </form>
       </div>
     </div>
   );

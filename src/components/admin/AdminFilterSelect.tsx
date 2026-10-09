@@ -45,10 +45,11 @@ function AdminFilterSelectInner({
 
   return (
     <select
+      aria-label={placeholder || paramName}
       value={currentValue}
       onChange={handleChange}
       disabled={isPending}
-      className={`bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg py-2 pl-3 pr-8 text-sm focus:ring-primary focus:border-primary outline-none cursor-pointer ${
+      className={`min-h-11 bg-accent-cream border border-primary/20 text-primary rounded-lg py-2 pl-3 pr-8 text-sm cursor-pointer ${
         isPending ? "opacity-60" : ""
       }`}
     >
@@ -66,7 +67,7 @@ export default function AdminFilterSelect(props: AdminFilterSelectProps) {
   return (
     <Suspense
       fallback={
-        <div className="h-9 w-32 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg animate-pulse" />
+        <div className="h-11 w-32 bg-accent-cream border border-primary/10 rounded-lg animate-pulse" />
       }
     >
       <AdminFilterSelectInner {...props} />

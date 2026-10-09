@@ -15,27 +15,24 @@ export default function AdminError({
   }, [error]);
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center p-6">
-      <div className="max-w-md w-full bg-slate-800 border border-slate-700 rounded-2xl p-8 text-center shadow-xl">
-        <div className="w-16 h-16 bg-rose-500/10 text-rose-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-rose-500/20">
-          <span className="material-symbols-outlined text-3xl">admin_panel_settings</span>
-        </div>
-        <h2 className="text-xl font-bold text-white mb-2">Erro ao carregar o Painel Admin</h2>
-        <p className="text-slate-400 text-sm mb-6">
-          Ocorreu uma falha ao sincronizar as informações administrativas. Verifique sua conexão e tente novamente.
+    <div className="min-h-screen bg-background-light text-primary flex items-center justify-center p-6">
+      <div role="alert" className="max-w-md w-full bg-white border border-primary/10 rounded-lg p-8">
+        <h1 className="text-3xl font-serif mb-2">Não foi possível carregar esta página</h1>
+        <p className="text-primary/80 text-sm mb-6">
+          Os dados não chegaram. Verifique a conexão com a internet e tente de novo. Se o problema continuar, entre em contato com quem cuida do sistema.
         </p>
-        <div className="flex flex-col sm:flex-row justify-center gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={() => reset()}
-            className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl text-sm transition-colors cursor-pointer"
+            className="min-h-11 px-5 bg-primary hover:bg-accent-blue text-white font-semibold rounded-lg text-sm transition-colors cursor-pointer"
           >
             Tentar novamente
           </button>
           <Link
             href="/admin/login"
-            className="px-5 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-sm transition-colors"
+            className="min-h-11 px-5 inline-flex items-center border border-primary/30 hover:bg-primary/5 text-primary font-semibold rounded-lg text-sm transition-colors"
           >
-            Ir para Login Admin
+            Voltar ao login
           </Link>
         </div>
       </div>

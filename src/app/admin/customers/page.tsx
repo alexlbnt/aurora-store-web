@@ -1,5 +1,8 @@
 import React from "react";
 import Link from "next/link";
+import PageHeader from "@/components/admin/ui/PageHeader";
+import MetricCard from "@/components/admin/ui/MetricCard";
+import { formatBRL } from "@/lib/format";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { prisma } from "@/lib/prisma";
 import DeleteCustomerButton from "./DeleteCustomerButton";
@@ -96,34 +99,37 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
   return (
     <AdminLayout pageTitle="Clientes">
       <div className="flex-1">
-        {/* Header Override for title */}
-        {/* Header Override for title */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Clientes</h2>
-            <p className="text-slate-500 text-xs sm:text-sm mt-0.5">Gerencie sua base de clientes e acompanhe o engajamento.</p>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/api/admin/export/customers"
-              target="_blank"
-              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 border border-primary/20 bg-white dark:bg-slate-900 rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
-              title="Baixar CSV de clientes"
-            >
-              <span className="material-symbols-outlined text-base text-slate-500">download</span>
-              <span>CSV</span>
-            </Link>
-            <Link
-              href="/admin/customers/new"
-              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all shadow-sm"
-            >
-              <span className="material-symbols-outlined text-base">person_add</span>
-              <span>Novo Cliente</span>
-            </Link>
-          </div>
+        <PageHeader
+          description="Veja quem compra com você e quanto cada pessoa já gastou."
+          actions={
+            <>
+              <Link
+                href="/api/admin/export/customers"
+                target="_blank"
+                className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/25 bg-white px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary/5 sm:flex-none"
+                title="Baixar a lista de clientes em planilha"
+              >
+                <span className="material-symbols-outlined text-base" aria-hidden="true">download</span>
+                Baixar planilha (CSV)
+              </Link>
+              <Link
+                href="/admin/customers/new"
+                className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-accent-blue sm:flex-none"
+              >
+                <span className="material-symbols-outlined text-base" aria-hidden="true">person_add</span>
+                Novo cliente
+              </Link>
+            </>
+          }
+        />
+
+        <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+          <MetricCard label="Clientes cadastrados" value={totalCustomersAll} />
+          <MetricCard label="Já compraram" value={activeCustomersCount} hint="Com ao menos um pedido não cancelado" />
+          <MetricCard label="Gasto médio por cliente" value={formatBRL(averageLTV)} hint="Vendas totais ÷ nº de clientes" />
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-primary/10 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-lg border border-primary/10 overflow-hidden">
           {/* Search Bar */}
           <div className="p-4 border-b border-primary/10 bg-slate-50/50 dark:bg-slate-800/50">
             <div className="max-w-md">
@@ -197,23 +203,23 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
                         >
                           <span className="material-symbols-outlined text-base">edit</span>
                         </Link>
-                        <DeleteCustomerButton id={customer.id} />
+                        <DeleteCustomerButton id={customer.id} name={customer.name} />
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between text-xs bg-slate-50 dark:bg-slate-800/40 p-2 rounded-lg">
                       <div>
-                        <span className="text-slate-400 text-[10px] uppercase font-bold block">Pedidos</span>
+                        <span className="text-primary/60 text-xs block">Pedidos</span>
                         <span className="font-bold text-slate-800 dark:text-slate-200">
                           {customer.orders.length} pedidos
                         </span>
                       </div>
                       <div className="text-center">
-                        <span className="text-slate-400 text-[10px] uppercase font-bold block">Última Compra</span>
+                        <span className="text-primary/60 text-xs block">Última compra</span>
                         <span className="font-medium text-slate-600 dark:text-slate-400">{lastOrder}</span>
                       </div>
                       <div className="text-right">
-                        <span className="text-slate-400 text-[10px] uppercase font-bold block">Total Gasto</span>
+                        <span className="text-primary/60 text-xs block">Total gasto</span>
                         <span className="font-bold text-primary dark:text-rose-300">
                           R$ {spent.toFixed(2).replace(".", ",")}
                         </span>
@@ -247,14 +253,14 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
             <table className="w-full border-collapse whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800 text-left border-b border-primary/10">
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-[30%]">Nome</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Contato</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">
+                  <th className="px-6 py-4 text-sm font-medium text-primary/70 w-[30%]">Nome</th>
+                  <th className="px-6 py-4 text-sm font-medium text-primary/70">Contato</th>
+                  <th className="px-6 py-4 text-sm font-medium text-primary/70 text-center">
                     Total Pedidos
                   </th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Valor Gasto</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Último Pedido</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">
+                  <th className="px-6 py-4 text-sm font-medium text-primary/70">Valor Gasto</th>
+                  <th className="px-6 py-4 text-sm font-medium text-primary/70">Último Pedido</th>
+                  <th className="px-6 py-4 text-sm font-medium text-primary/70 text-right">
                     Ações
                   </th>
                 </tr>
@@ -318,7 +324,7 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
                             >
                               <span className="material-symbols-outlined text-lg">edit</span>
                             </Link>
-                            <DeleteCustomerButton id={customer.id} />
+                            <DeleteCustomerButton id={customer.id} name={customer.name} />
                           </div>
                         </td>
                       </tr>
@@ -337,39 +343,6 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
             itemLabel="clientes"
             searchParams={{ q }}
           />
-        </div>
-
-        {/* Summary Cards Footer */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 mt-6 sm:mt-8">
-          <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-5 rounded-xl border border-primary/10 shadow-sm">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Clientes Base</p>
-            <div className="flex items-end justify-between mt-2">
-              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{totalCustomersAll}</h3>
-              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded flex items-center">
-                <span className="material-symbols-outlined text-sm">database</span> Base Real
-              </span>
-            </div>
-          </div>
-          <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-5 rounded-xl border border-primary/10 shadow-sm">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">LTV Médio (Life Time Value)</p>
-            <div className="flex items-end justify-between mt-2">
-              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                R$ {averageLTV.toFixed(2).replace(".", ",")}
-              </h3>
-              <span className="text-xs font-bold text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded">
-                Base Real
-              </span>
-            </div>
-          </div>
-          <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-5 rounded-xl border border-primary/10 shadow-sm">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Clientes Ativos</p>
-            <div className="flex items-end justify-between mt-2">
-              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{activeCustomersCount}</h3>
-              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded flex items-center">
-                <span className="material-symbols-outlined text-sm">person_check</span> Compras
-              </span>
-            </div>
-          </div>
         </div>
       </div>
     </AdminLayout>

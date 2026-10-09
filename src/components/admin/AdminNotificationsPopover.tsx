@@ -104,7 +104,7 @@ export default function AdminNotificationsPopover() {
 
         {/* Badge Indicador de Alertas Não Lidos */}
         {data.counts.unread > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-rose-600 text-[10px] font-extrabold text-white shadow-sm ring-2 ring-white dark:ring-slate-900 animate-pulse">
+          <span className="absolute -top-1 -right-1 flex h-5 min-w-5 px-1 items-center justify-center rounded-full bg-dawn-ink text-xs font-semibold text-white ring-2 ring-white">
             {data.counts.unread > 9 ? "9+" : data.counts.unread}
           </span>
         )}

@@ -7,8 +7,8 @@ export default function AdminProductImage({ src, alt }: { src: string; alt: stri
 
   if (error || !src || src.length < 5) {
     return (
-      <div className="w-full h-full bg-sky-50 flex items-center justify-center text-sky-400" title="Sem imagem ou imagem quebrada">
-        <span className="material-symbols-outlined text-[22px]">dry_cleaning</span>
+      <div role="img" aria-label={`Sem foto de ${alt}`} className="w-full h-full bg-accent-soft flex items-center justify-center text-primary/40" title="Sem foto, ou a foto não carrega">
+        <span className="material-symbols-outlined text-[22px]" aria-hidden="true">checkroom</span>
       </div>
     );
   }

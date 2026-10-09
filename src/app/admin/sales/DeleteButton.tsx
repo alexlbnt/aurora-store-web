@@ -3,32 +3,41 @@
 import { useTransition } from "react";
 import { deleteOrder } from "./actions";
 import { showToast } from "@/components/ui/Toast";
+import { useConfirm } from "@/components/admin/ui/ConfirmDialog";
 
-export default function DeleteButton({ orderId }: { orderId: string }) {
+export default function DeleteButton({ orderId, orderNumber }: { orderId: string; orderNumber?: string }) {
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirm();
 
-  const handleDelete = () => {
-    if (confirm("Tem certeza que deseja excluir este pedido? Esta ação não pode ser desfeita.")) {
-      startTransition(async () => {
-        const res = await deleteOrder(orderId);
-        if (res.error) {
-          showToast(res.error, "error");
-        } else {
-          showToast("Pedido excluído com sucesso!", "success");
-        }
-      });
-    }
+  const handleDelete = async () => {
+    const ok = await confirm({
+      title: orderNumber ? `Excluir o pedido ${orderNumber}?` : "Excluir este pedido?",
+      description:
+        "O pedido sai da lista e, se ainda não estava cancelado, as peças voltam para o estoque. Não dá para desfazer.",
+      confirmLabel: "Excluir pedido",
+      tone: "danger",
+    });
+    if (!ok) return;
+    startTransition(async () => {
+      const res = await deleteOrder(orderId);
+      if (res.error) {
+        showToast(res.error, "error");
+      } else {
+        showToast("Pedido excluído.", "success");
+      }
+    });
   };
 
   return (
-    <button 
+    <button
       type="button"
       onClick={handleDelete}
       disabled={isPending}
-      className="text-slate-400 hover:text-rose-600 transition-colors p-2 md:p-1.5 rounded hover:bg-rose-50 dark:hover:bg-rose-900/20 inline-flex items-center justify-center cursor-pointer disabled:opacity-50" 
-      title="Excluir Pedido"
+      aria-label={orderNumber ? `Excluir o pedido ${orderNumber}` : "Excluir pedido"}
+      title="Excluir pedido"
+      className="inline-flex size-10 items-center justify-center rounded-lg text-primary/70 transition-colors hover:bg-dawn/20 hover:text-dawn-ink disabled:opacity-50"
     >
-      <span className={`material-symbols-outlined ${isPending ? 'animate-spin' : ''}`}>
+      <span className={`material-symbols-outlined text-[20px] ${isPending ? "animate-spin" : ""}`} aria-hidden="true">
         {isPending ? "progress_activity" : "delete"}
       </span>
     </button>
