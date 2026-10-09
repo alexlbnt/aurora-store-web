@@ -12,14 +12,11 @@ export default function AboutPage() {
     <StorefrontLayout>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
         {/* Header */}
-        <div className="text-center mb-16">
-          <span className="text-xs uppercase tracking-[0.25em] text-primary/60 font-bold block mb-3">
-            Manifesto Aurora
-          </span>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif text-primary dark:text-slate-100 font-bold mb-6">
+        <div className="mb-16">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif text-primary dark:text-slate-100 mb-6">
             Ressignificando o seu descanso
           </h1>
-          <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
             Acreditamos que o autocuidado começa no momento em que você se desliga do mundo exterior e se conecta consigo mesma.
           </p>
         </div>
@@ -31,7 +28,7 @@ export default function AboutPage() {
               Nossa Origem
             </h2>
             <p>
-              A **Aurora** nasceu do desejo de criar peças de sleepwear e loungewear que unissem a sofisticação do design contemporâneo com o toque acolhedor dos tecidos mais nobres. Cada modelo é pensado para transformar o ritual de dormir em um momento de pura celebração e bem-estar.
+              A Aurora nasceu do desejo de criar peças de sleepwear e loungewear que unissem a sofisticação do design contemporâneo com o toque acolhedor dos tecidos mais nobres. Cada modelo é pensado para transformar o ritual de dormir em um momento de pura celebração e bem-estar.
             </p>
             <p>
               Priorizamos modelagens que respeitam a anatomia feminina, com caimento fluido, costuras macias que não incomodam durante o sono e uma cartela de cores inspirada na serenidade da primeira luz do dia.

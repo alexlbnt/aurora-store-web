@@ -4,23 +4,28 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/context/CartContext";
-import { getCategories } from "@/actions/categories";
 
-export default function Header({ isAdmin }: { isAdmin?: boolean }) {
+type HeaderCategory = { id: string; name: string; slug: string };
+
+export default function Header({ isAdmin, categories = [] }: { isAdmin?: boolean; categories?: HeaderCategory[] }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [categories, setCategories] = useState<{id: string, name: string, slug: string}[]>([]);
   const pathname = usePathname();
   const { cartCount } = useCart();
-
-  React.useEffect(() => {
-    getCategories().then(cats => setCategories(cats)).catch(console.error);
-  }, []);
 
   const [prevPathname, setPrevPathname] = useState(pathname);
   if (prevPathname !== pathname) {
     setPrevPathname(pathname);
     setIsMenuOpen(false);
   }
+
+  React.useEffect(() => {
+    if (!isMenuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isMenuOpen]);
 
   // Prevent scroll when menu is open
   React.useEffect(() => {
@@ -38,7 +43,9 @@ export default function Header({ isAdmin }: { isAdmin?: boolean }) {
     <>
       <header className="sticky top-0 z-50 flex items-center bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md px-4 py-3 justify-between border-b border-primary/10 transition-colors">
         <button 
-          aria-label={isMenuOpen ? "Fechar Menu" : "Menu"} 
+          aria-label={isMenuOpen ? "Fechar menu" : "Abrir menu"}
+          aria-expanded={isMenuOpen}
+          aria-controls="menu-lateral"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           className="text-primary dark:text-primary/80 flex size-10 shrink-0 items-center justify-center hover:bg-primary/5 rounded-full transition-colors relative z-50"
         >
@@ -46,25 +53,25 @@ export default function Header({ isAdmin }: { isAdmin?: boolean }) {
             {isMenuOpen ? "close" : "menu"}
           </span>
         </button>
-        <h1 className="text-primary dark:text-primary/90 text-xl font-serif font-bold tracking-widest flex-1 text-center relative z-50">
-          <Link href="/">AURORA</Link>
-        </h1>
+        <div className="text-primary dark:text-primary/90 text-2xl font-serif flex-1 text-center relative z-50">
+          <Link href="/" aria-label="Aurora, página inicial">Aurora</Link>
+        </div>
         <div className="flex items-center gap-1 shrink-0 relative z-50">
           {isAdmin && (
-            <Link href="/admin" aria-label="Painel Admin" className="text-primary dark:text-primary/80 flex size-10 items-center justify-center hover:bg-primary/5 rounded-full transition-colors hidden sm:flex">
+            <Link href="/admin" aria-label="Painel administrativo" className="text-primary dark:text-primary/80 flex size-10 items-center justify-center hover:bg-primary/5 rounded-full transition-colors hidden sm:flex">
               <span className="material-symbols-outlined text-[24px]">admin_panel_settings</span>
             </Link>
           )}
-          <Link href="/catalog" aria-label="Search" className="text-primary dark:text-primary/80 flex size-10 items-center justify-center hover:bg-primary/5 rounded-full transition-colors">
+          <Link href="/catalog" aria-label="Buscar produtos" className="text-primary dark:text-primary/80 flex size-10 items-center justify-center hover:bg-primary/5 rounded-full transition-colors">
             <span className="material-symbols-outlined text-[24px]">search</span>
           </Link>
-          <Link href="/wishlist" aria-label="Wishlist" className="text-primary dark:text-primary/80 flex size-10 items-center justify-center hover:bg-primary/5 rounded-full transition-colors hidden sm:flex">
+          <Link href="/wishlist" aria-label="Lista de desejos" className="text-primary dark:text-primary/80 flex size-10 items-center justify-center hover:bg-primary/5 rounded-full transition-colors hidden sm:flex">
             <span className="material-symbols-outlined text-[24px]">favorite</span>
           </Link>
-          <Link href="/account" aria-label="Account" className="text-primary dark:text-primary/80 flex size-10 items-center justify-center hover:bg-primary/5 rounded-full transition-colors">
+          <Link href="/account" aria-label="Minha conta" className="text-primary dark:text-primary/80 flex size-10 items-center justify-center hover:bg-primary/5 rounded-full transition-colors">
             <span className="material-symbols-outlined text-[24px]">person</span>
           </Link>
-          <Link href="/cart" aria-label="Bag" className="text-primary dark:text-primary/80 flex size-10 items-center justify-center hover:bg-primary/5 rounded-full transition-colors relative">
+          <Link href="/cart" aria-label={cartCount > 0 ? `Sacola, ${cartCount} ${cartCount === 1 ? "item" : "itens"}` : "Sacola"} className="text-primary dark:text-primary/80 flex size-10 items-center justify-center hover:bg-primary/5 rounded-full transition-colors relative">
             <span className="material-symbols-outlined text-[24px]">shopping_bag</span>
             {cartCount > 0 && (
               <span className="absolute top-2 right-2 flex min-w-4 h-4 px-1 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-sm border border-white">
@@ -86,8 +93,10 @@ export default function Header({ isAdmin }: { isAdmin?: boolean }) {
 
       {/* Side Drawer Menu */}
       <div 
-        className={`fixed inset-y-0 left-0 w-72 bg-background-light dark:bg-background-dark z-40 shadow-2xl transition-transform duration-300 flex flex-col pt-[72px] ${
-          isMenuOpen ? "translate-x-0" : "-translate-x-full"
+        id="menu-lateral"
+        inert={!isMenuOpen}
+        className={`fixed inset-y-0 left-0 w-72 bg-background-light dark:bg-background-dark z-40 transition-[transform,box-shadow] duration-300 flex flex-col pt-[72px] ${
+          isMenuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full shadow-none"
         }`}
       >
         <div className="flex flex-col h-full gap-4 p-6 overflow-y-auto">
@@ -97,24 +106,20 @@ export default function Header({ isAdmin }: { isAdmin?: boolean }) {
             
             <div className="w-full h-px bg-primary/10 dark:bg-slate-800 my-2" />
             
-            <span className="text-sm font-bold uppercase tracking-widest text-primary/40 dark:text-slate-500 mb-2">Categorias</span>
+            <span className="text-sm font-semibold text-primary/60 dark:text-slate-400 mb-1">Categorias</span>
             {categories.length > 0 ? (
               categories.map(cat => (
                 <Link key={cat.id} href={`/category/${cat.slug}`} className="text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors capitalize" onClick={() => setIsMenuOpen(false)}>
                   {cat.name}
                 </Link>
               ))
-            ) : (
-              <>
-                <Link href="/category/camisolas" className="text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>Camisolas</Link>
-                <Link href="/category/conjuntos" className="text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>Conjuntos</Link>
-                <Link href="/category/roupoes" className="text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>Roupões</Link>
-                <Link href="/category/acessorios" className="text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>Acessórios</Link>
-              </>
-            )}
+            ) : null}
 
             <div className="w-full h-px bg-primary/10 dark:bg-slate-800 my-2" />
             
+            <Link href="/wishlist" className="flex items-center gap-2 text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>
+              <span className="material-symbols-outlined">favorite</span> Lista de desejos
+            </Link>
             <Link href="/account" className="flex items-center gap-2 text-base font-medium text-primary/80 dark:text-slate-300 hover:text-primary transition-colors" onClick={() => setIsMenuOpen(false)}>
               <span className="material-symbols-outlined">person</span> Minha Conta
             </Link>

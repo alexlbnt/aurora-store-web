@@ -5,23 +5,30 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-primary: #5d4a3c;
-  --color-background-light: #FAF6F0;
-  --color-background-dark: #1b1917;
-  --color-accent-cream: #FAF6F0;
-  --color-accent-soft: #f2eee8;
-  --color-accent-blue: #4C648B;
-  --color-neutral-100: #FDFBF9;
-  --color-neutral-600: #8C7B6E;
-  --color-neutral-800: #4A3B2F;
-  --color-neutral-900: #2D241D;
+  /* Madrugada: azul-noite e lilás. Os nomes antigos foram mantidos para que as
+     classes existentes (text-primary, bg-accent-soft...) herdem a nova paleta. */
+  --color-primary: #232a3e;            /* Tinta: texto e botões */
+  --color-background-light: #eeebf2;   /* Névoa: fundo geral */
+  --color-background-dark: #141826;
+  --color-accent-cream: #fbfafc;       /* Seda: superfícies e campos */
+  --color-accent-soft: #e4e0ec;
+  --color-accent-blue: #4b5a8c;        /* Índigo: links e foco */
+  --color-dew: #6fb3a5;                /* Orvalho: disponível/confirmado (fundo, com texto Tinta) */
+  --color-dawn: #d98ba5;               /* Amanhecer: destaque raro (fundo) */
+  --color-dawn-ink: #a8456d;           /* Amanhecer em texto e ícones sobre Névoa */
+  --color-neutral-100: #fbfafc;
+  --color-neutral-600: #6b6f85;
+  --color-neutral-800: #2f3650;
+  --color-neutral-900: #1b2030;
+}
 
-  /* Custom fonts setup matching our layout.tsx variables */
-  --font-display: var(--font-plus-jakarta-sans), sans-serif;
-  --font-serif: var(--font-playfair-display), serif;
-  --font-body: var(--font-montserrat), sans-serif;
-
-  /* Extending base tailwind container to have support for container queries if needed */
+/* As variáveis --font-hanken e --font-instrument são definidas no <body> (layout.tsx).
+   Com "inline", o Tailwind resolve a referência onde a classe é usada; sem isso ela
+   resolveria na raiz, onde a variável não existe, e a fonte nunca seria aplicada. */
+@theme inline {
+  --font-display: var(--font-hanken), sans-serif;
+  --font-serif: var(--font-instrument), serif;
+  --font-body: var(--font-hanken), sans-serif;
 }
 
 /* Material Symbols Outlined Default Configuration */
@@ -32,5 +39,28 @@
 @layer base {
   body {
     @apply font-body text-primary bg-background-light dark:bg-background-dark dark:text-neutral-100 antialiased;
+  }
+}
+
+/* Instrument Serif só existe em peso 400: impede o negrito sintético. */
+.font-serif {
+  font-synthesis: none;
+}
+
+/* Foco visível para teclado em qualquer elemento interativo.
+   Fica fora de @layer para vencer utilitários como outline-none. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent-blue);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

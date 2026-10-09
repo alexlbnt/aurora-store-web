@@ -1,29 +1,30 @@
 import React from "react";
 import StorefrontLayout from "@/components/storefront/StorefrontLayout";
 import Link from "next/link";
+import { whatsappLink } from "@/lib/contact";
 
 export const metadata = {
   title: "Ajuda & Dúvidas Frequentes | Aurora Sleepwear",
-  description: "Encontre respostas sobre frete, trocas, devoluções e guia de tamanhos.",
+  description: "Respostas sobre entrega, pagamento, trocas e tamanhos.",
 };
 
 export default function FAQPage() {
   const faqs = [
     {
-      q: "Qual é o prazo de entrega dos pedidos?",
-      a: "O envio é realizado em até 24h úteis após a confirmação do pagamento. O prazo de entrega varia conforme o seu CEP, sendo informado diretamente no momento da compra.",
+      q: "Qual é o prazo e o valor da entrega?",
+      a: "Frete e prazo variam de pedido para pedido. Depois que você envia o pedido, a vendedora entra em contato para combinar os dois. Você também pode perguntar antes, pelo WhatsApp.",
     },
     {
-      q: "Como funciona a política de trocas e devoluções?",
-      a: "Você tem até 7 dias corridos após o recebimento do pedido para solicitar troca ou devolução gratuita, conforme o Código de Defesa do Consumidor. A peça deve estar com etiquetas intactas e sem sinais de uso.",
+      q: "Como funcionam as trocas e devoluções?",
+      a: "Prazo e condições são combinados com a vendedora no atendimento. Para pedir uma troca, mantenha a peça com a etiqueta, sem sinais de uso ou lavagem, e fale com a equipe pelo WhatsApp.",
     },
     {
-      q: "Quais são as formas de pagamento aceitas?",
-      a: "Aceitamos cartões de crédito (com parcelamento sem juros), PIX instantâneo e boleto bancário.",
+      q: "Como funciona o pagamento?",
+      a: "Ao enviar o pedido pelo site, você não paga na hora. A equipe entra em contato para combinar a forma de pagamento. Na loja física, o pagamento é feito no atendimento.",
     },
     {
       q: "Como cuidar das minhas peças de sleepwear?",
-      a: "Recomendamos lavagem à mão ou no ciclo delicado da máquina, com sabão neutro e sem alvejantes. Evite secadora para preservar a maciez e o brilho dos tecidos acetinados.",
+      a: "Confira a etiqueta de cada peça. Em geral, lave à mão ou no ciclo delicado, com sabão neutro e sem alvejante, e evite secadora para preservar a maciez do tecido.",
     },
   ];
 
@@ -38,34 +39,30 @@ export default function FAQPage() {
     <StorefrontLayout>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
         {/* Header */}
-        <div className="text-center mb-16">
-          <span className="text-xs uppercase tracking-[0.25em] text-primary/60 font-bold block mb-3">
-            Central de Suporte
-          </span>
-          <h1 className="text-4xl sm:text-5xl font-serif text-primary dark:text-slate-100 font-bold mb-4">
-            Como podemos te ajudar?
+        <div className="mb-16">
+          <h1 className="text-4xl sm:text-5xl font-serif text-primary dark:text-slate-100 mb-4">
+            Dúvidas frequentes
           </h1>
-          <p className="text-slate-600 dark:text-slate-400">
-            Tire suas dúvidas sobre pedidos, trocas, devoluções e medidas.
+          <p className="text-primary/80 dark:text-slate-400 max-w-xl">
+            Entrega, pagamento, trocas e medidas. Se não achar a resposta, fale com a equipe.
           </p>
         </div>
 
         {/* FAQs */}
         <div className="space-y-8 mb-16">
-          <h2 className="text-2xl font-serif font-bold text-primary dark:text-slate-100 border-b border-primary/10 pb-3">
-            Dúvidas Frequentes
+          <h2 id="trocas" className="text-3xl font-serif text-primary dark:text-slate-100 border-b border-primary/10 pb-3 scroll-mt-24">
+            Perguntas e respostas
           </h2>
           <div className="space-y-4">
             {faqs.map((faq, index) => (
               <div
                 key={index}
-                className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm"
+                className="bg-white dark:bg-slate-900 p-6 rounded-lg border border-primary/10 dark:border-slate-800"
               >
-                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base mb-2 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-lg">help</span>
+                <h3 className="font-semibold text-primary dark:text-slate-100 text-lg mb-2">
                   {faq.q}
                 </h3>
-                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed pl-7">
+                <p className="text-primary/80 dark:text-slate-400 leading-relaxed max-w-prose">
                   {faq.a}
                 </p>
               </div>
@@ -75,13 +72,13 @@ export default function FAQPage() {
 
         {/* Guia de Medidas */}
         <div className="space-y-6 mb-16">
-          <h2 className="text-2xl font-serif font-bold text-primary dark:text-slate-100 border-b border-primary/10 pb-3">
-            Guia de Tamanhos
+          <h2 id="tamanhos" className="text-3xl font-serif text-primary dark:text-slate-100 border-b border-primary/10 pb-3 scroll-mt-24">
+            Guia de tamanhos
           </h2>
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-lg border border-primary/10 dark:border-slate-800 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-bold uppercase text-xs">
+                <thead className="bg-accent-soft dark:bg-slate-800 text-primary font-semibold text-sm">
                   <tr>
                     <th className="px-6 py-4">Tamanho</th>
                     <th className="px-6 py-4">Busto</th>
@@ -107,19 +104,27 @@ export default function FAQPage() {
         </div>
 
         {/* Contact Banner */}
-        <div className="bg-primary/5 dark:bg-slate-800/60 p-8 rounded-3xl border border-primary/10 text-center space-y-4">
-          <h3 className="text-xl font-serif font-bold text-primary dark:text-slate-100">
-            Ainda precisa de assistência?
-          </h3>
-          <p className="text-sm text-slate-600 dark:text-slate-400 max-w-md mx-auto">
-            Nossa equipe de suporte está à disposição para te atender com carinho e agilidade.
+        <div className="bg-accent-soft dark:bg-slate-800/60 p-8 rounded-lg space-y-4">
+          <h2 className="text-2xl font-serif text-primary dark:text-slate-100">
+            Não encontrou o que procurava?
+          </h2>
+          <p className="text-primary/80 dark:text-slate-400 max-w-md">
+            Fale com a equipe pelo WhatsApp. Entrega, troca e pagamento são combinados direto com a vendedora.
           </p>
-          <div className="pt-2">
+          <div className="pt-2 flex flex-wrap gap-3">
+            <a
+              href={whatsappLink("Olá! Tenho uma dúvida sobre a Aurora.")}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center min-h-12 px-6 bg-primary text-white font-semibold rounded-full hover:bg-accent-blue transition-colors text-sm"
+            >
+              Falar no WhatsApp
+            </a>
             <Link
               href="/catalog"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all text-sm shadow-sm"
+              className="inline-flex items-center min-h-12 px-6 border border-primary/40 text-primary font-semibold rounded-full hover:bg-primary/5 transition-colors text-sm"
             >
-              Voltar às Compras
+              Ver o catálogo
             </Link>
           </div>
         </div>

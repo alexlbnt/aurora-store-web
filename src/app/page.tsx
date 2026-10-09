@@ -5,7 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
-import { Truck, Award, RefreshCw, ArrowRight } from "lucide-react";
+import HeroSky from "@/components/storefront/HeroSky";
+import { whatsappLink } from "@/lib/contact";
 
 export const revalidate = 60; // Revalidate page every 60 seconds
 
@@ -77,51 +78,66 @@ export default async function Home() {
 
   return (
     <StorefrontLayout>
-      {/* Hero Section */}
-      <section className="relative h-[80vh] min-h-[500px] max-h-[800px] w-full mt-4 rounded-xl overflow-hidden flex items-center justify-center">
-        <Image 
-          src="/hero-banner.jpg" 
-          alt="Elegância no Descanso" 
-          fill 
-          className="object-cover" 
-          priority 
+      {/* Hero */}
+      <section className="relative isolate mt-4 flex h-[78vh] min-h-[520px] max-h-[780px] w-full items-end overflow-hidden">
+        <Image
+          src="/hero-banner.jpg"
+          alt="Peças de dormir da coleção Aurora"
+          fill
+          sizes="100vw"
+          className="object-cover"
+          priority
         />
-        <div className="absolute inset-0 bg-black/30"></div>
-        <div className="relative z-10 text-center px-6 max-w-2xl mx-auto flex flex-col items-center gap-6">
-          <p className="text-white/90 text-xs font-bold uppercase tracking-[0.3em]">Nova Coleção</p>
-          <h2 className="text-4xl md:text-5xl lg:text-7xl font-serif text-white font-bold tracking-tight">Elegância no <br/><span className="italic font-light">Descanso</span></h2>
-          <p className="text-white/80 text-sm md:text-base font-medium max-w-md">Descubra peças em seda pura e tecidos premium que transformam sua rotina noturna em um ritual de bem-estar.</p>
-          <Link href="/catalog" className="mt-4 bg-white text-primary px-8 py-3.5 rounded-full text-sm font-bold uppercase tracking-wider hover:bg-accent-blue hover:text-white transition-colors shadow-xl">
-            Explorar Coleção
-          </Link>
+        {/* Escurecimento base: garante a leitura do texto antes do céu aparecer */}
+        <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/25 to-transparent" />
+        <HeroSky />
+        <div className="relative z-10 w-full max-w-2xl px-6 pb-10 sm:px-10 sm:pb-14 text-left text-white">
+          <h1 className="font-serif text-5xl leading-[1.02] sm:text-6xl lg:text-7xl">
+            Roupas para dormir melhor
+          </h1>
+          <p className="mt-5 max-w-md text-base leading-relaxed text-white/90">
+            Camisolas, conjuntos e roupões. Escolha pelo site e combine entrega e pagamento com a nossa equipe.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <Link href="/catalog" className="rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-primary transition-colors hover:bg-accent-soft">
+              Ver o catálogo
+            </Link>
+            <a
+              href={whatsappLink("Olá! Gostaria de ajuda para escolher uma peça da Aurora.")}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full border border-white/70 px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-white/15"
+            >
+              Falar com a equipe
+            </a>
+          </div>
         </div>
       </section>
 
-      {/* Benefits */}
-      <section className="py-16 grid grid-cols-1 md:grid-cols-3 gap-8 text-center divide-y md:divide-y-0 md:divide-x divide-primary/10 dark:divide-slate-800 border-b border-primary/5 dark:border-slate-800">
-        <div className="flex flex-col items-center gap-3 pt-6 md:pt-0">
-          <Truck className="w-8 h-8 text-primary/70 dark:text-slate-400" />
-          <h4 className="text-primary dark:text-slate-100 font-serif font-semibold text-lg">Frete Grátis</h4>
-        </div>
-        <div className="flex flex-col items-center gap-3 pt-6 md:pt-0">
-          <Award className="w-8 h-8 text-primary/70 dark:text-slate-400" />
-          <h4 className="text-primary dark:text-slate-100 font-serif font-semibold text-lg">Qualidade Premium</h4>
-        </div>
-        <div className="flex flex-col items-center gap-3 pt-6 md:pt-0">
-          <RefreshCw className="w-8 h-8 text-primary/70 dark:text-slate-400" />
-          <h4 className="text-primary dark:text-slate-100 font-serif font-semibold text-lg">Troca Fácil</h4>
-        </div>
+      {/* Atendimento: sem promessas fixas de frete, prazo ou troca */}
+      <section className="flex flex-col gap-3 border-b border-primary/10 py-10 sm:flex-row sm:items-center sm:justify-between">
+        <p className="max-w-xl text-primary/80 dark:text-slate-300">
+          Frete, prazo de entrega e trocas são combinados com a vendedora no atendimento.
+        </p>
+        <a
+          href={whatsappLink("Olá! Tenho uma dúvida sobre entrega e trocas da Aurora.")}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-fit text-sm font-semibold text-accent-blue underline underline-offset-4 hover:text-primary"
+        >
+          Tirar dúvidas no WhatsApp
+        </a>
       </section>
 
       {/* Categories */}
       <section className="py-20 md:py-24">
         <div className="flex flex-col sm:flex-row items-end justify-between gap-4 mb-10">
           <div className="flex flex-col gap-2">
-            <h3 className="text-3xl md:text-4xl font-serif text-primary dark:text-slate-100 font-bold">Essenciais</h3>
-            <p className="text-primary/60 dark:text-slate-400 text-sm md:text-base max-w-lg">Peças atemporais e versáteis projetadas para o máximo de conforto em qualquer estação.</p>
+            <h2 className="text-3xl md:text-4xl font-serif text-primary dark:text-slate-100">Categorias</h2>
+            <p className="text-primary/70 dark:text-slate-400 text-sm md:text-base max-w-lg">Navegue por tipo de peça.</p>
           </div>
-          <Link href="/catalog" className="text-primary dark:text-slate-300 text-sm font-bold uppercase tracking-wider hover:underline underline-offset-4 decoration-primary/30 shrink-0">
-            Ver todas as categorias
+          <Link href="/catalog" className="text-primary dark:text-slate-300 text-sm font-semibold underline underline-offset-4 decoration-primary/30 hover:decoration-primary shrink-0">
+            Ver o catálogo completo
           </Link>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -129,13 +145,13 @@ export default async function Home() {
             <Link key={category.id} href={`/category/${category.slug}`} className="group relative aspect-[4/5] overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
               <Image 
                 src={category.imageUrl || category.products[0]?.images[0]?.url || "/promo-banner.jpg"} 
-                alt={category.name} 
-                fill 
+                alt={category.name}
+                fill
+                sizes="(min-width: 1024px) 25vw, 50vw"
                 className="object-cover transition-transform duration-700 group-hover:scale-105" 
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex flex-col justify-end p-6">
-                <h4 className="text-white font-serif text-xl md:text-2xl font-semibold mb-1 capitalize">{category.name}</h4>
-                <span className="text-white/80 text-xs font-bold uppercase tracking-widest flex items-center gap-1 group-hover:gap-2 transition-all">Explorar <ArrowRight className="w-4 h-4" /></span>
+                <h3 className="text-white font-serif text-2xl md:text-3xl capitalize">{category.name}</h3>
               </div>
             </Link>
           ))}
@@ -145,21 +161,20 @@ export default async function Home() {
       {/* Collection Promo Split */}
       {promoCategory && (
         <section className="py-20">
-          <div className="flex flex-col md:flex-row rounded-lg overflow-hidden bg-accent-soft dark:bg-slate-900 border border-primary/5 dark:border-slate-800 shadow-sm">
+          <div className="flex flex-col md:flex-row overflow-hidden bg-accent-soft dark:bg-slate-900">
             <div className="md:w-1/2 aspect-square md:aspect-auto relative min-h-[400px]">
               <Image src={promoCategory.imageUrl || promoCategory.products[0]?.images[0]?.url || "/promo-banner.jpg"} alt={`Coleção ${promoCategory.name}`} fill className="object-cover" />
             </div>
-            <div className="md:w-1/2 p-8 md:p-16 flex flex-col justify-center gap-6 text-center md:text-left">
-              <p className="text-accent-blue dark:text-accent-blue/80 text-xs font-bold uppercase tracking-[0.2em]">Coleção Exclusiva</p>
-              <h3 className="text-3xl md:text-5xl font-serif text-primary dark:text-slate-100 font-bold leading-tight capitalize">
-                Descubra <br/>{promoCategory.name}
-              </h3>
-              <p className="text-primary/70 dark:text-slate-300 text-sm md:text-base max-w-md mx-auto md:mx-0">
-                {promoCategory.description || "Conheça nossa linha exclusiva projetada com cuidado e atenção aos detalhes. O conforto e elegância que você precisa para o seu dia a dia."}
+            <div className="md:w-1/2 p-8 md:p-16 flex flex-col justify-center gap-6 text-left">
+              <h2 className="text-4xl md:text-6xl font-serif text-primary dark:text-slate-100 leading-[1.05] capitalize">
+                {promoCategory.name}
+              </h2>
+              <p className="text-primary/70 dark:text-slate-300 text-sm md:text-base max-w-md">
+                {promoCategory.description || "Veja todas as peças desta categoria."}
               </p>
               <div>
-                <Link href={`/category/${promoCategory.slug}`} className="inline-block mt-2 border-b-2 border-primary pb-1 text-primary dark:text-slate-200 font-bold uppercase tracking-wider text-sm hover:text-accent-blue hover:border-accent-blue transition-colors">
-                  Descubra a Coleção {promoCategory.name}
+                <Link href={`/category/${promoCategory.slug}`} className="inline-block mt-2 rounded-full bg-primary px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-accent-blue">
+                  Ver {promoCategory.name}
                 </Link>
               </div>
             </div>
@@ -169,8 +184,8 @@ export default async function Home() {
 
       {/* Grid Products */}
       <section className="py-12 mb-20">
-        <div className="text-center mb-12">
-          <h3 className="text-3xl md:text-4xl font-serif text-primary dark:text-slate-100 font-bold">Em Alta</h3>
+        <div className="mb-10">
+          <h2 className="text-3xl md:text-4xl font-serif text-primary dark:text-slate-100">Destaques</h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-x-6 md:gap-y-10">
           {essentialsProducts.map((product) => (

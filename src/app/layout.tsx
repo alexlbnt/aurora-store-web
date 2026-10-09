@@ -1,25 +1,21 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, Playfair_Display, Montserrat } from "next/font/google";
+import { Hanken_Grotesk, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  variable: "--font-plus-jakarta-sans",
+const hankenGrotesk = Hanken_Grotesk({
+  variable: "--font-hanken",
   subsets: ["latin"],
 });
 
-const playfairDisplay = Playfair_Display({
-  variable: "--font-playfair-display",
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument",
   subsets: ["latin"],
-});
-
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
-  subsets: ["latin"],
+  weight: "400",
 });
 
 export const viewport: Viewport = {
-  themeColor: "#b45309",
+  themeColor: "#232a3e",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -51,7 +47,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${plusJakartaSans.variable} ${playfairDisplay.variable} ${montserrat.variable} antialiased text-slate-900 bg-background-light dark:bg-background-dark dark:text-slate-100 min-h-screen`}
+        className={`${hankenGrotesk.variable} ${instrumentSerif.variable} antialiased text-slate-900 bg-background-light dark:bg-background-dark dark:text-slate-100 min-h-screen`}
       >
         <Providers>
           {children}

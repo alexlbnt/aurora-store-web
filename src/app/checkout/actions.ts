@@ -124,7 +124,7 @@ export async function processPaymentAndCreateOrder(prevState: any, formData: For
           orderNumber,
           customerId: customer.id,
           stockLocation: "ESTOQUE_A",
-          status: "PAID",
+          status: "PENDING",
           shippingType: (["SEM_FRETE", "PAGO_AURORA", "PAGO_CLIENTE"].includes(shippingTypeRaw) ? shippingTypeRaw : "SEM_FRETE") as any,
           shippingAddress: address,
           shippingCity: city,
@@ -149,7 +149,7 @@ export async function processPaymentAndCreateOrder(prevState: any, formData: For
 
     // Simulação de e-mail transacional
     console.log(`\n📧 [SIMULADOR EMAIL] Enviando confirmação para: ${email || name}`);
-    console.log(`Assunto: Aurora Store - Seu pedido #${orderNumber} foi confirmado!`);
+    console.log(`Assunto: Aurora Store - Recebemos o seu pedido #${orderNumber}`);
     console.log(`Método de Pagamento: ${paymentMethodRaw} | Tipo de Frete: ${shippingTypeRaw}`);
     console.log(`Entrega para: ${address}, ${city} - ${state} (${cep})\n`);
 

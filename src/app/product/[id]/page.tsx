@@ -39,12 +39,12 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
     id: dbProduct.id,
     name: dbProduct.name,
     price: `R$ ${Number(dbProduct.basePrice).toFixed(2).replace('.', ',')}`,
-    installments: "em até 6x s/ juros",
     images: dbProduct.images.length > 0 
       ? dbProduct.images.map((img: any) => img.url) 
       : ["https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=1587&auto=format&fit=crop"],
     colors: colors.length > 0 ? colors : ["Padrão"],
     sizes: sizes.length > 0 ? sizes : ["Único"],
+    variants: dbProduct.variants.map((v) => ({ color: v.color, size: v.size, stock: v.stockA })),
     description: dbProduct.description,
     categoryName: dbProduct.category.name,
     categorySlug: dbProduct.category.slug,
@@ -58,8 +58,8 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   return (
     <StorefrontLayout>
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-xs text-primary/60 dark:text-slate-400 py-6 font-medium uppercase tracking-widest">
-        <Link href="/" className="hover:text-primary dark:hover:text-slate-200 transition-colors">Home</Link>
+      <nav className="flex items-center gap-2 text-sm text-primary/70 dark:text-slate-400 py-6">
+        <Link href="/" className="hover:text-primary dark:hover:text-slate-200 transition-colors">Início</Link>
         <span className="material-symbols-outlined text-sm">chevron_right</span>
         <Link href={`/category/${product.categorySlug}`} className="hover:text-primary dark:hover:text-slate-200 transition-colors">{product.categoryName}</Link>
         <span className="material-symbols-outlined text-sm">chevron_right</span>
@@ -74,17 +74,16 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
         <div className="w-full md:w-[45%] flex flex-col gap-8 md:pt-4">
           <div className="space-y-4 border-b border-primary/10 pb-8">
             <div className="flex items-start justify-between gap-4">
-              <h1 className="text-3xl lg:text-4xl font-serif text-primary dark:text-slate-100 font-bold leading-tight">{product.name}</h1>
+              <h1 className="text-3xl lg:text-4xl font-serif text-primary dark:text-slate-100 leading-tight">{product.name}</h1>
               {isAdmin && (
-                <Link href={`/admin/products/${product.id}/edit`} className="shrink-0 flex items-center gap-1 bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 hover:bg-emerald-100 hover:text-emerald-700 dark:hover:bg-emerald-500/20 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider border border-emerald-200 dark:border-emerald-500/30 transition-colors">
+                <Link href={`/admin/products/${product.id}/edit`} className="shrink-0 flex items-center gap-1 bg-accent-soft text-primary hover:bg-primary hover:text-white px-3 py-1.5 rounded-full text-xs font-semibold transition-colors">
                   <span className="material-symbols-outlined text-[16px]">edit</span>
                   Editar
                 </Link>
               )}
             </div>
             <div>
-              <p className="text-2xl font-bold text-primary dark:text-slate-100 mb-1">{product.price}</p>
-              <p className="text-sm text-primary/60 dark:text-slate-400 font-medium">{product.installments}</p>
+              <p className="text-2xl font-semibold text-primary dark:text-slate-100">{product.price}</p>
             </div>
           </div>
 
@@ -93,8 +92,8 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
           {/* Accordion Detalhes */}
           <div className="space-y-1">
             <details className="group border-b border-primary/10 pb-4" open>
-              <summary className="flex items-center justify-between cursor-pointer list-none py-4 font-serif text-lg text-primary dark:text-slate-100 font-bold">
-                Detalhes do Produto
+              <summary className="flex items-center justify-between cursor-pointer list-none py-4 font-serif text-xl text-primary dark:text-slate-100">
+                Detalhes do produto
                 <span className="material-symbols-outlined group-open:rotate-180 transition-transform text-primary/60">keyboard_arrow_down</span>
               </summary>
               <div className="text-sm text-primary/80 dark:text-slate-300 leading-relaxed pr-6 pb-2 space-y-4">
@@ -105,27 +104,27 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
               </div>
             </details>
             <details className="group border-b border-primary/10 pb-4">
-              <summary className="flex items-center justify-between cursor-pointer list-none py-4 font-serif text-lg text-primary dark:text-slate-100 font-bold">
-                Cuidados com a Peça
+              <summary className="flex items-center justify-between cursor-pointer list-none py-4 font-serif text-xl text-primary dark:text-slate-100">
+                Cuidados com a peça
                 <span className="material-symbols-outlined group-open:rotate-180 transition-transform text-primary/60">keyboard_arrow_down</span>
               </summary>
               <div className="text-sm text-primary/80 dark:text-slate-300 leading-relaxed pr-6 pb-2">
-                <p>A seda exige cuidados delicados para manter seu brilho e maciez por muitos anos:</p>
+                <p>Para manter a maciez e o caimento da peça, confira a etiqueta e, em geral:</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
                   <li>Lavar à mão com água fria e sabão neutro</li>
                   <li>Não torcer, apenas espremer suavemente</li>
                   <li>Secar à sombra, longe de calor direto</li>
-                  <li>Passar do avesso com ferro morno ou a vapor</li>
+                  <li>Passar do avesso, em temperatura baixa</li>
                 </ul>
               </div>
             </details>
             <details className="group border-b border-primary/10 pb-4">
-              <summary className="flex items-center justify-between cursor-pointer list-none py-4 font-serif text-lg text-primary dark:text-slate-100 font-bold">
-                Trocas & Devoluções
+              <summary className="flex items-center justify-between cursor-pointer list-none py-4 font-serif text-xl text-primary dark:text-slate-100">
+                Trocas e devoluções
                 <span className="material-symbols-outlined group-open:rotate-180 transition-transform text-primary/60">keyboard_arrow_down</span>
               </summary>
               <div className="text-sm text-primary/80 dark:text-slate-300 leading-relaxed pr-6 pb-2">
-                Você tem 30 dias após o recebimento para solicitar a primeira troca gratuitamente. A peça deve estar com as etiquetas originais, sem marcas de uso, odores ou lavagem.
+                Prazo e condições de troca são combinados com a vendedora no atendimento. Para pedir uma troca, mantenha a peça com a etiqueta, sem sinais de uso ou lavagem, e fale com a equipe pelo WhatsApp.
               </div>
             </details>
           </div>
