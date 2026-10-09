@@ -142,6 +142,8 @@ export async function createOrder(formData: FormData) {
       ? (shippingTypeRaw as "SEM_FRETE" | "PAGO_AURORA" | "PAGO_CLIENTE")
       : "SEM_FRETE";
     const notes = (formData.get("notes") as string)?.trim() || null;
+    // Venda na rua costuma ser paga na hora: a vendedora marca e o pedido já entra como pago.
+    const markAsPaid = formData.get("paid") === "true";
     
     // Discount fields
     const discountType = formData.get("discountType") as string | null;
@@ -245,7 +247,7 @@ export async function createOrder(formData: FormData) {
           orderNumber,
           customerId: customer.id,
           stockLocation,
-          status: "PENDING",
+          status: markAsPaid ? "PAID" : "PENDING",
           shippingType,
           notes,
           discountType,

@@ -48,7 +48,7 @@ export default async function NewOrderPage({ searchParams }: NewOrderPageProps) 
   }));
 
   return (
-    <AdminLayout pageTitle="Novo Pedido">
+    <AdminLayout pageTitle="Novo pedido">
       <OrderForm
         products={serializedProducts}
         customers={customers}
