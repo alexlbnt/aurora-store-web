@@ -454,8 +454,8 @@ export default function OrderForm({
                   setStockChoice(v);
                 }}
                 options={[
-                  { value: "ESTOQUE_A", label: "Estoque A", hint: "Loja principal" },
-                  { value: "ESTOQUE_V", label: "Estoque V", hint: "Showroom e externo" },
+                  { value: "ESTOQUE_A", label: "Estoque A" },
+                  { value: "ESTOQUE_V", label: "Estoque V" },
                 ]}
               />
             </div>
