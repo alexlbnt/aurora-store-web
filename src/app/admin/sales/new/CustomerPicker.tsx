@@ -18,7 +18,6 @@ export default function CustomerPicker({ customers, value, onChange }: CustomerP
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
-  const [showEmail, setShowEmail] = useState(Boolean(value.email));
   const listId = useId();
 
   const results = useMemo(() => {
@@ -30,13 +29,14 @@ export default function CustomerPicker({ customers, value, onChange }: CustomerP
         (c) =>
           normalize(c.name).includes(q) ||
           (c.email && normalize(c.email).includes(q)) ||
+          (c.socialMedia && normalize(c.socialMedia).includes(q)) ||
           (digits.length >= 3 && c.phone.replace(/\D/g, "").includes(digits))
       )
       .slice(0, 6);
   }, [customers, search]);
 
   const select = (c: PickerCustomer) => {
-    onChange({ id: c.id, name: c.name, phone: formatPhone(c.phone), email: c.email ?? "" });
+    onChange({ id: c.id, name: c.name, phone: formatPhone(c.phone), email: c.email ?? "", socialMedia: c.socialMedia ?? "" });
     setSearch("");
     setOpen(false);
   };
@@ -60,12 +60,13 @@ export default function CustomerPicker({ customers, value, onChange }: CustomerP
             <p className="truncate text-sm text-primary/70">
               {value.phone}
               {value.email && ` · ${value.email}`}
+              {value.socialMedia && ` · ${value.socialMedia}`}
             </p>
           </div>
         </div>
         <button
           type="button"
-          onClick={() => onChange({ id: "", name: "", phone: "", email: "" })}
+          onClick={() => onChange({ id: "", name: "", phone: "", email: "", socialMedia: "" })}
           className="min-h-11 shrink-0 rounded-lg border border-primary/25 bg-white px-3 text-sm font-semibold text-primary hover:bg-primary/5"
         >
           Trocar
@@ -116,7 +117,7 @@ export default function CustomerPicker({ customers, value, onChange }: CustomerP
                 setOpen(false);
               }
             }}
-            placeholder="Nome, telefone ou e-mail"
+            placeholder="Nome, telefone, e-mail ou @"
             className={`${fieldClass} pl-10`}
           />
         </div>
@@ -150,6 +151,7 @@ export default function CustomerPicker({ customers, value, onChange }: CustomerP
                   <span className="text-sm text-primary/70">
                     {formatPhone(c.phone)}
                     {c.email && ` · ${c.email}`}
+                    {c.socialMedia && ` · ${c.socialMedia}`}
                   </span>
                 </li>
               ))
@@ -212,7 +214,7 @@ export default function CustomerPicker({ customers, value, onChange }: CustomerP
         </div>
       )}
 
-      {showEmail ? (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="customer-email" className={labelClass}>
             E-mail <span className="font-normal text-primary/60">(opcional)</span>
@@ -228,15 +230,23 @@ export default function CustomerPicker({ customers, value, onChange }: CustomerP
             className={fieldClass}
           />
         </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setShowEmail(true)}
-          className="min-h-11 text-sm font-semibold text-accent-blue underline underline-offset-4 hover:text-primary"
-        >
-          Adicionar e-mail
-        </button>
-      )}
+        <div>
+          <label htmlFor="customer-social" className={labelClass}>
+            Redes sociais <span className="font-normal text-primary/60">(opcional)</span>
+          </label>
+          <input
+            id="customer-social"
+            type="text"
+            autoComplete="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            value={value.socialMedia ?? ""}
+            onChange={(e) => onChange({ ...value, socialMedia: e.target.value })}
+            placeholder="@cliente.instagram"
+            className={fieldClass}
+          />
+        </div>
+      </div>
     </div>
   );
 }

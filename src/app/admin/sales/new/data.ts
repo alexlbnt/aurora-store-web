@@ -13,7 +13,7 @@ export async function loadOrderFormData(): Promise<{ products: PickerProduct[]; 
       orderBy: { name: "asc" },
     }),
     prisma.customer.findMany({
-      select: { id: true, name: true, email: true, phone: true },
+      select: { id: true, name: true, email: true, phone: true, socialMedia: true },
       orderBy: { name: "asc" },
     }),
   ]);
