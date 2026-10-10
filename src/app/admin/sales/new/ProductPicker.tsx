@@ -6,7 +6,7 @@ import { formatBRL } from "@/lib/format";
 import { STOCK_LABEL } from "@/lib/order-meta";
 import { normalize, type OrderLine, type PickerProduct, type PickerVariant, type StockLocation } from "./types";
 
-const VISIBLE_WITHOUT_SEARCH = 6;
+const VISIBLE_WITHOUT_SEARCH = 12; // divisível por 2 e 3: completa as linhas da grade
 
 interface ProductPickerProps {
   products: PickerProduct[];
@@ -68,7 +68,8 @@ export default function ProductPicker({ products, location, getStock, lines, onA
           Nenhum produto com “{query}”. Confira o nome ou busque pelo código.
         </p>
       ) : (
-        <ul className="mt-3 divide-y divide-primary/10 rounded-lg border border-primary/10">
+        // Cartões compactos em grade: cabem mais produtos na tela antes de precisar buscar.
+        <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {visible.map((product) => {
             const variants = product.variants;
             const available = variants.filter((v) => getStock(v) - inCart(v.id) > 0);
@@ -87,32 +88,36 @@ export default function ProductPicker({ products, location, getStock, lines, onA
             };
 
             return (
-              <li key={product.id}>
+              <li
+                key={product.id}
+                className={`overflow-hidden rounded-lg border ${
+                  isOpen ? "border-primary/30 sm:col-span-2 xl:col-span-3" : "border-primary/10"
+                }`}
+              >
                 <button
                   type="button"
                   onClick={handleClick}
                   disabled={soldOut}
                   aria-expanded={single ? undefined : isOpen}
-                  className="flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-accent-cream disabled:cursor-not-allowed disabled:opacity-60"
+                  title={product.sku ? `Código ${product.sku}` : undefined}
+                  className="flex min-h-14 w-full items-center gap-2.5 px-2.5 py-2 text-left transition-colors hover:bg-accent-cream disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <div className="relative size-14 shrink-0 overflow-hidden rounded-md bg-accent-soft">
+                  <div className="relative size-10 shrink-0 overflow-hidden rounded-md bg-accent-soft">
                     <AdminProductImage src={product.images[0]?.url ?? ""} alt={product.name} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-primary">{product.name}</p>
-                    <p className="text-sm text-primary/70">
+                    <p className="truncate text-sm font-medium text-primary">{product.name}</p>
+                    <p className="truncate text-xs text-primary/70">
                       {formatBRL(product.basePrice)}
-                      {product.sku && <span className="text-primary/50"> · {product.sku}</span>}
-                    </p>
-                    <p className={`text-sm ${soldOut ? "text-dawn-ink" : "text-primary/60"}`}>
-                      {soldOut
-                        ? `Sem estoque no ${locationLabel}`
-                        : `${totalStock} ${totalStock === 1 ? "unidade" : "unidades"} no ${locationLabel}`}
+                      <span className="text-primary/40"> · </span>
+                      <span className={soldOut ? "text-dawn-ink" : undefined}>
+                        {soldOut ? `Sem estoque no ${locationLabel}` : `${totalStock} no ${locationLabel}`}
+                      </span>
                     </p>
                   </div>
                   {!soldOut && (
                     <span
-                      className="material-symbols-outlined shrink-0 text-[24px] text-primary/70"
+                      className="material-symbols-outlined shrink-0 text-[20px] text-primary/60"
                       aria-hidden="true"
                     >
                       {single ? "add_circle" : isOpen ? "expand_less" : "expand_more"}
@@ -122,8 +127,8 @@ export default function ProductPicker({ products, location, getStock, lines, onA
                 </button>
 
                 {isOpen && !single && (
-                  <div className="border-t border-primary/10 bg-accent-cream px-3 pb-3 pt-2">
-                    <p className="mb-2 text-sm text-primary/70">Escolha cor e tamanho:</p>
+                  <div className="border-t border-primary/10 bg-accent-cream px-2.5 pb-2.5 pt-2">
+                    <p className="mb-2 text-xs text-primary/70">Escolha cor e tamanho:</p>
                     <div className="flex flex-wrap gap-2">
                       {variants.map((v) => {
                         const left = getStock(v) - inCart(v.id);
@@ -133,7 +138,7 @@ export default function ProductPicker({ products, location, getStock, lines, onA
                             type="button"
                             disabled={left <= 0}
                             onClick={() => add(product, v)}
-                            className="flex min-h-12 flex-col items-start justify-center rounded-lg border border-primary/25 bg-white px-3 py-1.5 text-left transition-colors hover:border-primary disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex min-h-11 flex-col items-start justify-center rounded-lg border border-primary/25 bg-white px-3 py-1 text-left transition-colors hover:border-primary disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             <span className="text-sm font-semibold text-primary">
                               {v.size} · {v.color}
