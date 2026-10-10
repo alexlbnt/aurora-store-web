@@ -92,19 +92,27 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
+          <Link
+            href={`/admin/sales/${order.id}/edit`}
+            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-accent-blue"
+          >
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">edit</span>
+            Editar pedido
+          </Link>
           {waLink && (
             <a
               href={waLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/25 bg-white px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary/5 sm:flex-none"
+              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-primary/25 bg-white px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"
             >
               <span className="material-symbols-outlined text-[18px]" aria-hidden="true">forum</span>
-              Enviar resumo no WhatsApp
+              <span className="sm:hidden">WhatsApp</span>
+              <span className="hidden sm:inline">Enviar resumo no WhatsApp</span>
             </a>
           )}
-          <div className="flex-1 sm:flex-none">
+          <div className="col-span-2 sm:col-span-1">
             <StatusUpdater orderId={order.id} currentStatus={order.status} />
           </div>
         </div>

@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { createOrder } from "../actions";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createOrder, updateOrder } from "../actions";
 import { formatPhone } from "@/lib/formatters";
 import { formatBRL, parseBRL, toBRLInput } from "@/lib/format";
-import { PAYMENT_LABEL, STOCK_LABEL } from "@/lib/order-meta";
+import { ORDER_STATUS, PAYMENT_LABEL, STOCK_LABEL, type OrderStatusKey } from "@/lib/order-meta";
 import { showToast } from "@/components/ui/Toast";
 import ChoiceChips from "@/components/admin/ui/ChoiceChips";
 import AdminProductImage from "@/components/admin/AdminProductImage";
@@ -41,6 +43,23 @@ interface Draft {
 }
 
 const EMPTY_CUSTOMER: CustomerDraft = { id: "", name: "", phone: "", email: "" };
+
+/** Pedido já registrado, para abrir o formulário em modo de edição. */
+export interface EditableOrder {
+  id: string;
+  orderNumber: string;
+  status: string;
+  lines: OrderLine[];
+  customer: CustomerDraft;
+  stockLocation: StockLocation;
+  paymentMethod: PaymentMethod;
+  shippingType: ShippingType;
+  discountType: DiscountType;
+  discountValue: string;
+  notes: string;
+  /** Peças que o pedido devolve ao estoque ao ser salvo (por variação), se não estiver cancelado. */
+  returnedStock: Record<string, number>;
+}
 
 const noopSubscribe = () => () => {};
 function readStorage(key: string): string | null {
@@ -87,34 +106,40 @@ export default function OrderForm({
   products,
   customers = [],
   initialCustomerId = "",
+  editing,
 }: {
   products: PickerProduct[];
   customers?: PickerCustomer[];
   initialCustomerId?: string;
+  /** Quando presente, o formulário edita este pedido em vez de criar um novo. */
+  editing?: EditableOrder;
 }) {
+  const isEdit = Boolean(editing);
+  const router = useRouter();
   // ---------- preferências do aparelho ----------
   const prefsRaw = useSyncExternalStore(noopSubscribe, () => readStorage(PREFS_KEY), () => null);
   const prefs = useMemo(
     () => parseJSON<{ stockLocation?: StockLocation; paymentMethod?: PaymentMethod }>(prefsRaw) ?? {},
     [prefsRaw]
   );
-  const [stockChoice, setStockChoice] = useState<StockLocation | null>(null);
-  const [paymentChoice, setPaymentChoice] = useState<PaymentMethod | null>(null);
+  const [stockChoice, setStockChoice] = useState<StockLocation | null>(editing?.stockLocation ?? null);
+  const [paymentChoice, setPaymentChoice] = useState<PaymentMethod | null>(editing?.paymentMethod ?? null);
   const stockLocation: StockLocation = stockChoice ?? prefs.stockLocation ?? "ESTOQUE_A";
   const paymentMethod: PaymentMethod = paymentChoice ?? prefs.paymentMethod ?? "PIX";
 
   // ---------- dados da venda ----------
-  const [lines, setLines] = useState<OrderLine[]>([]);
+  const [lines, setLines] = useState<OrderLine[]>(editing?.lines ?? []);
   const [customer, setCustomer] = useState<CustomerDraft>(() => {
+    if (editing) return editing.customer;
     const found = customers.find((c) => c.id === initialCustomerId);
     return found
       ? { id: found.id, name: found.name, phone: formatPhone(found.phone), email: found.email ?? "" }
       : EMPTY_CUSTOMER;
   });
-  const [shippingType, setShippingType] = useState<ShippingType>("SEM_FRETE");
-  const [discountType, setDiscountType] = useState<DiscountType>("NONE");
-  const [discountValue, setDiscountValue] = useState("");
-  const [notes, setNotes] = useState("");
+  const [shippingType, setShippingType] = useState<ShippingType>(editing?.shippingType ?? "SEM_FRETE");
+  const [discountType, setDiscountType] = useState<DiscountType>(editing?.discountType ?? "NONE");
+  const [discountValue, setDiscountValue] = useState(editing?.discountValue ?? "");
+  const [notes, setNotes] = useState(editing?.notes ?? "");
   const [paid, setPaid] = useState(false);
 
   const [touched, setTouched] = useState(false);
@@ -128,11 +153,13 @@ export default function OrderForm({
   const storedDraftRaw = useSyncExternalStore(noopSubscribe, () => readStorage(DRAFT_KEY), () => null);
   const storedDraft = useMemo(() => parseJSON<Draft>(storedDraftRaw), [storedDraftRaw]);
   const showDraftBanner =
+    !isEdit &&
     !touched && !draftHandled && !success && !!storedDraft && (storedDraft.lines?.length > 0 || !!storedDraft.customer?.name);
 
   const formHasContent = lines.length > 0 || !!customer.name.trim() || !!customer.phone.trim() || !!notes.trim();
 
   useEffect(() => {
+    if (isEdit) return; // a edição não usa rascunho: o pedido original continua salvo no sistema
     if (!touched && !draftHandled) return; // não sobrescreve um rascunho que ainda não foi decidido
     if (success || !formHasContent) {
       writeStorage(DRAFT_KEY, null);
@@ -140,7 +167,7 @@ export default function OrderForm({
     }
     const draft: Draft = { savedAt: Date.now(), lines, customer, shippingType, discountType, discountValue, notes, paid };
     writeStorage(DRAFT_KEY, JSON.stringify(draft));
-  }, [touched, draftHandled, success, formHasContent, lines, customer, shippingType, discountType, discountValue, notes, paid]);
+  }, [isEdit, touched, draftHandled, success, formHasContent, lines, customer, shippingType, discountType, discountValue, notes, paid]);
 
   const resumeDraft = () => {
     if (!storedDraft) return;
@@ -162,9 +189,14 @@ export default function OrderForm({
   // ---------- helpers de produto ----------
   const productById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
   const findVariant = (line: OrderLine) => productById.get(line.productId)?.variants.find((v) => v.id === line.variantId);
+  // Na edição, as peças do próprio pedido voltam ao estoque de origem antes da nova baixa.
+  const effectiveStock = (v: PickerVariant) =>
+    stockOf(v, stockLocation) +
+    (editing && stockLocation === editing.stockLocation ? editing.returnedStock[v.id] ?? 0 : 0);
   const lineStock = (line: OrderLine) => {
+    if (!line.variantId) return Infinity; // produto sem variações não controla estoque
     const v = findVariant(line);
-    return v ? stockOf(v, stockLocation) : Infinity; // produto sem variações não controla estoque
+    return v ? effectiveStock(v) : 0;
   };
 
   const addProduct = (product: PickerProduct, variant: PickerVariant | null) => {
@@ -184,6 +216,25 @@ export default function OrderForm({
     touch();
     setLines((prev) => prev.map((l) => (l.key === key ? { ...l, ...patch } : l)));
   };
+  // Pedidos antigos podem ter itens sem cor/tamanho gravados: a pessoa escolhe aqui mesmo.
+  const needsVariant = (line: OrderLine) =>
+    !line.variantId && (productById.get(line.productId)?.variants.length ?? 0) > 0;
+  const chooseVariant = (lineKey: string, variant: PickerVariant) => {
+    touch();
+    setLines((prev) => {
+      const line = prev.find((l) => l.key === lineKey);
+      if (!line) return prev;
+      const twin = prev.find((l) => l.key === variant.id);
+      if (twin) {
+        // Já existe linha dessa variação: soma a quantidade nela.
+        return prev
+          .filter((l) => l.key !== lineKey)
+          .map((l) => (l.key === variant.id ? { ...l, quantity: l.quantity + line.quantity } : l));
+      }
+      return prev.map((l) => (l.key === lineKey ? { ...l, key: variant.id, variantId: variant.id } : l));
+    });
+  };
+
   const removeLine = (key: string) => {
     touch();
     setLines((prev) => prev.filter((l) => l.key !== key));
@@ -208,7 +259,9 @@ export default function OrderForm({
     const name = productById.get(l.productId)?.name ?? "produto";
     const price = parseBRL(l.price);
     if (!Number.isFinite(price) || price < 0) missing.push(`Confira o preço de ${name}`);
-    if (l.quantity > lineStock(l)) missing.push(`Estoque insuficiente de ${name} no ${STOCK_LABEL[stockLocation]}`);
+    if (needsVariant(l)) missing.push(`Escolha a cor e o tamanho de ${name}`);
+    else if (l.variantId && !findVariant(l)) missing.push(`Escolha de novo a cor e o tamanho de ${name}`);
+    else if (l.quantity > lineStock(l)) missing.push(`Estoque insuficiente de ${name} no ${STOCK_LABEL[stockLocation]}`);
   }
   if (!customer.name.trim()) missing.push("Informe o nome do cliente");
   if (customer.phone.replace(/\D/g, "").length < 10) missing.push("Informe o telefone com DDD");
@@ -241,7 +294,7 @@ export default function OrderForm({
     formData.append("paymentMethod", paymentMethod);
     formData.append("shippingType", shippingType);
     formData.append("notes", notes);
-    formData.append("paid", paid ? "true" : "false");
+    if (!isEdit) formData.append("paid", paid ? "true" : "false");
     formData.append(
       "items",
       JSON.stringify(
@@ -256,6 +309,24 @@ export default function OrderForm({
     if (discountType !== "NONE") {
       formData.append("discountType", discountType);
       formData.append("discountValue", discountValue);
+    }
+
+    if (editing) {
+      try {
+        const result = await updateOrder(editing.id, formData);
+        if (result.error) {
+          showToast(result.error, "error");
+          return;
+        }
+        showToast(`Pedido ${editing.orderNumber} atualizado.`, "success");
+        router.push(`/admin/sales/${editing.id}`);
+        router.refresh();
+      } catch {
+        showToast("A conexão falhou no meio do envio. Abra o pedido para conferir se as alterações entraram.", "error");
+      } finally {
+        setIsPending(false);
+      }
+      return;
     }
 
     try {
@@ -311,10 +382,35 @@ export default function OrderForm({
 
   if (success) return <OrderSuccess order={success} onNewOrder={startNewOrder} />;
 
-  const submitLabel = isPending ? "Registrando…" : "Registrar pedido";
+  const submitLabel = isEdit
+    ? isPending
+      ? "Salvando…"
+      : "Salvar alterações"
+    : isPending
+      ? "Registrando…"
+      : "Registrar pedido";
 
   return (
     <form onSubmit={handleSubmit} noValidate className="pb-36 lg:pb-8">
+      {editing && (
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <Link
+              href={`/admin/sales/${editing.id}`}
+              className="mb-1 inline-flex items-center gap-1 text-sm text-accent-blue underline-offset-4 hover:text-primary hover:underline"
+            >
+              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_back</span>
+              Voltar sem salvar
+            </Link>
+            <h2 className="text-2xl font-semibold text-primary">Editando o pedido {editing.orderNumber}</h2>
+          </div>
+          <p className="max-w-sm text-sm text-primary/70">
+            {editing.status === "CANCELED"
+              ? "Pedido cancelado: as alterações não mexem no estoque."
+              : "Ao salvar, as peças antigas voltam ao estoque e as novas saem dele."}
+          </p>
+        </div>
+      )}
       {showDraftBanner && storedDraft && (
         <div role="status" className="mb-6 flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-amber-900">
@@ -357,7 +453,7 @@ export default function OrderForm({
               />
             </div>
 
-            <ProductPicker products={products} location={stockLocation} lines={lines} onAdd={addProduct} />
+            <ProductPicker products={products} location={stockLocation} getStock={effectiveStock} lines={lines} onAdd={addProduct} />
 
             {lines.length > 0 && (
               <div className="mt-6">
@@ -385,7 +481,37 @@ export default function OrderForm({
                                 {variant.color}, tamanho {variant.size}
                               </p>
                             )}
-                            {Number.isFinite(stock) && (
+                            {needsVariant(line) && product && (
+                              <div className="mt-2">
+                                <p className="mb-1.5 text-sm font-medium text-dawn-ink">Escolha a cor e o tamanho:</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {product.variants.map((v) => {
+                                    const left = effectiveStock(v);
+                                    return (
+                                      <button
+                                        key={v.id}
+                                        type="button"
+                                        onClick={() => chooseVariant(line.key, v)}
+                                        className="flex min-h-11 flex-col items-start justify-center rounded-lg border border-primary/25 bg-white px-3 py-1 text-left hover:border-primary"
+                                      >
+                                        <span className="text-sm font-semibold text-primary">
+                                          {v.size} · {v.color}
+                                        </span>
+                                        <span className={`text-xs ${left <= 0 ? "text-dawn-ink" : "text-primary/60"}`}>
+                                          {left <= 0 ? "Sem estoque" : `${left} disponíve${left === 1 ? "l" : "is"}`}
+                                        </span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                            {line.variantId && !variant && (
+                              <p className="text-sm font-medium text-dawn-ink">
+                                Esta cor/tamanho foi removida do cadastro. Tire o item e adicione de novo.
+                              </p>
+                            )}
+                            {Number.isFinite(stock) && variant && (
                               <p className={`text-sm ${over ? "font-medium text-dawn-ink" : "text-primary/60"}`}>
                                 {over
                                   ? `Só ${stock} no ${STOCK_LABEL[stockLocation]}`
@@ -501,6 +627,15 @@ export default function OrderForm({
                 }))}
               />
 
+              {editing ? (
+                <p className="rounded-lg border border-primary/15 bg-accent-cream p-3.5 text-sm text-primary/80">
+                  Status atual:{" "}
+                  <strong className="font-semibold text-primary">
+                    {ORDER_STATUS[editing.status as OrderStatusKey]?.label ?? editing.status}
+                  </strong>
+                  . Para mudar o status, use a página do pedido.
+                </p>
+              ) : (
               <label className="flex min-h-12 cursor-pointer items-start gap-3 rounded-lg border border-primary/15 bg-accent-cream p-3.5">
                 <input
                   type="checkbox"
@@ -518,6 +653,7 @@ export default function OrderForm({
                   </span>
                 </span>
               </label>
+              )}
 
               <ChoiceChips<ShippingType>
                 name="shippingType"
@@ -639,7 +775,7 @@ export default function OrderForm({
                 <dt>Pagamento</dt>
                 <dd>
                   {PAYMENT_LABEL[paymentMethod]}
-                  {paid ? ", recebido" : ""}
+                  {!isEdit && paid ? ", recebido" : ""}
                 </dd>
               </div>
             </dl>

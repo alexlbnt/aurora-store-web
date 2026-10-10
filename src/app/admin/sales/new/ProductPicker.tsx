@@ -4,18 +4,20 @@ import React, { useMemo, useState } from "react";
 import AdminProductImage from "@/components/admin/AdminProductImage";
 import { formatBRL } from "@/lib/format";
 import { STOCK_LABEL } from "@/lib/order-meta";
-import { normalize, stockOf, type OrderLine, type PickerProduct, type PickerVariant, type StockLocation } from "./types";
+import { normalize, type OrderLine, type PickerProduct, type PickerVariant, type StockLocation } from "./types";
 
 const VISIBLE_WITHOUT_SEARCH = 6;
 
 interface ProductPickerProps {
   products: PickerProduct[];
   location: StockLocation;
+  /** Estoque disponível da variação no estoque escolhido (na edição, já conta o que o pedido devolve). */
+  getStock: (variant: PickerVariant) => number;
   lines: OrderLine[];
   onAdd: (product: PickerProduct, variant: PickerVariant | null) => void;
 }
 
-export default function ProductPicker({ products, location, lines, onAdd }: ProductPickerProps) {
+export default function ProductPicker({ products, location, getStock, lines, onAdd }: ProductPickerProps) {
   const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
@@ -69,8 +71,8 @@ export default function ProductPicker({ products, location, lines, onAdd }: Prod
         <ul className="mt-3 divide-y divide-primary/10 rounded-lg border border-primary/10">
           {visible.map((product) => {
             const variants = product.variants;
-            const available = variants.filter((v) => stockOf(v, location) - inCart(v.id) > 0);
-            const totalStock = variants.reduce((acc, v) => acc + stockOf(v, location), 0);
+            const available = variants.filter((v) => getStock(v) - inCart(v.id) > 0);
+            const totalStock = variants.reduce((acc, v) => acc + getStock(v), 0);
             const single = variants.length <= 1;
             const isOpen = openId === product.id;
             const soldOut = variants.length > 0 && available.length === 0;
@@ -124,7 +126,7 @@ export default function ProductPicker({ products, location, lines, onAdd }: Prod
                     <p className="mb-2 text-sm text-primary/70">Escolha cor e tamanho:</p>
                     <div className="flex flex-wrap gap-2">
                       {variants.map((v) => {
-                        const left = stockOf(v, location) - inCart(v.id);
+                        const left = getStock(v) - inCart(v.id);
                         return (
                           <button
                             key={v.id}

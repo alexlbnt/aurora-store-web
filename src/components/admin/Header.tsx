@@ -33,6 +33,7 @@ export default function Header({
     if (title && title !== "Visão Geral") return title;
     if (pathname === "/admin") return "Visão Geral";
     if (pathname === "/admin/sales/new") return "Novo pedido";
+    if (pathname.startsWith("/admin/sales/") && pathname.endsWith("/edit")) return "Editar pedido";
     if (pathname.startsWith("/admin/sales/")) return "Detalhes do Pedido";
     if (pathname.startsWith("/admin/sales")) return "Vendas";
     if (pathname === "/admin/products/new") return "Novo Produto";
