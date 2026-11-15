@@ -9,15 +9,20 @@ import { whatsappLink } from "@/lib/contact";
 function SuccessContent() {
   const { clearCart } = useCart();
   const searchParams = useSearchParams();
-  const orderNumber = searchParams.get("orderNumber");
+  // Um pedido que precisou dos dois estoques chega como dois números separados por vírgula.
+  const orderNumbers = (searchParams.get("orderNumber") ?? "")
+    .split(",")
+    .map((n) => n.trim())
+    .filter((n) => /^AUR-\d{6}$/.test(n));
+  const orderLabel = orderNumbers.join(" e ");
 
   useEffect(() => {
     clearCart();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const message = orderNumber
-    ? `Olá! Acabei de enviar o pedido ${orderNumber} pelo site da Aurora. Podemos combinar o pagamento e a entrega?`
+  const message = orderNumbers.length
+    ? `Olá! Acabei de enviar o pedido ${orderLabel} pelo site da Aurora. Podemos combinar o pagamento e a entrega?`
     : "Olá! Acabei de enviar um pedido pelo site da Aurora. Podemos combinar o pagamento e a entrega?";
 
   return (
@@ -27,9 +32,15 @@ function SuccessContent() {
         Recebemos o seu pedido
       </h1>
 
-      {orderNumber && (
+      {orderNumbers.length === 1 && (
         <p className="text-primary/80 dark:text-slate-300 mb-6">
-          Número do pedido: <span className="font-semibold text-primary dark:text-white">{orderNumber}</span>
+          Número do pedido: <span className="font-semibold text-primary dark:text-white">{orderNumbers[0]}</span>
+        </p>
+      )}
+      {orderNumbers.length > 1 && (
+        <p className="text-primary/80 dark:text-slate-300 mb-6">
+          As peças vão sair de dois estoques, então o seu pedido ficou com dois números:{" "}
+          <span className="font-semibold text-primary dark:text-white">{orderLabel}</span>.
         </p>
       )}
 

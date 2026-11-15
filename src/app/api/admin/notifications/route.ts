@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { releaseStaleSiteOrders } from "@/lib/stale-orders";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,9 @@ export async function GET() {
   }
 
   try {
+    // Pedidos do site parados há dias voltam ao estoque antes de listar os pendentes.
+    await releaseStaleSiteOrders().catch((e) => console.error("Falha ao liberar pedidos antigos do site:", e));
+
     const [pendingOrders, lowStockVariants, recentPaidOrders] = await Promise.all([
       // 1. Pedidos pendentes de pagamento / confirmação
       prisma.order.findMany({

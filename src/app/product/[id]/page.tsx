@@ -35,16 +35,30 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   const colors = Array.from(new Set(dbProduct.variants.map((v: any) => v.color)));
   const sizes = Array.from(new Set(dbProduct.variants.map((v: any) => v.size)));
 
+  // Preço: a variação pode ter preço próprio; sem ele, vale o preço base do produto.
+  const brl = (n: number) => `R$ ${n.toFixed(2).replace('.', ',')}`;
+  const basePrice = Number(dbProduct.basePrice);
+  const variantPrices = dbProduct.variants.map((v) => (v.price != null ? Number(v.price) : basePrice));
+  const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : basePrice;
+  const hasPriceRange = new Set(variantPrices).size > 1;
+
   const product = {
     id: dbProduct.id,
     name: dbProduct.name,
-    price: `R$ ${Number(dbProduct.basePrice).toFixed(2).replace('.', ',')}`,
+    basePrice,
+    price: brl(minPrice),
     images: dbProduct.images.length > 0 
       ? dbProduct.images.map((img: any) => img.url) 
       : ["https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=1587&auto=format&fit=crop"],
     colors: colors.length > 0 ? colors : ["Padrão"],
     sizes: sizes.length > 0 ? sizes : ["Único"],
-    variants: dbProduct.variants.map((v) => ({ color: v.color, size: v.size, stock: v.stockA })),
+    // O site vende dos dois estoques (A e V): o disponível é a soma.
+    variants: dbProduct.variants.map((v) => ({
+      color: v.color,
+      size: v.size,
+      stock: Math.max(0, v.stockA) + Math.max(0, v.stockV),
+      price: v.price != null ? Number(v.price) : null,
+    })),
     description: dbProduct.description,
     categoryName: dbProduct.category.name,
     categorySlug: dbProduct.category.slug,
@@ -83,7 +97,10 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
               )}
             </div>
             <div>
-              <p className="text-2xl font-semibold text-primary dark:text-slate-100">{product.price}</p>
+              <p className="text-2xl font-semibold text-primary dark:text-slate-100">
+                {hasPriceRange && <span className="text-base font-normal text-primary/70">A partir de </span>}
+                {product.price}
+              </p>
             </div>
           </div>
 

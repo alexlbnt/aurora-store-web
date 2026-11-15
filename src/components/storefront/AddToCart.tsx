@@ -9,12 +9,15 @@ export interface StockVariant {
   color: string;
   size: string;
   stock: number;
+  /** Preço próprio da variação; null usa o preço base do produto. */
+  price: number | null;
 }
 
 interface AddToCartProduct {
   id: string;
   name: string;
   price: string;
+  basePrice: number;
   images: string[];
   colors: string[];
   sizes: string[];
@@ -47,6 +50,11 @@ export default function AddToCart({ product }: { product: AddToCartProduct }) {
 
   const liked = isInWishlist(product.id);
 
+  const selectedVariant = product.variants.find((v) => v.color === selectedColor && v.size === selectedSize);
+  const unitPrice = selectedVariant?.price ?? product.basePrice;
+  const unitPriceLabel = `R$ ${unitPrice.toFixed(2).replace(".", ",")}`;
+  const showOptionPrice = product.variants.some((v) => v.price != null && v.price !== product.basePrice);
+
   const cartLineId = `${product.id}-${selectedColor}-${selectedSize}`;
   const inCart = items.find((i) => i.id === cartLineId)?.qty ?? 0;
   const stock = hasVariants ? stockOf(selectedColor, selectedSize) : Infinity;
@@ -66,17 +74,14 @@ export default function AddToCart({ product }: { product: AddToCartProduct }) {
 
   const handleAddToCart = () => {
     if (soldOut || reachedLimit) return;
-    const cleanPriceStr = String(product.price).replace("R$", "").trim().replace(/\./g, "").replace(",", ".");
-    const numericPrice = parseFloat(cleanPriceStr) || 0;
-
     addToCart({
       id: cartLineId,
       productId: product.id,
       name: product.name,
       color: selectedColor,
       size: selectedSize,
-      price: product.price,
-      numericPrice,
+      price: unitPriceLabel,
+      numericPrice: unitPrice,
       qty: 1,
       image: product.images[0],
     });
@@ -164,6 +169,11 @@ export default function AddToCart({ product }: { product: AddToCartProduct }) {
             );
           })}
         </div>
+        {showOptionPrice && (
+          <p className="text-sm text-primary dark:text-slate-200">
+            Preço desta opção: <span className="font-semibold">{unitPriceLabel}</span>
+          </p>
+        )}
         {stockMessage && (
           <p className={`text-sm font-medium ${soldOut ? "text-dawn-ink" : "text-primary/80"}`} role="status">
             {stockMessage}

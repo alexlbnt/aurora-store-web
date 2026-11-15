@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { processPaymentAndCreateOrder } from "./actions";
 import { formatPhone } from "@/lib/formatters";
+import { HONEYPOT_FIELD } from "@/lib/checkout";
 
 const UFS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
@@ -20,8 +21,8 @@ const formatCep = (value: string) => {
 
 const brl = (n: number) => `R$ ${n.toFixed(2).replace(".", ",")}`;
 
-export default function CheckoutClient() {
-  const { items, cartTotal, cartCount, isMounted } = useCart();
+export default function CheckoutClient({ account }: { account: { email: string; name: string | null } | null }) {
+  const { items, cartTotal, cartCount, isMounted, updatePrices } = useCart();
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(processPaymentAndCreateOrder, null);
 
@@ -33,6 +34,12 @@ export default function CheckoutClient() {
   const [cepStatus, setCepStatus] = useState<"idle" | "loading" | "notFound">("idle");
   const [paymentMethod, setPaymentMethod] = useState<"PIX" | "CREDIT_CARD">("PIX");
   const [shippingType, setShippingType] = useState<"SEM_FRETE" | "PAGO_CLIENTE">("SEM_FRETE");
+
+  // O servidor avisou que o preço mudou: a sacola passa a mostrar o valor atual.
+  useEffect(() => {
+    if (state?.priceUpdates) updatePrices(state.priceUpdates);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
 
   useEffect(() => {
     if (isMounted && items.length === 0 && !isPending) {
@@ -127,6 +134,11 @@ export default function CheckoutClient() {
           <input type="hidden" name="cartItems" value={JSON.stringify(items)} />
           <input type="hidden" name="paymentMethod" value={paymentMethod} />
           <input type="hidden" name="shippingType" value={shippingType} />
+          {/* Campo invisível para pessoas: se vier preenchido, o pedido é de um robô. */}
+          <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
+            <label htmlFor={HONEYPOT_FIELD}>Não preencha este campo</label>
+            <input id={HONEYPOT_FIELD} type="text" name={HONEYPOT_FIELD} tabIndex={-1} autoComplete="off" defaultValue="" />
+          </div>
 
           {/* 1. Dados */}
           <fieldset className="space-y-4">
@@ -137,11 +149,17 @@ export default function CheckoutClient() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="name" className={labelClass}>Nome completo</label>
-                <input id="name" type="text" name="name" required autoComplete="name" className={fieldClass} placeholder="Maria Oliveira" />
+                <input id="name" type="text" name="name" required maxLength={120} autoComplete="name" defaultValue={account?.name ?? ""} className={fieldClass} placeholder="Maria Oliveira" />
               </div>
               <div>
-                <label htmlFor="email" className={labelClass}>E-mail <span className="font-normal text-primary/60">(opcional)</span></label>
-                <input id="email" type="email" name="email" autoComplete="email" className={fieldClass} placeholder="maria@exemplo.com" />
+                <label htmlFor="email" className={labelClass}>
+                  E-mail <span className="font-normal text-primary/60">{account ? "(da sua conta)" : "(opcional)"}</span>
+                </label>
+                {account ? (
+                  <input id="email" type="email" value={account.email} readOnly className={`${fieldClass} opacity-70`} />
+                ) : (
+                  <input id="email" type="email" name="email" maxLength={160} autoComplete="email" className={fieldClass} placeholder="maria@exemplo.com" />
+                )}
               </div>
               <div>
                 <label htmlFor="phone" className={labelClass}>Telefone ou WhatsApp</label>
@@ -263,7 +281,7 @@ export default function CheckoutClient() {
 
             <div>
               <label htmlFor="notes" className={labelClass}>Observações <span className="font-normal text-primary/60">(opcional)</span></label>
-              <textarea id="notes" name="notes" rows={2} className={fieldClass} placeholder="Referência para entrega, embalagem de presente…" />
+              <textarea id="notes" name="notes" rows={2} maxLength={500} className={fieldClass} placeholder="Referência para entrega, embalagem de presente…" />
             </div>
           </fieldset>
 

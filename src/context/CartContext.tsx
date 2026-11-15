@@ -20,6 +20,8 @@ interface CartContextType {
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, qty: number) => void;
   clearCart: () => void;
+  /** Aplica preços atuais (em reais) informados pelo servidor, por id da linha. */
+  updatePrices: (prices: Record<string, number>) => void;
   cartCount: number;
   cartTotal: number;
   isMounted: boolean;
@@ -78,6 +80,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     saveCart([]);
   };
 
+  const updatePrices = (prices: Record<string, number>) => {
+    saveCart(
+      items.map((i) =>
+        prices[i.id] !== undefined
+          ? { ...i, numericPrice: prices[i.id], price: `R$ ${prices[i.id].toFixed(2).replace(".", ",")}` }
+          : i
+      )
+    );
+  };
+
   const cartCount = isMounted ? items.reduce((acc, item) => acc + (Number(item.qty) || 0), 0) : 0;
   const cartTotal = isMounted ? items.reduce((acc, item) => {
     const rawPrice = item.numericPrice ?? (parseFloat(String(item.price || "0").replace(/[^0-9,-]+/g, "").replace(",", ".")) || 0);
@@ -87,7 +99,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, 0) : 0;
 
   return (
-    <CartContext.Provider value={{ items: isMounted ? items : [], addToCart, removeFromCart, updateQuantity, clearCart, cartCount, cartTotal, isMounted }}>
+    <CartContext.Provider value={{ items: isMounted ? items : [], addToCart, removeFromCart, updateQuantity, clearCart, updatePrices, cartCount, cartTotal, isMounted }}>
       {children}
     </CartContext.Provider>
   );

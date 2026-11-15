@@ -2,7 +2,9 @@ import type { NextAuthConfig } from "next-auth";
 
 export const authConfig = {
   trustHost: true,
-  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "aurora-store-dev-secret-key-very-secure-2026-centi",
+  // Sem chave fixa no código: se AUTH_SECRET faltar, o login falha em vez de aceitar sessões forjadas.
+  // Gere uma com `npx auth secret` e configure em .env e na Vercel (Settings > Environment Variables).
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   pages: {
     signIn: '/admin/login',
   },
