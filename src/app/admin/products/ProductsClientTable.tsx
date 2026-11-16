@@ -11,6 +11,8 @@ export interface SerializedProduct {
   id: string;
   name: string;
   sku: string;
+  /** false: oculto na vitrine. */
+  visible: boolean;
   description: string;
   basePrice: number;
   categoryId: string;
@@ -272,6 +274,7 @@ export default function ProductsClientTable({
                           <ProductRowActions
                             productId={product.id}
                             productName={product.name}
+                            visible={product.visible}
                             onProductDeleted={(id) => setProducts((prev) => prev.filter((p) => p.id !== id))}
                             onStockUpdated={() => router.refresh()}
                           />
@@ -283,6 +286,12 @@ export default function ProductsClientTable({
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary">
                             {product.category?.name || "Geral"}
                           </span>
+                          {!product.visible && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-900">
+                              <span className="material-symbols-outlined text-[14px]" aria-hidden="true">visibility_off</span>
+                              Oculto na loja
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -354,7 +363,15 @@ export default function ProductsClientTable({
                               />
                             </div>
                             <div>
-                              <p className="font-semibold text-primary">{product.name}</p>
+                              <p className="font-semibold text-primary">
+                                {product.name}
+                                {!product.visible && (
+                                  <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-900 align-middle">
+                                    <span className="material-symbols-outlined text-[14px]" aria-hidden="true">visibility_off</span>
+                                    Oculto na loja
+                                  </span>
+                                )}
+                              </p>
                               <p className="text-sm text-primary/60">{product.variants.length} {product.variants.length === 1 ? "variação" : "variações"}</p>
                             </div>
                           </div>
@@ -405,6 +422,7 @@ export default function ProductsClientTable({
                           <ProductRowActions
                             productId={product.id}
                             productName={product.name}
+                            visible={product.visible}
                             onProductDeleted={(id) => setProducts((prev) => prev.filter((p) => p.id !== id))}
                             onStockUpdated={() => router.refresh()}
                           />

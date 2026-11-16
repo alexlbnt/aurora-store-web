@@ -15,6 +15,7 @@ export default async function Home() {
   // Busca mais que 8 para poder preencher a vitrine com peças disponíveis antes das esgotadas.
   const dbEssentialsProducts = await prisma.product.findMany({
     take: 24,
+    where: { visible: true },
     orderBy: [
       { isFeatured: 'desc' },
       { createdAt: 'desc' }
@@ -27,6 +28,7 @@ export default async function Home() {
     orderBy: { name: 'asc' },
     include: {
       products: {
+        where: { visible: true },
         take: 1,
         include: {
           images: {

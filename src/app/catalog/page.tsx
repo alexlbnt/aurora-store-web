@@ -14,7 +14,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
   const size = typeof params.size === 'string' ? params.size : undefined;
   const color = typeof params.color === 'string' ? params.color : undefined;
 
-  const where: any = {};
+  const where: any = { visible: true };
   if (q) {
     where.OR = [
       { name: { contains: q, mode: 'insensitive' } },
@@ -49,7 +49,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
 
   // Opções de tamanho e cor: só o que tem peça disponível.
   const inStockVariants = await prisma.variant.findMany({
-    where: { OR: [{ stockA: { gt: 0 } }, { stockV: { gt: 0 } }] },
+    where: { product: { visible: true }, OR: [{ stockA: { gt: 0 } }, { stockV: { gt: 0 } }] },
     select: { size: true, color: true },
     distinct: ['size', 'color'],
   });

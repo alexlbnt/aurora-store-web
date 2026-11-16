@@ -3,6 +3,28 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { handleDatabaseError } from "@/lib/error-handler";
+import { requireAdmin } from "@/lib/require-admin";
+import { productPath } from "@/lib/slug";
+
+/** Mostra ou esconde o produto da vitrine. Ele continua no painel, nos pedidos e no estoque. */
+export async function setProductVisibility(productId: string, visible: boolean) {
+  try {
+    await requireAdmin();
+    const product = await prisma.product.update({
+      where: { id: productId },
+      data: { visible },
+      select: { id: true, slug: true },
+    });
+    revalidatePath("/");
+    revalidatePath("/catalog");
+    revalidatePath("/category/[slug]", "page");
+    revalidatePath(productPath(product));
+    revalidatePath("/admin/products");
+    return { success: true as const };
+  } catch (error) {
+    return { success: false as const, error: handleDatabaseError(error, "Não foi possível mudar a visibilidade do produto.") };
+  }
+}
 
 export async function deleteProduct(productId: string) {
   try {
@@ -14,7 +36,7 @@ export async function deleteProduct(productId: string) {
     if (orderItemsCount > 0) {
       return {
         success: false,
-        error: "Este produto não pode ser excluído pois possui pedidos e histórico de vendas registrados. Recomendamos zerar seu estoque para retirá-lo da loja."
+        error: "Este produto não pode ser excluído pois possui pedidos e histórico de vendas registrados. Para tirá-lo da vitrine, use \"Ocultar da loja\" no menu do produto."
       };
     }
 

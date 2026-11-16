@@ -29,7 +29,7 @@ const getProduct = cache((idOrSlug: string) =>
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const p = await getProduct(id);
-  if (!p) return { title: `Produto não encontrado | ${SITE_NAME}` };
+  if (!p || !p.visible) return { title: `Produto não encontrado | ${SITE_NAME}`, robots: { index: false } };
 
   const title = `${p.name.trim()} | ${SITE_NAME}`;
   const price = formatBRL(Number(p.basePrice));
@@ -60,7 +60,8 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   const session = await auth();
   const isAdmin = (session?.user as any)?.role === "ADMIN";
 
-  if (!dbProduct) {
+  // Produto oculto na loja: some para o público; o administrador ainda vê para conferir.
+  if (!dbProduct || (!dbProduct.visible && !isAdmin)) {
     notFound();
   }
 
@@ -114,6 +115,13 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
         <span className="material-symbols-outlined text-sm">chevron_right</span>
         <span className="text-primary dark:text-slate-200 font-bold truncate max-w-[200px] sm:max-w-none">{product.name}</span>
       </nav>
+
+      {!dbProduct.visible && (
+        <p className="mb-6 rounded-lg bg-amber-50 text-amber-900 border border-amber-200 px-4 py-3 text-sm" role="status">
+          Este produto está <strong>oculto na loja</strong>. Só administradores veem esta página. Para mostrar de novo,
+          use &quot;Mostrar na loja&quot; na lista de produtos do painel.
+        </p>
+      )}
 
       <div className="flex flex-col md:flex-row gap-10 lg:gap-16 mb-20 relative">
         {/* Images Selection */}

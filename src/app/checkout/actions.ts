@@ -4,6 +4,9 @@ import { randomInt } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { notifyNewSiteOrders } from "@/lib/push";
+import type { NewOrderInfo } from "@/lib/push-message";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { formatPhone } from "@/lib/formatters";
@@ -85,7 +88,7 @@ export async function processPaymentAndCreateOrder(_prev: CheckoutState, formDat
   // Sem converter maiúsculas: a área do cliente busca o cadastro pelo e-mail exatamente como está na conta.
   const sessionEmail = session?.user?.email ?? null;
 
-  let orderNumbers: string[] = [];
+  let created: NewOrderInfo[] = [];
 
   try {
     // Pedidos parados há muitos dias liberam estoque antes de conferir este.
@@ -114,7 +117,7 @@ export async function processPaymentAndCreateOrder(_prev: CheckoutState, formDat
 
     // 3. Preço e variação vêm do banco, nunca do navegador.
     const productIds = [...new Set(cart.lines.map((l) => l.productId))];
-    const products = await prisma.product.findMany({ where: { id: { in: productIds } }, include: { variants: true } });
+    const products = await prisma.product.findMany({ where: { id: { in: productIds }, visible: true }, include: { variants: true } });
     const productById = new Map(products.map((p) => [p.id, p]));
 
     type ProductRow = (typeof products)[number];
@@ -147,7 +150,7 @@ export async function processPaymentAndCreateOrder(_prev: CheckoutState, formDat
     // 4. Estoque conferido e baixado dentro da mesma transação. Se o número do pedido repetir, tenta de novo.
     for (let attempt = 0; ; attempt++) {
       try {
-        orderNumbers = await prisma.$transaction(
+        created = await prisma.$transaction(
           async (tx) => {
             const fresh = await tx.variant.findMany({ where: { id: { in: variantIds } } });
             const freshById = new Map(fresh.map((v) => [v.id, v]));
@@ -199,6 +202,7 @@ export async function processPaymentAndCreateOrder(_prev: CheckoutState, formDat
                 ? `[Site] Pedido dividido entre os estoques: ${locations.map((l) => `${numbers.get(l)} (${LOCATION_LABEL[l]})`).join(" e ")}.`
                 : null;
 
+            const createdHere: NewOrderInfo[] = [];
             for (const loc of locations) {
               const allocated = allocation.byLocation[loc]!;
               for (const a of allocated) {
@@ -215,7 +219,7 @@ export async function processPaymentAndCreateOrder(_prev: CheckoutState, formDat
               }
 
               const totalCents = allocated.reduce((acc, a) => acc + byKey.get(a.key)!.priceCents * a.qty, 0);
-              await tx.order.create({
+              const order = await tx.order.create({
                 data: {
                   orderNumber: numbers.get(loc)!,
                   customerId,
@@ -241,10 +245,19 @@ export async function processPaymentAndCreateOrder(_prev: CheckoutState, formDat
                     }),
                   },
                 },
+                select: { id: true },
+              });
+              createdHere.push({
+                id: order.id,
+                orderNumber: numbers.get(loc)!,
+                stockLocation: loc,
+                totalCents,
+                customerName: name,
+                itemCount: allocated.reduce((acc, a) => acc + a.qty, 0),
               });
             }
 
-            return locations.map((l) => numbers.get(l)!);
+            return createdHere;
           },
           { timeout: 20000 }
         );
@@ -264,5 +277,9 @@ export async function processPaymentAndCreateOrder(_prev: CheckoutState, formDat
   revalidatePath("/admin");
   for (const id of new Set(cart.lines.map((l) => l.productId))) revalidatePath(`/product/${id}`);
 
+  // Aviso no celular das vendedoras depois da resposta ao cliente: não atrasa nem derruba o pedido.
+  after(() => notifyNewSiteOrders(created));
+
+  const orderNumbers = created.map((o) => o.orderNumber);
   redirect(`/checkout/success?orderNumber=${encodeURIComponent(orderNumbers.join(","))}`);
 }

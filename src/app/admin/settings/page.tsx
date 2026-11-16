@@ -3,6 +3,8 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import SettingsClientForm from "./SettingsClientForm";
+import PushSettingsCard from "@/components/admin/pwa/PushSettingsCard";
+import { vapidPublicKey } from "@/lib/push";
 
 export const revalidate = 0;
 
@@ -52,6 +54,10 @@ export default async function AdminSettingsPage() {
           <p className="text-slate-500 text-sm mt-1">
             Gerencie seu perfil de acesso, parâmetros da loja e monitore os serviços integrados.
           </p>
+        </div>
+
+        <div className="mb-8">
+          <PushSettingsCard publicKey={vapidPublicKey()} />
         </div>
 
         <SettingsClientForm initialData={initialData} />

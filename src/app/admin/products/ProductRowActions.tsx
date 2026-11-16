@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback, useSyncExternalStore }
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { deleteProduct } from "./actions";
+import { deleteProduct, setProductVisibility } from "./actions";
 import { showToast } from "@/components/ui/Toast";
 import QuickStockModal from "@/components/admin/products/QuickStockModal";
 import ProductionModal from "@/components/admin/products/ProductionModal";
@@ -13,6 +13,8 @@ import { useConfirm } from "@/components/admin/ui/ConfirmDialog";
 interface ProductRowActionsProps {
   productId: string;
   productName?: string;
+  /** Se o produto aparece na vitrine. */
+  visible?: boolean;
   onStockUpdated?: () => void;
   onProductDeleted?: (id: string) => void;
 }
@@ -22,6 +24,7 @@ const emptySubscribe = () => () => {};
 export default function ProductRowActions({
   productId,
   productName = "Produto",
+  visible = true,
   onStockUpdated,
   onProductDeleted,
 }: ProductRowActionsProps) {
@@ -51,7 +54,7 @@ export default function ProductRowActions({
       return;
     }
 
-    const menuHeight = 185;
+    const menuHeight = 225;
     const menuWidth = 192;
     const margin = 6;
 
@@ -115,6 +118,17 @@ export default function ProductRowActions({
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen, updatePosition]);
+
+  const handleVisibility = async () => {
+    setIsOpen(false);
+    const res = await setProductVisibility(productId, !visible);
+    if (!res.success) {
+      showToast(res.error || "Não foi possível mudar a visibilidade.", "error");
+      return;
+    }
+    showToast(visible ? "Produto oculto na loja." : "Produto visível na loja.", "success");
+    router.refresh();
+  };
 
   const handleDelete = async () => {
     setIsOpen(false);
@@ -203,6 +217,17 @@ export default function ProductRowActions({
               >
                 <span className="material-symbols-outlined text-[18px] text-purple-500">tune</span>
                 Ajustar Estoque
+              </button>
+
+              <button
+                type="button"
+                onClick={handleVisibility}
+                className="group flex w-full items-center gap-2 px-4 py-2.5 text-xs sm:text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px] text-slate-400">
+                  {visible ? "visibility_off" : "visibility"}
+                </span>
+                {visible ? "Ocultar da loja" : "Mostrar na loja"}
               </button>
 
               <button
