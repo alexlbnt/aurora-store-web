@@ -5,6 +5,21 @@ import React, { useState } from "react";
 export default function ProductGallery({ images }: { images: string[] }) {
   const [activeIndex, setActiveIndex] = useState(0);
 
+  if (images.length === 0) {
+    return (
+      <div className="w-full md:w-[55%] md:sticky md:top-24">
+        <div
+          className="aspect-[3/4] w-full rounded-lg bg-accent-soft flex flex-col items-center justify-center gap-3 text-primary/30"
+          role="img"
+          aria-label="Produto ainda sem foto"
+        >
+          <span className="material-symbols-outlined text-7xl" aria-hidden="true">checkroom</span>
+          <span className="font-serif text-2xl" aria-hidden="true">Aurora</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full md:w-[55%] flex flex-col-reverse md:flex-row gap-4 h-full md:sticky md:top-24">
       <div className="flex md:flex-col gap-4 overflow-x-auto md:overflow-y-auto no-scrollbar md:w-20 lg:w-24 shrink-0 snap-x">

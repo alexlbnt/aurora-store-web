@@ -2,6 +2,7 @@ import React from "react";
 import StorefrontLayout from "@/components/storefront/StorefrontLayout";
 import Link from "next/link";
 import { whatsappLink } from "@/lib/contact";
+import { TROCAS_RESUMO } from "@/lib/policies";
 
 export const metadata = {
   title: "Ajuda & Dúvidas Frequentes | Aurora Sleepwear",
@@ -16,7 +17,7 @@ export default function FAQPage() {
     },
     {
       q: "Como funcionam as trocas e devoluções?",
-      a: "Prazo e condições são combinados com a vendedora no atendimento. Para pedir uma troca, mantenha a peça com a etiqueta, sem sinais de uso ou lavagem, e fale com a equipe pelo WhatsApp.",
+      a: `${TROCAS_RESUMO} Veja todos os detalhes em Trocas e devoluções.`,
     },
     {
       q: "Como funciona o pagamento?",
@@ -120,6 +121,12 @@ export default function FAQPage() {
             >
               Falar no WhatsApp
             </a>
+            <Link
+              href="/trocas"
+              className="inline-flex items-center min-h-12 px-6 border border-primary/40 text-primary font-semibold rounded-full hover:bg-primary/5 transition-colors text-sm"
+            >
+              Trocas e devoluções
+            </Link>
             <Link
               href="/catalog"
               className="inline-flex items-center min-h-12 px-6 border border-primary/40 text-primary font-semibold rounded-full hover:bg-primary/5 transition-colors text-sm"

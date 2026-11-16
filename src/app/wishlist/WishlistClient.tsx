@@ -47,7 +47,7 @@ export default function WishlistClient() {
               name={product.name}
               price={product.price}
               category={typeof product.category === 'object' ? (product.category as any)?.name : (product.category || 'Aurora')}
-              imageUrl={typeof product.imageUrl === 'string' ? product.imageUrl : ((product.imageUrl as any)?.url || 'https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=1587&auto=format&fit=crop')}
+              imageUrl={typeof product.imageUrl === 'string' ? product.imageUrl : ((product.imageUrl as any)?.url || '')}
             />
           ))}
         </div>

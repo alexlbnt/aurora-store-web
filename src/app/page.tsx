@@ -4,30 +4,22 @@ import ProductCard from "@/components/storefront/ProductCard";
 import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 import HeroSky from "@/components/storefront/HeroSky";
 import { whatsappLink } from "@/lib/contact";
+import { availableFirst, productCardInclude, toProductCard } from "@/lib/storefront";
 
 export const revalidate = 60; // Revalidate page every 60 seconds
 
 export default async function Home() {
 
+  // Busca mais que 8 para poder preencher a vitrine com peças disponíveis antes das esgotadas.
   const dbEssentialsProducts = await prisma.product.findMany({
-    take: 8,
+    take: 24,
     orderBy: [
       { isFeatured: 'desc' },
       { createdAt: 'desc' }
     ],
-    include: {
-      category: true,
-      images: {
-        orderBy: [
-          { isDisplay: 'desc' },
-          { order: 'asc' }
-        ],
-        take: 1
-      }
-    }
+    include: productCardInclude,
   });
 
   const dbCategories = await prisma.category.findMany({
@@ -52,29 +44,7 @@ export default async function Home() {
   const promoCategory = dbCategories.find(c => c.name.toLowerCase() === 'blusas') || dbCategories[0];
   const displayCategories = dbCategories.filter(c => c.id !== promoCategory?.id).slice(0, 4);
 
-  type ProductWithRelations = Prisma.ProductGetPayload<{
-    include: {
-      category: true;
-      images: {
-        orderBy: [
-          { isDisplay: 'desc' },
-          { order: 'asc' }
-        ];
-        take: 1;
-      };
-    };
-  }>;
-
-  const mapProductToCard = (p: ProductWithRelations) => ({
-    id: p.id,
-    name: p.name,
-    price: `R$ ${Number(p.basePrice).toFixed(2).replace('.', ',')}`,
-    category: p.category.name,
-    imageUrl: p.images[0]?.url || "https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=1587&auto=format&fit=crop",
-    isNew: p.isNew
-  });
-
-  const essentialsProducts = dbEssentialsProducts.map(mapProductToCard);
+  const essentialsProducts = availableFirst(dbEssentialsProducts.map(toProductCard)).slice(0, 8);
 
   return (
     <StorefrontLayout>

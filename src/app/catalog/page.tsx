@@ -2,6 +2,7 @@ import StorefrontLayout from "@/components/storefront/StorefrontLayout";
 import ProductCard from "@/components/storefront/ProductCard";
 import { prisma } from "@/lib/prisma";
 import CatalogFilters from "@/components/storefront/CatalogFilters";
+import { availableFirst, productCardInclude, toProductCard } from "@/lib/storefront";
 
 export const revalidate = 0;
 
@@ -29,28 +30,13 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
   const productsRaw = await prisma.product.findMany({
     where,
     orderBy,
-    include: {
-      category: true,
-      images: {
-        orderBy: [
-          { isDisplay: 'desc' },
-          { order: 'asc' }
-        ],
-        take: 1
-      }
-    }
+    include: productCardInclude,
   });
 
   const categories = await prisma.category.findMany({ orderBy: { name: 'asc' } });
 
-  const products = productsRaw.map(p => ({
-    id: p.id,
-    name: p.name,
-    price: `R$ ${Number(p.basePrice).toFixed(2).replace('.', ',')}`,
-    category: p.category.name,
-    imageUrl: p.images[0]?.url || "https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=1587&auto=format&fit=crop",
-    isNew: p.isNew
-  }));
+  // Esgotados aparecem por último, para o cliente ver primeiro o que pode comprar.
+  const products = availableFirst(productsRaw.map(toProductCard));
 
   return (
     <StorefrontLayout>

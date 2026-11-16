@@ -83,7 +83,7 @@ export default function AddToCart({ product }: { product: AddToCartProduct }) {
       price: unitPriceLabel,
       numericPrice: unitPrice,
       qty: 1,
-      image: product.images[0],
+      image: product.images[0] ?? "",
     });
     setJustAdded(true);
   };
@@ -94,7 +94,7 @@ export default function AddToCart({ product }: { product: AddToCartProduct }) {
       name: product.name,
       price: product.price,
       category: product.categoryName,
-      imageUrl: product.images[0],
+      imageUrl: product.images[0] ?? "",
     });
   };
 

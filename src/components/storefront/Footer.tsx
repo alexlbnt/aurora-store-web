@@ -27,7 +27,7 @@ export default function Footer() {
               <h2 className="text-primary dark:text-slate-100 font-semibold text-base">Ajuda</h2>
               <nav className="flex flex-col gap-2">
                 <Link href="/faq" className="text-primary/70 dark:text-slate-400 text-sm hover:text-primary dark:hover:text-white underline-offset-4 hover:underline">Dúvidas frequentes</Link>
-                <Link href="/faq#trocas" className="text-primary/70 dark:text-slate-400 text-sm hover:text-primary dark:hover:text-white underline-offset-4 hover:underline">Entrega e trocas</Link>
+                <Link href="/trocas" className="text-primary/70 dark:text-slate-400 text-sm hover:text-primary dark:hover:text-white underline-offset-4 hover:underline">Trocas e devoluções</Link>
                 <Link href="/faq#tamanhos" className="text-primary/70 dark:text-slate-400 text-sm hover:text-primary dark:hover:text-white underline-offset-4 hover:underline">Guia de tamanhos</Link>
                 <Link href="/privacidade" className="text-primary/70 dark:text-slate-400 text-sm hover:text-primary dark:hover:text-white underline-offset-4 hover:underline">Privacidade</Link>
               </nav>

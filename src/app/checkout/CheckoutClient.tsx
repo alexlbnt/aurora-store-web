@@ -98,7 +98,11 @@ export default function CheckoutClient({ account }: { account: { email: string; 
             {items.map((item) => (
               <li key={item.id} className="flex gap-4 items-center">
                 <div className="relative w-16 h-20 bg-accent-soft shrink-0 overflow-hidden">
-                  <Image src={item.image} alt={item.name} fill sizes="64px" className="object-cover" />
+                  {item.image ? (
+                    <Image src={item.image} alt={item.name} fill sizes="64px" className="object-cover" />
+                  ) : (
+                    <span className="material-symbols-outlined absolute inset-0 flex items-center justify-center text-primary/30" aria-hidden="true">checkroom</span>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm text-primary dark:text-white line-clamp-1">{item.name}</p>

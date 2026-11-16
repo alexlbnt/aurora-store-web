@@ -38,7 +38,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
               name: String(item.name || "Produto"),
               price: typeof item.price === "string" ? item.price : `R$ ${Number(item.price || 0).toFixed(2).replace(".", ",")}`,
               category: typeof item.category === "string" ? item.category : (item.category?.name || "Aurora"),
-              imageUrl: typeof item.imageUrl === "string" ? item.imageUrl : (item.imageUrl?.url || "https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=1587&auto=format&fit=crop"),
+              imageUrl: typeof item.imageUrl === "string" ? item.imageUrl : (item.imageUrl?.url || ""),
             }));
           setItems(sanitized);
         }

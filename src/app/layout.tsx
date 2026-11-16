@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Hanken_Grotesk, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import { SITE_NAME, siteUrl } from "@/lib/site";
 
 const hankenGrotesk = Hanken_Grotesk({
   variable: "--font-hanken",
@@ -22,9 +23,10 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXTAUTH_URL || "http://localhost:3000"),
+  metadataBase: new URL(siteUrl()),
   title: "Aurora | Premium Sleepwear",
   description: "Ressignificando o seu descanso com elegância e conforto.",
+  openGraph: { siteName: SITE_NAME, locale: "pt_BR", type: "website" },
 };
 
 export default function RootLayout({

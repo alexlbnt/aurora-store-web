@@ -1,4 +1,5 @@
-import React from "react";
+import React, { cache } from "react";
+import type { Metadata } from "next";
 import StorefrontLayout from "@/components/storefront/StorefrontLayout";
 import Link from "next/link";
 import Image from "next/image";
@@ -7,22 +8,52 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import AddToCart from "@/components/storefront/AddToCart";
 import ProductGallery from "@/components/storefront/ProductGallery";
+import { availableStock, formatBRL, metaDescription } from "@/lib/storefront";
+import { SITE_NAME } from "@/lib/site";
+import { TROCAS_RESUMO } from "@/lib/policies";
 
-export default async function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
-  // In a real app we'd fetch product data here based on params.id
-  // This is mock data
-  const resolvedParams = await params;
-  
-  const dbProduct = await prisma.product.findUnique({
-    where: { id: resolvedParams.id },
+// Mesma consulta para a página e para os metadados: o cache evita ir ao banco duas vezes.
+const getProduct = cache((id: string) =>
+  prisma.product.findUnique({
+    where: { id },
     include: {
       category: true,
-      images: {
-        orderBy: { order: 'asc' }
-      },
-      variants: true
-    }
-  });
+      images: { orderBy: { order: "asc" } },
+      variants: true,
+    },
+  })
+);
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const p = await getProduct(id);
+  if (!p) return { title: `Produto não encontrado | ${SITE_NAME}` };
+
+  const title = `${p.name} | ${SITE_NAME}`;
+  const price = formatBRL(Number(p.basePrice));
+  const soldOut = availableStock(p.variants) === 0;
+  const description = metaDescription(`${soldOut ? "Esgotado. " : `${price}. `}${p.description}`);
+  const cover = [...p.images].sort((a, b) => Number(b.isDisplay) - Number(a.isDisplay) || a.order - b.order)[0];
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `/product/${p.id}` },
+    openGraph: {
+      title,
+      description,
+      url: `/product/${p.id}`,
+      siteName: SITE_NAME,
+      locale: "pt_BR",
+      type: "website",
+      ...(cover ? { images: [{ url: cover.url, alt: p.name }] } : {}),
+    },
+  };
+}
+
+export default async function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const dbProduct = await getProduct(resolvedParams.id);
 
   const session = await auth();
   const isAdmin = (session?.user as any)?.role === "ADMIN";
@@ -36,7 +67,6 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   const sizes = Array.from(new Set(dbProduct.variants.map((v: any) => v.size)));
 
   // Preço: a variação pode ter preço próprio; sem ele, vale o preço base do produto.
-  const brl = (n: number) => `R$ ${n.toFixed(2).replace('.', ',')}`;
   const basePrice = Number(dbProduct.basePrice);
   const variantPrices = dbProduct.variants.map((v) => (v.price != null ? Number(v.price) : basePrice));
   const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : basePrice;
@@ -46,10 +76,8 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
     id: dbProduct.id,
     name: dbProduct.name,
     basePrice,
-    price: brl(minPrice),
-    images: dbProduct.images.length > 0 
-      ? dbProduct.images.map((img: any) => img.url) 
-      : ["https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=1587&auto=format&fit=crop"],
+    price: formatBRL(minPrice),
+    images: dbProduct.images.map((img) => img.url),
     colors: colors.length > 0 ? colors : ["Padrão"],
     sizes: sizes.length > 0 ? sizes : ["Único"],
     // O site vende dos dois estoques (A e V): o disponível é a soma.
@@ -141,7 +169,10 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
                 <span className="material-symbols-outlined group-open:rotate-180 transition-transform text-primary/60">keyboard_arrow_down</span>
               </summary>
               <div className="text-sm text-primary/80 dark:text-slate-300 leading-relaxed pr-6 pb-2">
-                Prazo e condições de troca são combinados com a vendedora no atendimento. Para pedir uma troca, mantenha a peça com a etiqueta, sem sinais de uso ou lavagem, e fale com a equipe pelo WhatsApp.
+                <p>{TROCAS_RESUMO}</p>
+                <Link href="/trocas" className="inline-block mt-2 font-semibold text-primary dark:text-slate-100 underline underline-offset-4">
+                  Ver a política de trocas
+                </Link>
               </div>
             </details>
           </div>

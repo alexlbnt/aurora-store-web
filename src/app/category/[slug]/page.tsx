@@ -3,6 +3,7 @@ import StorefrontLayout from "@/components/storefront/StorefrontLayout";
 import ProductCard from "@/components/storefront/ProductCard";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import { availableFirst, productCardInclude, toProductCard } from "@/lib/storefront";
 
 export const revalidate = 60; // Revalidate page every 60 seconds
 
@@ -17,18 +18,7 @@ export default async function CategoryPage({ params }: Props) {
   const category = await prisma.category.findUnique({
     where: { slug },
     include: {
-      products: {
-        include: {
-          category: true,
-          images: {
-            orderBy: [
-              { isDisplay: 'desc' },
-              { order: 'asc' }
-            ],
-            take: 1
-          }
-        }
-      }
+      products: { include: productCardInclude },
     }
   });
 
@@ -36,14 +26,7 @@ export default async function CategoryPage({ params }: Props) {
     notFound();
   }
 
-  const products = category.products.map(p => ({
-    id: p.id,
-    name: p.name,
-    price: `R$ ${Number(p.basePrice).toFixed(2).replace('.', ',')}`,
-    category: p.category.name,
-    imageUrl: p.images[0]?.url || "https://images.unsplash.com/photo-1544441893-675973e31985?q=80&w=1587&auto=format&fit=crop",
-    isNew: p.isNew
-  }));
+  const products = availableFirst(category.products.map(toProductCard));
 
   return (
     <StorefrontLayout>
