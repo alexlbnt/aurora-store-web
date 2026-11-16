@@ -2,7 +2,7 @@ import StorefrontLayout from "@/components/storefront/StorefrontLayout";
 import ProductCard from "@/components/storefront/ProductCard";
 import { prisma } from "@/lib/prisma";
 import CatalogFilters from "@/components/storefront/CatalogFilters";
-import { availableFirst, productCardInclude, toProductCard } from "@/lib/storefront";
+import { availableFirst, filterableColors, productCardInclude, sortSizes, toProductCard } from "@/lib/storefront";
 
 export const revalidate = 0;
 
@@ -11,6 +11,8 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
   const q = typeof params.q === 'string' ? params.q : undefined;
   const categoryStr = typeof params.category === 'string' ? params.category : undefined;
   const sort = typeof params.sort === 'string' ? params.sort : 'newest';
+  const size = typeof params.size === 'string' ? params.size : undefined;
+  const color = typeof params.color === 'string' ? params.color : undefined;
 
   const where: any = {};
   if (q) {
@@ -21,6 +23,16 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
   }
   if (categoryStr) {
     where.categoryId = categoryStr;
+  }
+  // Tamanho e cor: só mostra o produto se a combinação escolhida tiver peça em algum estoque.
+  if (size || color) {
+    where.variants = {
+      some: {
+        ...(size ? { size } : {}),
+        ...(color ? { color } : {}),
+        OR: [{ stockA: { gt: 0 } }, { stockV: { gt: 0 } }],
+      },
+    };
   }
 
   let orderBy: any = { createdAt: 'desc' };
@@ -35,6 +47,15 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
 
   const categories = await prisma.category.findMany({ orderBy: { name: 'asc' } });
 
+  // Opções de tamanho e cor: só o que tem peça disponível.
+  const inStockVariants = await prisma.variant.findMany({
+    where: { OR: [{ stockA: { gt: 0 } }, { stockV: { gt: 0 } }] },
+    select: { size: true, color: true },
+    distinct: ['size', 'color'],
+  });
+  const sizes = sortSizes(inStockVariants.map((v) => v.size));
+  const colors = filterableColors(inStockVariants.map((v) => v.color));
+
   // Esgotados aparecem por último, para o cliente ver primeiro o que pode comprar.
   const products = availableFirst(productsRaw.map(toProductCard));
 
@@ -44,7 +65,16 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
         <div className="flex flex-col md:flex-row gap-8">
           {/* Filters Sidebar */}
           <div className="w-full md:w-64 shrink-0">
-            <CatalogFilters categories={categories} initialQuery={q} initialCategory={categoryStr} initialSort={sort} />
+            <CatalogFilters
+              categories={categories}
+              sizes={sizes}
+              colors={colors}
+              initialQuery={q}
+              initialCategory={categoryStr}
+              initialSort={sort}
+              initialSize={size}
+              initialColor={color}
+            />
           </div>
 
           {/* Product Grid */}

@@ -7,6 +7,8 @@ import { useWishlist } from "@/context/WishlistContext";
 
 interface ProductCardProps {
   id: string;
+  /** Endereço da página; sem ele, usa o id (o produto redireciona para o endereço legível). */
+  href?: string;
   name: string;
   price: string;
   category: string;
@@ -16,11 +18,12 @@ interface ProductCardProps {
   soldOut?: boolean;
 }
 
-export default function ProductCard({ id, name, price, category, imageUrl, isNew, soldOut }: ProductCardProps) {
+export default function ProductCard({ id, href, name, price, category, imageUrl, isNew, soldOut }: ProductCardProps) {
   const { toggleWishlist, isInWishlist } = useWishlist();
   const liked = isInWishlist(id);
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = !!imageUrl && !imageFailed;
+  const link = href || `/product/${id}`;
 
   return (
     <div className="group flex flex-col gap-3 relative">
@@ -37,7 +40,7 @@ export default function ProductCard({ id, name, price, category, imageUrl, isNew
         <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: liked ? '"FILL" 1' : '"FILL" 0' }}>favorite</span>
       </button>
 
-      <Link href={`/product/${id}`} className="relative aspect-[3/4] overflow-hidden bg-accent-soft" aria-label={soldOut ? `${name} (esgotado)` : name}>
+      <Link href={link} className="relative aspect-[3/4] overflow-hidden bg-accent-soft" aria-label={soldOut ? `${name} (esgotado)` : name}>
         {soldOut ? (
           <span className="absolute top-2 left-2 z-10 bg-white/90 text-primary text-xs font-semibold px-2.5 py-1">
             Esgotado
@@ -67,7 +70,7 @@ export default function ProductCard({ id, name, price, category, imageUrl, isNew
       <div className="flex flex-col gap-1 px-1">
         <p className="text-xs text-primary/60 dark:text-slate-400">{category}</p>
         <div className="flex justify-between items-start gap-3">
-          <Link href={`/product/${id}`} className="text-primary dark:text-slate-100 font-serif text-lg leading-snug group-hover:underline decoration-primary/30 underline-offset-4">
+          <Link href={link} className="text-primary dark:text-slate-100 font-serif text-lg leading-snug group-hover:underline decoration-primary/30 underline-offset-4">
             {name}
           </Link>
           <span className="text-primary dark:text-slate-100 font-semibold text-sm whitespace-nowrap pt-1">{price}</span>

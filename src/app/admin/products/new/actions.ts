@@ -3,9 +3,11 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { handleDatabaseError } from "@/lib/error-handler";
+import { slugify, uniqueSlug as findFreeSlug } from "@/lib/slug";
 
 export async function createProduct(formData: FormData) {
-  const name = formData.get("name") as string;
+  // Espaços nas pontas do nome apareciam no título da página e na prévia do link.
+  const name = ((formData.get("name") as string) || "").trim();
   const description = formData.get("description") as string;
   const price = formData.get("price") as string;
   const stockA = formData.get("stockA") as string;
@@ -78,10 +80,14 @@ export async function createProduct(formData: FormData) {
   }
 
   try {
+    // Endereço legível do produto (ex.: /product/sleep-dress-curto-isis).
+    const slug = await findFreeSlug(slugify(name), async (s) =>
+      !!(await prisma.product.findUnique({ where: { slug: s }, select: { id: true } }))
+    );
     const product = await prisma.product.create({
       data: {
         name,
-        slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') + '-' + Math.random().toString(36).substring(7),
+        slug,
         description: description || "",
         basePrice: parseFloat(price),
         categoryId,

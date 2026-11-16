@@ -4,18 +4,20 @@ import StorefrontLayout from "@/components/storefront/StorefrontLayout";
 import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { auth } from "@/auth";
 import AddToCart from "@/components/storefront/AddToCart";
 import ProductGallery from "@/components/storefront/ProductGallery";
 import { availableStock, formatBRL, metaDescription } from "@/lib/storefront";
 import { SITE_NAME } from "@/lib/site";
+import { isUuid, productPath } from "@/lib/slug";
 import { TROCAS_RESUMO } from "@/lib/policies";
 
 // Mesma consulta para a página e para os metadados: o cache evita ir ao banco duas vezes.
-const getProduct = cache((id: string) =>
+// O endereço aceita o slug (/product/pijama-cetim) ou o id antigo (links já compartilhados).
+const getProduct = cache((idOrSlug: string) =>
   prisma.product.findUnique({
-    where: { id },
+    where: isUuid(idOrSlug) ? { id: idOrSlug } : { slug: decodeURIComponent(idOrSlug) },
     include: {
       category: true,
       images: { orderBy: { order: "asc" } },
@@ -29,7 +31,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const p = await getProduct(id);
   if (!p) return { title: `Produto não encontrado | ${SITE_NAME}` };
 
-  const title = `${p.name} | ${SITE_NAME}`;
+  const title = `${p.name.trim()} | ${SITE_NAME}`;
   const price = formatBRL(Number(p.basePrice));
   const soldOut = availableStock(p.variants) === 0;
   const description = metaDescription(`${soldOut ? "Esgotado. " : `${price}. `}${p.description}`);
@@ -38,11 +40,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return {
     title,
     description,
-    alternates: { canonical: `/product/${p.id}` },
+    alternates: { canonical: productPath(p) },
     openGraph: {
       title,
       description,
-      url: `/product/${p.id}`,
+      url: productPath(p),
       siteName: SITE_NAME,
       locale: "pt_BR",
       type: "website",
@@ -62,6 +64,11 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
     notFound();
   }
 
+  // Link antigo pelo id: leva ao endereço legível, que é o que o Google deve guardar.
+  if (dbProduct.slug && resolvedParams.id !== dbProduct.slug && isUuid(resolvedParams.id)) {
+    permanentRedirect(productPath(dbProduct));
+  }
+
   // Extrair cores únicas e tamanhos únicos das variantes
   const colors = Array.from(new Set(dbProduct.variants.map((v: any) => v.color)));
   const sizes = Array.from(new Set(dbProduct.variants.map((v: any) => v.size)));
@@ -74,7 +81,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
 
   const product = {
     id: dbProduct.id,
-    name: dbProduct.name,
+    name: dbProduct.name.trim(),
     basePrice,
     price: formatBRL(minPrice),
     images: dbProduct.images.map((img) => img.url),

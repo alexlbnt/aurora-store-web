@@ -42,7 +42,7 @@ export async function deleteProduct(productId: string) {
 }
 
 export async function editProduct(productId: string, formData: FormData) {
-  const name = formData.get("name") as string;
+  const name = ((formData.get("name") as string) || "").trim();
   const description = formData.get("description") as string;
   const price = formData.get("price") as string;
   const stockA = formData.get("stockA") as string;

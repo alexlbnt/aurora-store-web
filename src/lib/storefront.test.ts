@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { availableFirst, availableStock, formatBRL, metaDescription, toProductCard } from "./storefront";
+import {
+  availableFirst,
+  availableStock,
+  filterableColors,
+  formatBRL,
+  metaDescription,
+  sortSizes,
+  toProductCard,
+} from "./storefront";
 
 describe("availableStock", () => {
   it("soma os dois estoques e ignora valores negativos", () => {
@@ -12,7 +20,8 @@ describe("availableStock", () => {
 describe("toProductCard", () => {
   const base = {
     id: "p1",
-    name: "Pijama",
+    slug: "pijama",
+    name: "Pijama ",
     basePrice: "129.9",
     isNew: true,
     category: { name: "Pijamas" },
@@ -23,6 +32,7 @@ describe("toProductCard", () => {
   it("monta o card com preço em reais", () => {
     expect(toProductCard(base)).toEqual({
       id: "p1",
+      href: "/product/pijama",
       name: "Pijama",
       price: "R$ 129,90",
       category: "Pijamas",
@@ -64,6 +74,22 @@ describe("metaDescription", () => {
     const out = metaDescription(long);
     expect(out.length).toBeLessThanOrEqual(160);
     expect(out.endsWith("palavra…")).toBe(true);
+  });
+});
+
+describe("sortSizes", () => {
+  it("ordena como na arara e põe números e outros depois", () => {
+    expect(sortSizes(["G", "Único", "PP", "42", "M", "38", "GG", "P", "M"])).toEqual([
+      "PP", "P", "M", "G", "GG", "38", "42", "Único",
+    ]);
+  });
+});
+
+describe("filterableColors", () => {
+  it("remove repetidas e a cor genérica", () => {
+    expect(filterableColors(["Rosa", "Azul", "Padrão", "Rosa ", "azul marinho"])).toEqual([
+      "Azul", "azul marinho", "Rosa",
+    ]);
   });
 });
 

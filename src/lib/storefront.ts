@@ -1,4 +1,5 @@
 // Regras da vitrine compartilhadas por home, catálogo e categorias.
+import { productPath } from "./slug";
 
 /** Inclusão do Prisma que traz o necessário para montar um card de produto. */
 export const productCardInclude = {
@@ -14,6 +15,8 @@ export type StockCounts = { stockA: number; stockV: number };
 
 export type ProductCardData = {
   id: string;
+  /** Endereço da página do produto (usa o slug legível quando existe). */
+  href: string;
   name: string;
   price: string;
   category: string;
@@ -25,6 +28,7 @@ export type ProductCardData = {
 
 type ProductForCard = {
   id: string;
+  slug?: string | null;
   name: string;
   basePrice: unknown;
   isNew: boolean;
@@ -45,7 +49,8 @@ export function availableStock(variants: StockCounts[]): number {
 export function toProductCard(p: ProductForCard): ProductCardData {
   return {
     id: p.id,
-    name: p.name,
+    href: productPath(p),
+    name: p.name.trim(),
     price: formatBRL(Number(p.basePrice)),
     category: p.category.name,
     imageUrl: p.images[0]?.url || null,
@@ -61,6 +66,31 @@ export function metaDescription(text: string, max = 160): string {
   const cut = clean.slice(0, max - 1);
   const lastSpace = cut.lastIndexOf(" ");
   return `${(lastSpace > max / 2 ? cut.slice(0, lastSpace) : cut).replace(/[\s,.;:!?-]+$/, "")}…`;
+}
+
+const SIZE_ORDER = ["RN", "PP", "P", "M", "G", "GG", "XG", "XGG", "G1", "G2", "G3", "G4", "EXG"];
+
+/** Tamanhos em ordem de vestir (PP, P, M, G...), depois números, depois o resto (ex.: Único). */
+export function sortSizes(sizes: string[]): string[] {
+  const rank = (s: string) => {
+    const i = SIZE_ORDER.indexOf(s.trim().toUpperCase());
+    if (i >= 0) return [0, i] as const;
+    const n = Number(s.replace(",", "."));
+    if (!Number.isNaN(n)) return [1, n] as const;
+    return [2, 0] as const;
+  };
+  return [...new Set(sizes)].sort((a, b) => {
+    const [ga, va] = rank(a);
+    const [gb, vb] = rank(b);
+    return ga - gb || va - vb || a.localeCompare(b, "pt-BR");
+  });
+}
+
+/** Cores para o filtro: sem repetição, sem a cor genérica "Padrão", em ordem alfabética. */
+export function filterableColors(colors: string[]): string[] {
+  return [...new Set(colors.map((c) => c.trim()).filter((c) => c && c.toLowerCase() !== "padrão"))].sort((a, b) =>
+    a.localeCompare(b, "pt-BR")
+  );
 }
 
 /** Esgotados vão para o fim, mantendo a ordem original dentro de cada grupo. */

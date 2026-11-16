@@ -3,18 +3,42 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function CatalogFilters({ categories, initialQuery, initialCategory, initialSort }: any) {
+type Props = {
+  categories: { id: string; name: string }[];
+  sizes: string[];
+  colors: string[];
+  initialQuery?: string;
+  initialCategory?: string;
+  initialSort?: string;
+  initialSize?: string;
+  initialColor?: string;
+};
+
+export default function CatalogFilters({
+  categories,
+  sizes,
+  colors,
+  initialQuery,
+  initialCategory,
+  initialSort,
+  initialSize,
+  initialColor,
+}: Props) {
   const router = useRouter();
 
   const [q, setQ] = useState(initialQuery || "");
   const [category, setCategory] = useState(initialCategory || "");
   const [sort, setSort] = useState(initialSort || "newest");
+  const [size, setSize] = useState(initialSize || "");
+  const [color, setColor] = useState(initialColor || "");
 
   const applyFilters = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams();
     if (q) params.set("q", q);
     if (category) params.set("category", category);
+    if (size) params.set("size", size);
+    if (color) params.set("color", color);
     if (sort && sort !== "newest") params.set("sort", sort);
     
     router.push(`/catalog?${params.toString()}`);
@@ -24,6 +48,8 @@ export default function CatalogFilters({ categories, initialQuery, initialCatego
     setQ("");
     setCategory("");
     setSort("newest");
+    setSize("");
+    setColor("");
     router.push("/catalog");
   };
 
@@ -54,11 +80,45 @@ export default function CatalogFilters({ categories, initialQuery, initialCatego
              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white focus:ring-1 focus:ring-primary rounded-xl text-sm transition-all outline-none cursor-pointer"
            >
              <option value="">Todas as Categorias</option>
-             {categories.map((c: any) => (
+             {categories.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
              ))}
            </select>
         </div>
+
+        {sizes.length > 0 && (
+          <div>
+            <label htmlFor="filtro-tamanho" className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Tamanho</label>
+            <select
+              id="filtro-tamanho"
+              value={size}
+              onChange={(e) => setSize(e.target.value)}
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white focus:ring-1 focus:ring-primary rounded-xl text-sm transition-all outline-none cursor-pointer"
+            >
+              <option value="">Todos os tamanhos</option>
+              {sizes.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {colors.length > 0 && (
+          <div>
+            <label htmlFor="filtro-cor" className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Cor</label>
+            <select
+              id="filtro-cor"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-primary focus:bg-white focus:ring-1 focus:ring-primary rounded-xl text-sm transition-all outline-none cursor-pointer"
+            >
+              <option value="">Todas as cores</option>
+              {colors.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div>
            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Ordenar por</label>
@@ -78,7 +138,7 @@ export default function CatalogFilters({ categories, initialQuery, initialCatego
         <button type="submit" className="w-full py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-colors shadow-sm focus:ring-4 focus:ring-primary/20">
           Aplicar Filtros
         </button>
-        {(q || category || sort !== 'newest') && (
+        {(q || category || size || color || sort !== 'newest') && (
           <button type="button" onClick={clearFilters} className="w-full py-3 bg-slate-50 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-colors">
             Limpar Filtros
           </button>
