@@ -2,8 +2,19 @@
 
 import React, { useState } from "react";
 
-export default function ProductGallery({ images }: { images: string[] }) {
+export default function ProductGallery({ images: allImages }: { images: string[] }) {
   const [activeIndex, setActiveIndex] = useState(0);
+  // Fotos que não carregaram (link quebrado) saem da galeria; sem nenhuma, fica o espaço neutro.
+  const [failed, setFailed] = useState<Set<string>>(() => new Set());
+  const images = allImages.filter((src) => !failed.has(src));
+  const markFailed = (src: string) =>
+    setFailed((prev) => {
+      if (prev.has(src)) return prev;
+      const next = new Set(prev);
+      next.add(src);
+      return next;
+    });
+  const current = images[Math.min(activeIndex, images.length - 1)];
 
   if (images.length === 0) {
     return (
@@ -30,13 +41,13 @@ export default function ProductGallery({ images }: { images: string[] }) {
             className={`rounded overflow-hidden border-2 shrink-0 w-20 md:w-full snap-center transition-all ${idx === activeIndex ? 'border-primary dark:border-slate-500' : 'border-transparent opacity-60 hover:opacity-100 hover:border-primary/30'}`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={img} alt={`Miniatura ${idx + 1}`} className="w-full h-auto object-contain block" />
+            <img src={img} alt={`Miniatura ${idx + 1}`} onError={() => markFailed(img)} className="w-full h-auto object-contain block" />
           </button>
         ))}
       </div>
       <div className="flex-1 relative cursor-zoom-in flex items-start justify-center">
          {/* eslint-disable-next-line @next/next/no-img-element */}
-         <img src={images[activeIndex]} alt="Produto" className="w-full h-auto max-h-[85vh] object-contain transition-all duration-300 rounded-lg" />
+         <img src={current} alt="Produto" onError={() => markFailed(current)} className="w-full h-auto max-h-[85vh] object-contain transition-all duration-300 rounded-lg" />
          <button className="absolute bottom-4 right-4 bg-white/80 backdrop-blur size-10 flex items-center justify-center rounded-full text-primary hover:bg-white transition-colors shadow-sm">
            <span className="material-symbols-outlined">zoom_in</span>
          </button>
