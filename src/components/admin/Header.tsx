@@ -43,6 +43,7 @@ export default function Header({
     if (pathname.startsWith("/admin/customers/")) return "Editar Cliente";
     if (pathname.startsWith("/admin/customers")) return "Clientes";
     if (pathname.startsWith("/admin/categories")) return "Categorias";
+    if (pathname.startsWith("/admin/finance")) return "Financeiro";
     if (pathname.startsWith("/admin/reports")) return "Relatórios";
     if (pathname.startsWith("/admin/settings")) return "Configurações";
     return title || "Visão Geral";

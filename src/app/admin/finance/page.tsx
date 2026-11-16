@@ -52,7 +52,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
           <span className="hidden sm:inline">Mês anterior</span>
         </Link>
         <p className="text-center">
-          <span className="block text-lg font-semibold capitalize text-primary">{label}</span>
+          <span className="block text-lg font-semibold text-primary">{label.charAt(0).toUpperCase() + label.slice(1)}</span>
           {!isCurrent && (
             <Link href="/admin/finance" className="text-xs text-accent-blue underline-offset-4 hover:underline">
               Voltar para o mês atual
