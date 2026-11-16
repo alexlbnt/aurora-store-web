@@ -2,7 +2,8 @@ import StorefrontLayout from "@/components/storefront/StorefrontLayout";
 import ProductCard from "@/components/storefront/ProductCard";
 import { prisma } from "@/lib/prisma";
 import CatalogFilters from "@/components/storefront/CatalogFilters";
-import { availableFirst, filterableColors, productCardInclude, sortSizes, toProductCard } from "@/lib/storefront";
+import Link from "next/link";
+import { availableFirst, filterableColors, paginate, productCardInclude, sortSizes, toProductCard } from "@/lib/storefront";
 
 export const revalidate = 0;
 
@@ -57,7 +58,21 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
   const colors = filterableColors(inStockVariants.map((v) => v.color));
 
   // Esgotados aparecem por último, para o cliente ver primeiro o que pode comprar.
-  const products = availableFirst(productsRaw.map(toProductCard));
+  const allProducts = availableFirst(productsRaw.map(toProductCard));
+  const { page, totalPages, items: products } = paginate(allProducts, params.page);
+
+  // Link de outra página mantendo busca, filtros e ordem.
+  const pageHref = (n: number) => {
+    const sp = new URLSearchParams();
+    if (q) sp.set("q", q);
+    if (categoryStr) sp.set("category", categoryStr);
+    if (sort && sort !== "newest") sp.set("sort", sort);
+    if (size) sp.set("size", size);
+    if (color) sp.set("color", color);
+    if (n > 1) sp.set("page", String(n));
+    const qs = sp.toString();
+    return qs ? `/catalog?${qs}` : "/catalog";
+  };
 
   return (
     <StorefrontLayout>
@@ -83,7 +98,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
               <h1 className="text-2xl font-serif font-bold text-slate-900 dark:text-white capitalize">
                 {q ? `Resultados para "${q}"` : 'Catálogo Completo'}
               </h1>
-              <p className="text-sm font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">{products.length} produtos</p>
+              <p className="text-sm font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">{allProducts.length} {allProducts.length === 1 ? "produto" : "produtos"}</p>
             </div>
 
             {products.length > 0 ? (
@@ -92,7 +107,34 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
                   <ProductCard key={product.id} {...product} />
                 ))}
               </div>
-            ) : (
+            ) : null}
+
+            {totalPages > 1 && (
+              <nav aria-label="Páginas do catálogo" className="mt-12 flex flex-wrap items-center justify-center gap-2">
+                {page > 1 && (
+                  <Link href={pageHref(page - 1)} className="min-h-11 px-4 inline-flex items-center rounded-full border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/5">
+                    Anterior
+                  </Link>
+                )}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+                  <Link
+                    key={n}
+                    href={pageHref(n)}
+                    aria-current={n === page ? "page" : undefined}
+                    className={`min-h-11 min-w-11 inline-flex items-center justify-center rounded-full text-sm font-semibold ${n === page ? "bg-primary text-white" : "text-primary hover:bg-primary/5"}`}
+                  >
+                    {n}
+                  </Link>
+                ))}
+                {page < totalPages && (
+                  <Link href={pageHref(page + 1)} className="min-h-11 px-4 inline-flex items-center rounded-full border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/5">
+                    Próxima
+                  </Link>
+                )}
+              </nav>
+            )}
+
+            {products.length === 0 && (
               <div className="text-center py-20 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                 <span className="material-symbols-outlined text-4xl text-slate-300 mb-4 block">search_off</span>
                 <h3 className="text-xl font-bold text-slate-900 dark:text-slate-200 mb-2">Nenhum produto encontrado</h3>

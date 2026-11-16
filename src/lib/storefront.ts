@@ -93,6 +93,16 @@ export function filterableColors(colors: string[]): string[] {
   );
 }
 
+export const CATALOG_PAGE_SIZE = 24;
+
+/** Recorta uma página da lista. Página fora do intervalo vira a mais próxima válida. */
+export function paginate<T>(items: T[], rawPage: unknown, pageSize = CATALOG_PAGE_SIZE) {
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const n = Number.parseInt(String(rawPage ?? "1"), 10);
+  const page = Number.isFinite(n) ? Math.min(Math.max(n, 1), totalPages) : 1;
+  return { page, totalPages, items: items.slice((page - 1) * pageSize, page * pageSize) };
+}
+
 /** Esgotados vão para o fim, mantendo a ordem original dentro de cada grupo. */
 export function availableFirst<T extends { soldOut: boolean }>(items: T[]): T[] {
   return [...items.filter((i) => !i.soldOut), ...items.filter((i) => i.soldOut)];

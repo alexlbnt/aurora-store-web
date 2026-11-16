@@ -5,6 +5,7 @@ import {
   filterableColors,
   formatBRL,
   metaDescription,
+  paginate,
   sortSizes,
   toProductCard,
 } from "./storefront";
@@ -90,6 +91,24 @@ describe("filterableColors", () => {
     expect(filterableColors(["Rosa", "Azul", "Padrão", "Rosa ", "azul marinho"])).toEqual([
       "Azul", "azul marinho", "Rosa",
     ]);
+  });
+});
+
+describe("paginate", () => {
+  const items = Array.from({ length: 50 }, (_, i) => i);
+
+  it("recorta a página pedida", () => {
+    const r = paginate(items, "2", 24);
+    expect(r).toMatchObject({ page: 2, totalPages: 3 });
+    expect(r.items[0]).toBe(24);
+    expect(r.items).toHaveLength(24);
+  });
+
+  it("corrige página inválida ou fora do intervalo", () => {
+    expect(paginate(items, "abc", 24).page).toBe(1);
+    expect(paginate(items, "0", 24).page).toBe(1);
+    expect(paginate(items, "99", 24).page).toBe(3);
+    expect(paginate([], undefined, 24)).toMatchObject({ page: 1, totalPages: 1, items: [] });
   });
 });
 

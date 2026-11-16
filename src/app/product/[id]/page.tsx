@@ -8,7 +8,8 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { auth } from "@/auth";
 import AddToCart from "@/components/storefront/AddToCart";
 import ProductGallery from "@/components/storefront/ProductGallery";
-import { availableStock, formatBRL, metaDescription } from "@/lib/storefront";
+import ProductCard from "@/components/storefront/ProductCard";
+import { availableFirst, availableStock, formatBRL, metaDescription, productCardInclude, toProductCard } from "@/lib/storefront";
 import { SITE_NAME } from "@/lib/site";
 import { isUuid, productPath } from "@/lib/slug";
 import { TROCAS_RESUMO } from "@/lib/policies";
@@ -69,6 +70,15 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   if (dbProduct.slug && resolvedParams.id !== dbProduct.slug && isUuid(resolvedParams.id)) {
     permanentRedirect(productPath(dbProduct));
   }
+
+  // "Você também pode gostar": outras peças da mesma categoria, disponíveis primeiro.
+  const relatedRaw = await prisma.product.findMany({
+    where: { categoryId: dbProduct.categoryId, visible: true, id: { not: dbProduct.id } },
+    orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
+    take: 12,
+    include: productCardInclude,
+  });
+  const related = availableFirst(relatedRaw.map(toProductCard)).slice(0, 4);
 
   // Extrair cores únicas e tamanhos únicos das variantes
   const colors = Array.from(new Set(dbProduct.variants.map((v: any) => v.color)));
@@ -194,6 +204,19 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
 
         </div>
       </div>
+
+      {related.length > 0 && (
+        <section aria-labelledby="relacionados" className="mb-20">
+          <h2 id="relacionados" className="text-2xl sm:text-3xl font-serif text-primary dark:text-slate-100 mb-8">
+            Você também pode gostar
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            {related.map((p) => (
+              <ProductCard key={p.id} {...p} />
+            ))}
+          </div>
+        </section>
+      )}
     </StorefrontLayout>
   );
 }

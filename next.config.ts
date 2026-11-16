@@ -18,16 +18,14 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // Origens de foto aceitas pelo otimizador de imagens. Antes era qualquer site (até sem HTTPS),
+  // o que deixava o servidor da loja baixar e redimensionar imagens de qualquer endereço.
+  // Foto de outra origem não quebra a página: o card mostra o espaço neutro no lugar.
   images: {
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
-      {
-        protocol: 'http',
-        hostname: '**',
-      },
+      { protocol: 'https', hostname: 'i.ibb.co' }, // ImgBB: envio de fotos pelo painel
+      { protocol: 'https', hostname: 'd2qs1z4gndokv4.cloudfront.net' }, // fotos atuais de parte do catálogo
+      { protocol: 'https', hostname: 'images.unsplash.com' }, // produtos de exemplo do banco de testes
     ],
   },
 };

@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
+import Link from "next/link";
+import { whatsappLink } from "@/lib/contact";
+import { customerOrderStatus, ORDER_STEPS, shippingLabel as describeShipping } from "@/lib/order-status";
 
 interface OrderItemData {
   id: string;
@@ -9,6 +11,7 @@ interface OrderItemData {
   price: any;
   product: {
     id: string;
+    slug?: string | null;
     name: string;
     images?: { url: string }[];
   };
@@ -32,34 +35,11 @@ interface OrderData {
 export default function OrderCard({ order }: { order: OrderData }) {
   const [expanded, setExpanded] = useState(false);
 
-  let statusColor = "slate";
-  let statusText = "Em processamento";
-  switch (order.status) {
-    case "PENDING":
-      statusColor = "amber";
-      statusText = "Aguardando Pagamento";
-      break;
-    case "PAID":
-      statusColor = "emerald";
-      statusText = "Pagamento Aprovado";
-      break;
-    case "SHIPPED":
-      statusColor = "blue";
-      statusText = "Enviado / Em Transporte";
-      break;
-    case "DELIVERED":
-      statusColor = "emerald";
-      statusText = "Entregue";
-      break;
-    case "CANCELED":
-      statusColor = "rose";
-      statusText = "Cancelado";
-      break;
-  }
-
-  let shippingLabel = "Sem Frete";
-  if (order.shippingType === "PAGO_AURORA") shippingLabel = "Frete Cortesia Aurora";
-  if (order.shippingType === "PAGO_CLIENTE") shippingLabel = "Frete Pago pelo Cliente";
+  const status = customerOrderStatus(order.status);
+  const statusColor = status.tone;
+  const statusText = status.label;
+  const shippingLabel = describeShipping(order.shippingType);
+  const whatsapp = whatsappLink(`Olá! Quero falar sobre o meu pedido ${order.orderNumber}.`);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 transition-all">
@@ -87,6 +67,24 @@ export default function OrderCard({ order }: { order: OrderData }) {
             Realizado em {new Date(order.createdAt).toLocaleDateString("pt-BR")} às{" "}
             {new Date(order.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
           </p>
+          {status.hint && <p className="text-sm text-slate-700 mb-3 max-w-md">{status.hint}</p>}
+          {status.step >= 0 && (
+            <ol className="flex flex-wrap items-center gap-x-1 gap-y-1.5 mb-4 text-[11px] font-semibold" aria-label="Andamento do pedido">
+              {ORDER_STEPS.map((step, i) => {
+                const done = i <= status.step;
+                return (
+                  <li key={step.code} className="flex items-center gap-1" aria-current={i === status.step ? "step" : undefined}>
+                    <span
+                      className={`px-2 py-1 rounded-full ${done ? "bg-primary text-white" : "bg-slate-100 text-slate-500"}`}
+                    >
+                      {step.label}
+                    </span>
+                    {i < ORDER_STEPS.length - 1 && <span className={`w-3 h-px ${done ? "bg-primary" : "bg-slate-300"}`} aria-hidden="true" />}
+                  </li>
+                );
+              })}
+            </ol>
+          )}
           <div className="flex -space-x-2">
             {(order.items || []).slice(0, 4).map((item) => {
               const imgUrl = item.product?.images?.[0]?.url;
@@ -119,6 +117,14 @@ export default function OrderCard({ order }: { order: OrderData }) {
               R$ {Number(order.totalAmount).toFixed(2).replace(".", ",")}
             </p>
           </div>
+          <a
+            href={whatsapp}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center min-h-10 px-4 rounded-full bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
+          >
+            Falar sobre este pedido
+          </a>
           <button
             onClick={() => setExpanded(!expanded)}
             className="text-sm font-bold text-primary hover:text-primary/80 transition-colors flex items-center gap-1 cursor-pointer"
@@ -159,11 +165,7 @@ export default function OrderCard({ order }: { order: OrderData }) {
                 Tipo de Frete
               </p>
               <p className="text-slate-600">{shippingLabel}</p>
-              {order.notes && (
-                <p className="text-xs text-slate-500 mt-2 bg-white p-2 rounded border border-slate-200">
-                  <span className="font-bold">Observação:</span> {order.notes}
-                </p>
-              )}
+              {/* As observações do pedido não aparecem aqui: o painel também anota nelas informações internas. */}
             </div>
           </div>
 
@@ -184,7 +186,16 @@ export default function OrderCard({ order }: { order: OrderData }) {
                         )}
                       </div>
                       <div>
-                        <p className="font-bold text-slate-900 text-sm">{item.product?.name || "Produto"}</p>
+                        {item.product ? (
+                          <Link
+                            href={`/product/${item.product.slug || item.product.id}`}
+                            className="font-bold text-slate-900 text-sm hover:underline underline-offset-4"
+                          >
+                            {item.product.name.trim()}
+                          </Link>
+                        ) : (
+                          <p className="font-bold text-slate-900 text-sm">Produto</p>
+                        )}
                         <p className="text-xs text-slate-500">Qtd: {item.quantity} un.</p>
                       </div>
                     </div>
