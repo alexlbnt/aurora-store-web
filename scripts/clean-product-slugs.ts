@@ -23,11 +23,13 @@ async function main() {
   for (const p of products) {
     // Só mexe no formato antigo: nome sem acento (como o painel gerava) + "-" + código aleatório.
     // Endereços escritos à mão ou de produtos renomeados ficam como estão.
+    // Alguns produtos antigos já tiveram o acento tirado (isis), outros não (sis): aceita os dois.
+    const base = slugify(p.name) || "produto";
     const oldBase = p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
-    const suffix = p.slug.startsWith(`${oldBase}-`) ? p.slug.slice(oldBase.length + 1) : null;
+    const prefix = [oldBase, base].find((b) => b && p.slug.startsWith(`${b}-`));
+    const suffix = prefix ? p.slug.slice(prefix.length + 1) : null;
     if (!suffix || !/^[a-z0-9]{3,8}$/.test(suffix) || !/[a-z]/.test(suffix)) continue;
 
-    const base = slugify(p.name) || "produto";
     if (p.slug === base) continue;
 
     taken.delete(p.slug);
