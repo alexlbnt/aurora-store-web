@@ -29,6 +29,7 @@ export default function Footer() {
                 <Link href="/faq" className="text-primary/70 dark:text-slate-400 text-sm hover:text-primary dark:hover:text-white underline-offset-4 hover:underline">Dúvidas frequentes</Link>
                 <Link href="/faq#trocas" className="text-primary/70 dark:text-slate-400 text-sm hover:text-primary dark:hover:text-white underline-offset-4 hover:underline">Entrega e trocas</Link>
                 <Link href="/faq#tamanhos" className="text-primary/70 dark:text-slate-400 text-sm hover:text-primary dark:hover:text-white underline-offset-4 hover:underline">Guia de tamanhos</Link>
+                <Link href="/privacidade" className="text-primary/70 dark:text-slate-400 text-sm hover:text-primary dark:hover:text-white underline-offset-4 hover:underline">Privacidade</Link>
               </nav>
             </div>
           </div>

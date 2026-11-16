@@ -56,7 +56,15 @@ Crie um arquivo `.env` na raiz do projeto contendo as credenciais. (Veja o arqui
 DATABASE_URL="Sua URL do Postgres"
 AUTH_SECRET="Sua_chave_secreta_gerada_aleatoriamente"
 NEXTAUTH_URL="http://localhost:3000"
+
+# Login com Google (Google Cloud Console > APIs e serviços > Credenciais > ID do cliente OAuth)
+AUTH_GOOGLE_ID="..."
+AUTH_GOOGLE_SECRET="..."
+# Gmails com acesso ao painel, separados por vírgula (padrão: auroraadm25@gmail.com)
+ADMIN_EMAILS="auroraadm25@gmail.com"
 ```
+
+> O painel `/admin` aceita **apenas login com Google** de um e-mail listado em `ADMIN_EMAILS`. Clientes podem entrar com Google ou com e-mail e senha.
 
 4. **Prepare o Banco de Dados:**
 ```bash
@@ -84,6 +92,8 @@ Este projeto está pronto para ir ao ar. A recomendação principal é publicá-
 3. Adicione as variáveis de ambiente em **Settings > Environment Variables**:
    - `DATABASE_URL`
    - `AUTH_SECRET`
+   - `AUTH_GOOGLE_ID` e `AUTH_GOOGLE_SECRET`
+   - `ADMIN_EMAILS` (opcional)
 4. Inicie o Deploy! O comando `prisma generate` já está configurado no `postinstall` do `package.json`, então o banco conectará automaticamente.
 
 ---

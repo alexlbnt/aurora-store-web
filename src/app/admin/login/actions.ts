@@ -1,26 +1,13 @@
 "use server";
 
-import { signIn } from "@/auth";
-import { AuthError } from "next-auth";
+import { signIn, signOut } from "@/auth";
 
-export async function authenticate(
-  prevState: string | undefined,
-  formData: FormData
-) {
-  try {
-    await signIn("credentials", {
-      ...Object.fromEntries(formData),
-      redirectTo: "/admin"
-    });
-  } catch (error) {
-    if (error instanceof AuthError) {
-      switch (error.type) {
-        case "CredentialsSignin":
-          return "Credenciais inválidas. Verifique seu e-mail e senha.";
-        default:
-          return "Ocorreu um erro no login.";
-      }
-    }
-    throw error;
-  }
+/** Painel: o administrador entra só com o Gmail autorizado (ADMIN_EMAILS). */
+export async function signInAdminWithGoogle() {
+  await signIn("google", { redirectTo: "/admin" });
+}
+
+/** Sai da conta atual para entrar com o Gmail da marca. */
+export async function switchAdminAccount() {
+  await signOut({ redirectTo: "/admin/login" });
 }

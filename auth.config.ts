@@ -7,6 +7,8 @@ export const authConfig = {
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   pages: {
     signIn: '/admin/login',
+    // Erros na volta do Google (?error=...) aparecem na tela de login da loja.
+    error: '/login',
   },
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
@@ -19,16 +21,15 @@ export const authConfig = {
         if (nextUrl.pathname === '/admin/login') {
           if (isLoggedIn && userRole === 'ADMIN') {
              return Response.redirect(new URL('/admin', nextUrl));
-          } else if (isLoggedIn) {
-             return Response.redirect(new URL('/', nextUrl));
           }
-          return true; // Let unauthenticated access the login page
+          // Visitante vê o botão do Google; logado sem permissão vê o aviso para trocar de conta.
+          return true;
         }
 
         if (isLoggedIn) {
           if (userRole === 'ADMIN') return true;
-          // Logged in but not admin
-          return Response.redirect(new URL('/', nextUrl));
+          // Logado com uma conta que não é de administrador
+          return Response.redirect(new URL('/admin/login', nextUrl));
         }
 
         return Response.redirect(new URL('/admin/login', nextUrl)); // Redirect unauthenticated users to login page

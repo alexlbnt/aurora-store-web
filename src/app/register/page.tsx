@@ -4,6 +4,9 @@ import { useActionState, useState } from "react";
 import Link from "next/link";
 import { formatPhone } from "@/lib/formatters";
 import { registerCustomer } from "./actions";
+import GoogleButton from "@/components/auth/GoogleButton";
+import AuthErrorNotice from "@/components/auth/AuthErrorNotice";
+import { signInCustomerWithGoogle } from "@/app/login/google-action";
 
 export default function RegisterPage() {
   const [state, formAction, isPending] = useActionState(registerCustomer, null);
@@ -32,6 +35,18 @@ export default function RegisterPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-2xl sm:px-10 border border-slate-100">
+
+          <div className="space-y-4 mb-6">
+            <AuthErrorNotice />
+            <form action={signInCustomerWithGoogle}>
+              <GoogleButton label="Criar conta com Google" />
+            </form>
+            <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              <span className="h-px flex-1 bg-slate-200" />
+              ou com e-mail e senha
+              <span className="h-px flex-1 bg-slate-200" />
+            </div>
+          </div>
           <form action={formAction} className="space-y-5">
             <div>
               <label htmlFor="name" className="block text-sm font-semibold text-slate-700">
