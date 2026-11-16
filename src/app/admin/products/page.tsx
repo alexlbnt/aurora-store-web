@@ -21,9 +21,11 @@ export default async function ProductsListPage({ searchParams }: ProductsPagePro
 
   let products: any[] = [];
   let categories: Array<{ id: string; name: string }> = [];
+  const producedBy = new Map<string, number>();
+  const soldBy = new Map<string, number>();
 
   try {
-    const [fetchedProducts, fetchedCategories] = await Promise.all([
+    const [fetchedProducts, fetchedCategories, produced, sold] = await Promise.all([
       prisma.product.findMany({
         select: {
           id: true,
@@ -52,9 +54,18 @@ export default async function ProductsListPage({ searchParams }: ProductsPagePro
         orderBy: { name: "asc" },
         select: { id: true, name: true },
       }),
+      // Produzido x vendido (desde sempre): o que a vendedora precisa ver de relance.
+      prisma.productionEntry.groupBy({ by: ["productId"], _sum: { quantity: true } }),
+      prisma.orderItem.groupBy({
+        by: ["productId"],
+        where: { order: { status: { not: "CANCELED" } } },
+        _sum: { quantity: true },
+      }),
     ]);
     products = fetchedProducts;
     categories = fetchedCategories;
+    produced.forEach((p) => producedBy.set(p.productId, p._sum.quantity ?? 0));
+    sold.forEach((s) => soldBy.set(s.productId, s._sum.quantity ?? 0));
   } catch (err) {
     console.error("Error loading products:", err);
   }
@@ -70,6 +81,8 @@ export default async function ProductsListPage({ searchParams }: ProductsPagePro
     category: p.category,
     variants: p.variants || [],
     images: p.images || [],
+    produced: producedBy.get(p.id) ?? 0,
+    sold: soldBy.get(p.id) ?? 0,
   }));
 
   return (

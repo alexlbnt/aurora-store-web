@@ -34,7 +34,9 @@ export default function ChoiceChips<T extends string>({
           return (
             <label
               key={opt.value}
-              className={`flex min-h-11 cursor-pointer items-center rounded-lg border px-4 py-2 text-sm transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent-blue ${
+              // `relative` prende o rádio invisível (sr-only é absolute) dentro do chip. Sem isso, ao
+              // receber foco ele rolava o contêiner externo do painel (overflow-hidden) e a tela sumia.
+              className={`relative flex min-h-11 cursor-pointer items-center rounded-lg border px-4 py-2 text-sm transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent-blue ${
                 checked
                   ? "border-primary bg-primary font-semibold text-white"
                   : "border-primary/20 bg-white font-medium text-primary hover:border-primary/50"

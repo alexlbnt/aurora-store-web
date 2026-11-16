@@ -72,9 +72,10 @@ export default async function Sales({ searchParams }: SalesPageProps) {
   let totalSalesLifetime = 0;
   let pendingCount = 0;
   let ticketMedio = 0;
+  let toReceive = 0;
 
   try {
-    const [fetchedOrders, fetchedTotal, salesAgg, fetchedPending] = await Promise.all([
+    const [fetchedOrders, fetchedTotal, salesAgg, fetchedPending, receivedAgg] = await Promise.all([
       prisma.order.findMany({
         where,
         include: {
@@ -86,6 +87,7 @@ export default async function Sales({ searchParams }: SalesPageProps) {
               phone: true,
             },
           },
+          payments: { select: { amount: true } },
         },
         orderBy: {
           createdAt: "desc",
@@ -100,6 +102,10 @@ export default async function Sales({ searchParams }: SalesPageProps) {
         where: { status: { not: "CANCELED" } },
       }),
       prisma.order.count({ where: { status: "PENDING" } }),
+      prisma.orderPayment.aggregate({
+        _sum: { amount: true },
+        where: { order: { status: { not: "CANCELED" } } },
+      }),
     ]);
 
     orders = fetchedOrders;
@@ -108,6 +114,7 @@ export default async function Sales({ searchParams }: SalesPageProps) {
     const nonCanceledCount = salesAgg._count._all || 0;
     ticketMedio = nonCanceledCount > 0 ? totalSalesLifetime / nonCanceledCount : 0;
     pendingCount = fetchedPending;
+    toReceive = Math.max(0, totalSalesLifetime - Number(receivedAgg._sum.amount || 0));
   } catch (err) {
     console.error("Error fetching sales data:", err);
   }
@@ -120,6 +127,13 @@ export default async function Sales({ searchParams }: SalesPageProps) {
         description="Acompanhe os pedidos, o frete e o faturamento."
         actions={
           <>
+            <Link
+              href="/admin/finance"
+              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-primary/25 bg-white px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"
+            >
+              <span className="material-symbols-outlined text-base" aria-hidden="true">account_balance_wallet</span>
+              Financeiro
+            </Link>
             <SalesExportButton />
             <Link
               href="/admin/sales/new"
@@ -143,7 +157,7 @@ export default async function Sales({ searchParams }: SalesPageProps) {
         <MetricCard
           label="Pendentes"
           value={pendingCount}
-          hint="Esperando pagamento"
+          hint={`${formatBRL(toReceive)} a receber`}
           href="/admin/sales?status=PENDING"
           attention={pendingCount > 0}
         />
@@ -199,6 +213,8 @@ export default async function Sales({ searchParams }: SalesPageProps) {
                 `Olá, ${customerName}! Sobre o seu pedido ${order.orderNumber} na Aurora…`
               );
               const shipping = SHIPPING_LABEL[order.shippingType] ?? order.shippingType;
+              const paidSoFar = (order.payments ?? []).reduce((acc: number, p: { amount: unknown }) => acc + Number(p.amount), 0);
+              const partial = order.status !== "CANCELED" && paidSoFar > 0 && paidSoFar < Number(order.totalAmount) - 0.004;
               return (
                 <li
                   key={order.id}
@@ -222,12 +238,18 @@ export default async function Sales({ searchParams }: SalesPageProps) {
 
                   <span className="hidden text-sm text-primary/80 lg:block">{formatDate(order.createdAt)}</span>
                   <span className="hidden text-sm text-primary/80 lg:block">{shipping}</span>
-                  <span className="hidden text-right font-semibold text-primary lg:block">{formatBRL(order.totalAmount)}</span>
+                  <span className="hidden text-right lg:block">
+                    <span className="block font-semibold text-primary">{formatBRL(order.totalAmount)}</span>
+                    {partial && <span className="block text-xs text-amber-800">pago {formatBRL(paidSoFar)}</span>}
+                  </span>
                   <span className="hidden lg:block"><StatusBadge status={order.status} /></span>
 
                   <div className="flex items-center justify-between text-sm text-primary/70 lg:hidden">
                     <span>{formatDate(order.createdAt)} · {shipping}</span>
-                    <span className="text-base font-semibold text-primary">{formatBRL(order.totalAmount)}</span>
+                    <span className="text-right">
+                      <span className="block text-base font-semibold text-primary">{formatBRL(order.totalAmount)}</span>
+                      {partial && <span className="block text-xs text-amber-800">pago {formatBRL(paidSoFar)}</span>}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-end gap-1">

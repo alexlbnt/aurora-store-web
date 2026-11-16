@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 import StatusUpdater from "@/components/admin/sales/StatusUpdater";
 import ShippingUpdater from "@/components/admin/sales/ShippingUpdater";
 import OrderNotesCard from "@/components/admin/sales/OrderNotesCard";
+import PaymentsCard from "@/components/admin/sales/PaymentsCard";
+import { paymentBalance } from "@/lib/finance";
 import AdminProductImage from "@/components/admin/AdminProductImage";
 import { StockBadge } from "@/components/admin/ui/StatusBadge";
 import { formatBRL, formatDateTime, whatsappToCustomer } from "@/lib/format";
@@ -19,6 +21,7 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
     where: { id: param.id },
     include: {
       customer: true,
+      payments: { orderBy: [{ paidAt: "asc" }, { createdAt: "asc" }] },
       items: {
         include: {
           product: {
@@ -49,6 +52,15 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
     })
     .join("\n");
 
+  const payments = order.payments.map((p) => ({
+    id: p.id,
+    amount: Number(p.amount),
+    method: p.method as string,
+    paidAt: p.paidAt.toISOString(),
+    notes: p.notes,
+  }));
+  const balance = paymentBalance(Number(order.totalAmount), payments);
+
   const discount = Number(order.discountAmount || 0);
   const subtotal = Number(order.totalAmount) + discount;
 
@@ -58,6 +70,9 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
     receiptText += `Desconto: - ${formatBRL(discount)}\n`;
   }
   receiptText += `*Total: ${formatBRL(order.totalAmount)}*\n`;
+  if (balance.paid > 0 && balance.remaining > 0) {
+    receiptText += `Já pago: ${formatBRL(balance.paid)}\nFalta pagar: ${formatBRL(balance.remaining)}\n`;
+  }
   receiptText += `Frete: ${SHIPPING_LABEL[order.shippingType] || "Sem frete"}\n`;
   if (order.notes) receiptText += `Observações: ${order.notes}\n`;
 
@@ -170,6 +185,16 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
               </div>
             </dl>
           </section>
+
+          <PaymentsCard
+            orderId={order.id}
+            status={order.status}
+            total={balance.total}
+            paid={balance.paid}
+            remaining={balance.remaining}
+            defaultMethod={order.paymentMethod ?? "PIX"}
+            payments={payments}
+          />
         </div>
 
         <div className="space-y-6">

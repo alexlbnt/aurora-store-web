@@ -3,15 +3,24 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { handleDatabaseError } from "@/lib/error-handler";
-import { auth } from "@/auth";
+import { requireAdmin } from "@/lib/require-admin";
+import {
+  parseDateInput,
+  paymentBalance,
+  roundMoney,
+  statusAfterPayments,
+  validatePaymentAmount,
+} from "@/lib/finance";
+import { parseBRL } from "@/lib/format";
 
-// As actions são endpoints públicos (POST): o middleware protege as páginas, não elas.
-// Toda action de vendas confere a sessão de administrador antes de mexer no banco.
-async function requireAdmin() {
-  const session = await auth();
-  if ((session?.user as { role?: string } | undefined)?.role !== "ADMIN") {
-    throw new Error("Sua sessão expirou ou você não tem permissão. Entre de novo no painel.");
-  }
+const PAYMENT_METHODS = ["CREDIT_CARD", "DEBIT_CARD", "PIX", "BOLETO", "CASH"] as const;
+type PaymentMethodValue = (typeof PAYMENT_METHODS)[number];
+
+function revalidateFinance(orderId?: string) {
+  if (orderId) revalidatePath(`/admin/sales/${orderId}`);
+  revalidatePath("/admin/sales");
+  revalidatePath("/admin/finance");
+  revalidatePath("/admin");
 }
 
 export async function updateOrderStatus(orderId: string, status: "PENDING" | "PAID" | "SHIPPED" | "DELIVERED" | "CANCELED") {
@@ -19,7 +28,7 @@ export async function updateOrderStatus(orderId: string, status: "PENDING" | "PA
     await requireAdmin();
     const currentOrder = await prisma.order.findUnique({
       where: { id: orderId },
-      include: { items: true }
+      include: { items: true, payments: { select: { amount: true } } }
     });
 
     if (!currentOrder) {
@@ -30,7 +39,30 @@ export async function updateOrderStatus(orderId: string, status: "PENDING" | "PA
       return { success: true };
     }
 
+    const balance = paymentBalance(
+      Number(currentOrder.totalAmount),
+      currentOrder.payments.map((p) => ({ amount: Number(p.amount) }))
+    );
+    // Pendente quer dizer "falta receber". Se já está tudo recebido, o caminho é estornar um recebimento.
+    if (status === "PENDING" && balance.isSettled && balance.total > 0) {
+      return {
+        error: "Este pedido já está todo recebido. Para voltar a pendente, exclua um recebimento no cartão Recebimentos.",
+      };
+    }
+
     await prisma.$transaction(async (tx) => {
+      // Marcar como Pago à mão dá baixa no que faltava, para o financeiro bater com o status.
+      if (status === "PAID" && balance.remaining > 0) {
+        await tx.orderPayment.create({
+          data: {
+            orderId,
+            amount: balance.remaining,
+            method: currentOrder.paymentMethod ?? "PIX",
+            notes: "Baixa automática ao marcar o pedido como pago",
+          },
+        });
+      }
+
       // Se estava CANCELADO e agora vai para outro status (reativação): debitar do estoque
       if (currentOrder.status === "CANCELED" && status !== "CANCELED") {
         for (const item of currentOrder.items) {
@@ -75,9 +107,7 @@ export async function updateOrderStatus(orderId: string, status: "PENDING" | "PA
       });
     });
 
-    revalidatePath(`/admin/sales/${orderId}`);
-    revalidatePath("/admin/sales");
-    revalidatePath("/admin");
+    revalidateFinance(orderId);
     return { success: true };
   } catch (error: any) {
     console.error("Error updating order status:", error);
@@ -278,15 +308,18 @@ export async function createOrder(formData: FormData) {
               quantity: item.quantity,
               price: item.price
             }))
-          }
+          },
+          // Pago na hora: o recebimento entra junto, com o valor cheio.
+          ...(markAsPaid && totalAmount > 0
+            ? { payments: { create: { amount: roundMoney(totalAmount), method: paymentMethod } } }
+            : {})
         }
       });
 
       return newOrder;
     });
 
-    revalidatePath("/admin/sales");
-    revalidatePath("/admin");
+    revalidateFinance();
     return { 
       success: true, 
       orderId: order.id,
@@ -454,8 +487,23 @@ export async function updateOrder(orderId: string, formData: FormData) {
 
     await prisma.$transaction(
       async (tx) => {
-        const current = await tx.order.findUnique({ where: { id: orderId }, include: { items: true } });
+        const current = await tx.order.findUnique({
+          where: { id: orderId },
+          include: { items: true, payments: { select: { amount: true } } },
+        });
         if (!current) throw new Error("Pedido não encontrado. Ele pode ter sido excluído.");
+
+        // O total novo não pode ficar abaixo do que a cliente já pagou.
+        const balance = paymentBalance(
+          parsed.totalAmount,
+          current.payments.map((p) => ({ amount: Number(p.amount) }))
+        );
+        if (balance.paid > roundMoney(parsed.totalAmount)) {
+          throw new Error(
+            `O novo total (${parsed.totalAmount.toFixed(2).replace(".", ",")}) é menor que o já recebido (${balance.paid.toFixed(2).replace(".", ",")}). Exclua um recebimento antes de salvar.`
+          );
+        }
+        const nextStatus = statusAfterPayments(current.status, balance);
 
         const holdsStock = current.status !== "CANCELED";
 
@@ -543,6 +591,7 @@ export async function updateOrder(orderId: string, formData: FormData) {
         await tx.order.update({
           where: { id: orderId },
           data: {
+            status: nextStatus,
             customerId: customer.id,
             stockLocation: parsed.stockLocation,
             paymentMethod: parsed.paymentMethod,
@@ -566,13 +615,99 @@ export async function updateOrder(orderId: string, formData: FormData) {
       { timeout: 20000 }
     );
 
-    revalidatePath(`/admin/sales/${orderId}`);
-    revalidatePath("/admin/sales");
+    revalidateFinance(orderId);
     revalidatePath("/admin/products");
-    revalidatePath("/admin");
     return { success: true };
   } catch (error) {
     console.error("Error updating order:", error);
     return { error: handleDatabaseError(error, "Não foi possível salvar as alterações do pedido.") };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Recebimentos (pagamento parcial)
+// ---------------------------------------------------------------------------
+
+/**
+ * Dá baixa em um valor recebido. Aceita parcelas até quitar o pedido; ao quitar,
+ * o pedido pendente passa para Pago sozinho.
+ */
+export async function addOrderPayment(orderId: string, formData: FormData) {
+  try {
+    await requireAdmin();
+    const amount = roundMoney(parseBRL(String(formData.get("amount") ?? "")));
+    const methodRaw = String(formData.get("method") ?? "");
+    const method: PaymentMethodValue = (PAYMENT_METHODS as readonly string[]).includes(methodRaw)
+      ? (methodRaw as PaymentMethodValue)
+      : "PIX";
+    const paidAt = parseDateInput(String(formData.get("paidAt") ?? "")) ?? new Date();
+    if (paidAt.getTime() > Date.now() + 24 * 60 * 60 * 1000) {
+      return { error: "A data do recebimento não pode ser no futuro." };
+    }
+    const notes = String(formData.get("notes") ?? "").trim() || null;
+
+    const result = await prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({
+        where: { id: orderId },
+        select: { status: true, totalAmount: true, payments: { select: { amount: true } } },
+      });
+      if (!order) throw new Error("Pedido não encontrado. Ele pode ter sido excluído.");
+      if (order.status === "CANCELED") throw new Error("Pedido cancelado não recebe pagamento. Reative o pedido antes.");
+
+      const before = paymentBalance(
+        Number(order.totalAmount),
+        order.payments.map((p) => ({ amount: Number(p.amount) }))
+      );
+      const invalid = validatePaymentAmount(amount, before.remaining);
+      if (invalid) throw new Error(invalid);
+
+      await tx.orderPayment.create({ data: { orderId, amount, method, paidAt, notes } });
+      const after = paymentBalance(before.total, [{ amount: before.paid }, { amount }]);
+      const nextStatus = statusAfterPayments(order.status, after);
+      if (nextStatus !== order.status) {
+        await tx.order.update({ where: { id: orderId }, data: { status: nextStatus } });
+      }
+      return { settled: after.isSettled, remaining: after.remaining };
+    });
+
+    revalidateFinance(orderId);
+    return { success: true, ...result };
+  } catch (error) {
+    console.error("Error adding order payment:", error);
+    return { error: handleDatabaseError(error, "Não foi possível registrar o recebimento.") };
+  }
+}
+
+/** Exclui um recebimento lançado errado. Se o pedido estava Pago e deixa de estar quitado, volta a Pendente. */
+export async function deleteOrderPayment(paymentId: string) {
+  try {
+    await requireAdmin();
+    const orderId = await prisma.$transaction(async (tx) => {
+      const payment = await tx.orderPayment.findUnique({ where: { id: paymentId }, select: { orderId: true } });
+      if (!payment) throw new Error("Recebimento não encontrado. Ele pode já ter sido excluído.");
+      await tx.orderPayment.delete({ where: { id: paymentId } });
+
+      const order = await tx.order.findUnique({
+        where: { id: payment.orderId },
+        select: { status: true, totalAmount: true, payments: { select: { amount: true } } },
+      });
+      if (order) {
+        const balance = paymentBalance(
+          Number(order.totalAmount),
+          order.payments.map((p) => ({ amount: Number(p.amount) }))
+        );
+        const nextStatus = statusAfterPayments(order.status, balance);
+        if (nextStatus !== order.status) {
+          await tx.order.update({ where: { id: payment.orderId }, data: { status: nextStatus } });
+        }
+      }
+      return payment.orderId;
+    });
+
+    revalidateFinance(orderId);
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting order payment:", error);
+    return { error: handleDatabaseError(error, "Não foi possível excluir o recebimento.") };
   }
 }

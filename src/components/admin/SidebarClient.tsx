@@ -17,6 +17,7 @@ export default function SidebarClient({ session }: SidebarClientProps) {
   const navItems = [
     { label: "Dashboard", href: "/admin", icon: "dashboard", exact: true },
     { label: "Vendas", href: "/admin/sales", icon: "shopping_cart" },
+    { label: "Financeiro", href: "/admin/finance", icon: "account_balance_wallet" },
     { label: "Produtos", href: "/admin/products", icon: "inventory_2" },
     { label: "Categorias", href: "/admin/categories", icon: "category" },
     { label: "Clientes", href: "/admin/customers", icon: "group" },

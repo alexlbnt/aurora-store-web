@@ -31,7 +31,8 @@ function AdminLayoutInner({
 
   return (
     <ConfirmProvider>
-    <div className="flex h-[100dvh] overflow-hidden bg-background-light text-primary font-display relative w-full">
+    {/* overflow-clip (e não hidden): a casca do painel nunca pode ser rolada por foco ou scrollIntoView. */}
+    <div className="flex h-[100dvh] overflow-clip bg-background-light text-primary font-display relative w-full">
       <a
         href="#conteudo"
         className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100000] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"

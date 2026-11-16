@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { deleteProduct } from "./actions";
 import { showToast } from "@/components/ui/Toast";
 import QuickStockModal from "@/components/admin/products/QuickStockModal";
+import ProductionModal from "@/components/admin/products/ProductionModal";
 import { useConfirm } from "@/components/admin/ui/ConfirmDialog";
 
 interface ProductRowActionsProps {
@@ -29,6 +30,7 @@ export default function ProductRowActions({
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
+  const [isProductionOpen, setIsProductionOpen] = useState(false);
   const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [menuStyle, setMenuStyle] = useState<{ top: number; left: number; openUpwards: boolean }>({
     top: 0,
@@ -49,7 +51,7 @@ export default function ProductRowActions({
       return;
     }
 
-    const menuHeight = 140;
+    const menuHeight = 185;
     const menuWidth = 192;
     const margin = 6;
 
@@ -183,6 +185,18 @@ export default function ProductRowActions({
                 type="button"
                 onClick={() => {
                   setIsOpen(false);
+                  setIsProductionOpen(true);
+                }}
+                className="group flex w-full items-center gap-2 px-4 py-2.5 text-xs sm:text-sm text-primary hover:bg-primary/5 transition-colors text-left cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px] text-primary/60">add_box</span>
+                Lançar produção
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOpen(false);
                   setIsStockModalOpen(true);
                 }}
                 className="group flex w-full items-center gap-2 px-4 py-2.5 text-xs sm:text-sm text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 transition-colors text-left cursor-pointer"
@@ -205,6 +219,17 @@ export default function ProductRowActions({
           </div>,
           document.body
         )}
+
+      <ProductionModal
+        isOpen={isProductionOpen}
+        onClose={() => setIsProductionOpen(false)}
+        productId={productId}
+        productName={productName}
+        onSaved={() => {
+          if (onStockUpdated) onStockUpdated();
+          router.refresh();
+        }}
+      />
 
       <QuickStockModal
         isOpen={isStockModalOpen}

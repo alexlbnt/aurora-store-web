@@ -19,38 +19,58 @@ model Category {
 }
 
 model Product {
-  id          String         @id @default(uuid())
+  id          String            @id @default(uuid())
   name        String
-  slug        String         @unique
+  slug        String            @unique
   description String
-  basePrice   Decimal        @db.Decimal(10, 2)
-  sku         String         @unique
+  basePrice   Decimal           @db.Decimal(10, 2)
+  sku         String            @unique
   categoryId  String
-  isNew       Boolean        @default(false)
-  isFeatured  Boolean        @default(false)
-  details     String[]       @default([])
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  isNew       Boolean           @default(false)
+  isFeatured  Boolean           @default(false)
+  details     String[]          @default([])
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
   orderItems  OrderItem[]
-  category    Category       @relation(fields: [categoryId], references: [id])
+  productions ProductionEntry[]
+  category    Category          @relation(fields: [categoryId], references: [id])
   images      ProductImage[]
   variants    Variant[]
 }
 
 model Variant {
-  id        String   @id @default(uuid())
-  productId String
-  color     String
-  size      String
-  price     Decimal? @db.Decimal(10, 2)
-  sku       String?  @unique
-  stockA    Int      @default(0)
-  stockV    Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id          String            @id @default(uuid())
+  productId   String
+  color       String
+  size        String
+  price       Decimal?          @db.Decimal(10, 2)
+  sku         String?           @unique
+  stockA      Int               @default(0)
+  stockV      Int               @default(0)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  product     Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productions ProductionEntry[]
 
   @@unique([productId, color, size])
+}
+
+/// Lançamento de produção: as peças feitas entram no estoque escolhido e ficam no histórico
+/// para comparar o que foi produzido com o que foi vendido.
+model ProductionEntry {
+  id            String        @id @default(uuid())
+  productId     String
+  variantId     String
+  quantity      Int
+  stockLocation StockLocation @default(ESTOQUE_A)
+  producedAt    DateTime      @default(now())
+  notes         String?
+  createdAt     DateTime      @default(now())
+  product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant       Variant       @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([producedAt])
+  @@index([productId])
 }
 
 model ProductImage {
@@ -100,6 +120,22 @@ model Order {
   updatedAt       DateTime       @updatedAt
   customer        Customer       @relation(fields: [customerId], references: [id])
   items           OrderItem[]
+  payments        OrderPayment[]
+}
+
+/// Recebimento de um pedido. Vários por pedido permitem pagamento parcial (baixa aos poucos).
+model OrderPayment {
+  id        String        @id @default(uuid())
+  orderId   String
+  amount    Decimal       @db.Decimal(10, 2)
+  method    PaymentMethod
+  paidAt    DateTime      @default(now())
+  notes     String?
+  createdAt DateTime      @default(now())
+  order     Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([paidAt])
 }
 
 model OrderItem {
@@ -154,4 +190,3 @@ enum ShippingType {
   PAGO_AURORA
   PAGO_CLIENTE
 }
-

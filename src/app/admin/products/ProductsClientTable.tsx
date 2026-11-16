@@ -25,6 +25,9 @@ export interface SerializedProduct {
   images: Array<{
     url: string;
   }>;
+  /** Peças lançadas como produzidas e vendidas (sem pedidos cancelados), desde sempre. */
+  produced: number;
+  sold: number;
 }
 
 interface CategoryOption {
@@ -304,6 +307,9 @@ export default function ProductsClientTable({
                         <p className="text-xs text-primary/60">
                           {product.variants.length} {product.variants.length === 1 ? 'variação' : 'variações'}
                         </p>
+                        <p className="text-xs text-primary/70">
+                          Produzido {product.produced} · Vendido {product.sold}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -321,6 +327,7 @@ export default function ProductsClientTable({
                     <th className="px-6 py-4 font-medium text-sm">Categoria</th>
                     <th className="px-6 py-4 font-medium text-sm">Estoque A</th>
                     <th className="px-6 py-4 font-medium text-sm">Estoque V</th>
+                    <th className="px-6 py-4 font-medium text-sm">Produzido / Vendido</th>
                     <th className="px-6 py-4 font-medium text-sm">Preço</th>
                     <th className="px-6 py-4 font-medium text-sm text-right">Ações</th>
                   </tr>
@@ -385,6 +392,11 @@ export default function ProductsClientTable({
                               {totalStockV} {totalStockV === 1 ? "unidade" : "unidades"}
                             </span>
                           </div>
+                        </td>
+                        <td className="px-6 py-4 text-primary">
+                          <span className="font-semibold">{product.produced}</span>
+                          <span className="text-primary/50"> / </span>
+                          <span className="font-semibold">{product.sold}</span>
                         </td>
                         <td className="px-6 py-4 font-semibold text-primary">
                           R$ {product.basePrice.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
