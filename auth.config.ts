@@ -14,7 +14,9 @@ export const authConfig = {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const userRole = (auth?.user as any)?.role;
-      const isOnAdmin = nextUrl.pathname.startsWith('/admin');
+      // Só o painel (/admin e /admin/...). Arquivos do app instalável, como /admin-sw.js e
+      // /admin.webmanifest, ficam públicos: o navegador os busca sem a sessão.
+      const isOnAdmin = nextUrl.pathname === '/admin' || nextUrl.pathname.startsWith('/admin/');
       const isOnAccount = nextUrl.pathname.startsWith('/account');
       
       if (isOnAdmin) {
