@@ -27,6 +27,7 @@ export interface PickerCustomer {
   email: string | null;
   phone: string;
   socialMedia: string | null;
+  city: string | null;
 }
 
 /** Uma linha da venda. `price` fica no formato digitado (pt-BR, "389,90"). */
@@ -45,6 +46,8 @@ export interface CustomerDraft {
   email: string;
   /** Instagram, TikTok etc. Rascunhos antigos podem não ter o campo. */
   socialMedia?: string;
+  /** Cidade do cliente (opcional). Rascunhos antigos podem não ter o campo. */
+  city?: string;
 }
 
 export const stockOf = (v: PickerVariant, location: StockLocation) =>

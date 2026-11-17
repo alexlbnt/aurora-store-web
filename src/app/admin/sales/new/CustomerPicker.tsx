@@ -30,13 +30,21 @@ export default function CustomerPicker({ customers, value, onChange }: CustomerP
           normalize(c.name).includes(q) ||
           (c.email && normalize(c.email).includes(q)) ||
           (c.socialMedia && normalize(c.socialMedia).includes(q)) ||
+          (c.city && normalize(c.city).includes(q)) ||
           (digits.length >= 3 && c.phone.replace(/\D/g, "").includes(digits))
       )
       .slice(0, 6);
   }, [customers, search]);
 
   const select = (c: PickerCustomer) => {
-    onChange({ id: c.id, name: c.name, phone: formatPhone(c.phone), email: c.email ?? "", socialMedia: c.socialMedia ?? "" });
+    onChange({
+      id: c.id,
+      name: c.name,
+      phone: formatPhone(c.phone),
+      email: c.email ?? "",
+      socialMedia: c.socialMedia ?? "",
+      city: c.city ?? "",
+    });
     setSearch("");
     setOpen(false);
   };
@@ -61,12 +69,13 @@ export default function CustomerPicker({ customers, value, onChange }: CustomerP
               {value.phone}
               {value.email && ` · ${value.email}`}
               {value.socialMedia && ` · ${value.socialMedia}`}
+              {value.city && ` · ${value.city}`}
             </p>
           </div>
         </div>
         <button
           type="button"
-          onClick={() => onChange({ id: "", name: "", phone: "", email: "", socialMedia: "" })}
+          onClick={() => onChange({ id: "", name: "", phone: "", email: "", socialMedia: "", city: "" })}
           className="min-h-11 shrink-0 rounded-lg border border-primary/25 bg-white px-3 text-sm font-semibold text-primary hover:bg-primary/5"
         >
           Trocar
@@ -152,6 +161,7 @@ export default function CustomerPicker({ customers, value, onChange }: CustomerP
                     {formatPhone(c.phone)}
                     {c.email && ` · ${c.email}`}
                     {c.socialMedia && ` · ${c.socialMedia}`}
+                    {c.city && ` · ${c.city}`}
                   </span>
                 </li>
               ))
@@ -243,6 +253,21 @@ export default function CustomerPicker({ customers, value, onChange }: CustomerP
             value={value.socialMedia ?? ""}
             onChange={(e) => onChange({ ...value, socialMedia: e.target.value })}
             placeholder="@cliente.instagram"
+            className={fieldClass}
+          />
+        </div>
+        <div>
+          <label htmlFor="customer-city" className={labelClass}>
+            Cidade <span className="font-normal text-primary/60">(opcional)</span>
+          </label>
+          <input
+            id="customer-city"
+            type="text"
+            autoComplete="off"
+            maxLength={80}
+            value={value.city ?? ""}
+            onChange={(e) => onChange({ ...value, city: e.target.value })}
+            placeholder="Ex.: Goiânia"
             className={fieldClass}
           />
         </div>

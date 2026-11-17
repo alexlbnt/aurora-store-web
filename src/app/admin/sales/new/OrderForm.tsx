@@ -42,7 +42,7 @@ interface Draft {
   paid: boolean;
 }
 
-const EMPTY_CUSTOMER: CustomerDraft = { id: "", name: "", phone: "", email: "", socialMedia: "" };
+const EMPTY_CUSTOMER: CustomerDraft = { id: "", name: "", phone: "", email: "", socialMedia: "", city: "" };
 
 /** Pedido já registrado, para abrir o formulário em modo de edição. */
 export interface EditableOrder {
@@ -139,6 +139,7 @@ export default function OrderForm({
           phone: formatPhone(found.phone),
           email: found.email ?? "",
           socialMedia: found.socialMedia ?? "",
+          city: found.city ?? "",
         }
       : EMPTY_CUSTOMER;
   });
@@ -296,6 +297,7 @@ export default function OrderForm({
     formData.append("customerName", customer.name.trim());
     formData.append("customerEmail", customer.email.trim());
     formData.append("customerSocialMedia", (customer.socialMedia ?? "").trim());
+    formData.append("customerCity", (customer.city ?? "").trim());
     formData.append("customerPhone", customer.phone);
     formData.append("stockLocation", stockLocation);
     formData.append("paymentMethod", paymentMethod);

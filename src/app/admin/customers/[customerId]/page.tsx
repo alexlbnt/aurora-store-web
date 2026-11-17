@@ -97,7 +97,7 @@ export default async function CustomerDetailsPage({
                 {customer.name}
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                Cliente desde {new Date(customer.createdAt).toLocaleDateString("pt-BR")}
+                {customer.city ? `${customer.city} · ` : ""}Cliente desde {new Date(customer.createdAt).toLocaleDateString("pt-BR")}
               </p>
             </div>
           </div>

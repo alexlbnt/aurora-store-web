@@ -172,6 +172,7 @@ export async function createOrder(formData: FormData) {
     const customerEmail = customerEmailRaw && customerEmailRaw.length > 0 ? customerEmailRaw : null;
     const customerPhone = (formData.get("customerPhone") as string)?.trim();
     const customerSocialMedia = (formData.get("customerSocialMedia") as string)?.trim() || null;
+    const customerCity = (formData.get("customerCity") as string)?.trim().slice(0, 80) || null;
     const itemsJson = formData.get("items") as string;
     const stockLocation = (formData.get("stockLocation") as "ESTOQUE_A" | "ESTOQUE_V") || "ESTOQUE_A";
     const paymentMethodRaw = formData.get("paymentMethod") as string | null;
@@ -237,7 +238,8 @@ export async function createOrder(formData: FormData) {
             name: customerName,
             email: customerEmail,
             phone: customerPhone,
-            socialMedia: customerSocialMedia
+            socialMedia: customerSocialMedia,
+            city: customerCity
           }
         });
       } else {
@@ -248,7 +250,8 @@ export async function createOrder(formData: FormData) {
             name: customerName,
             phone: customerPhone,
             ...(customerEmail ? { email: customerEmail } : {}),
-            ...(customerSocialMedia ? { socialMedia: customerSocialMedia } : {})
+            ...(customerSocialMedia ? { socialMedia: customerSocialMedia } : {}),
+            ...(customerCity ? { city: customerCity } : {})
           }
         });
       }
@@ -381,6 +384,7 @@ interface ParsedOrderForm {
   customerEmail: string | null;
   customerPhone: string;
   customerSocialMedia: string | null;
+  customerCity: string | null;
   stockLocation: StockLocationKey;
   paymentMethod: PaymentMethodKey;
   shippingType: ShippingTypeKey;
@@ -398,6 +402,7 @@ function parseOrderForm(formData: FormData): ParsedOrderForm | { error: string }
   const customerEmail = (formData.get("customerEmail") as string)?.trim() || null;
   const customerPhone = (formData.get("customerPhone") as string)?.trim() || "";
   const customerSocialMedia = (formData.get("customerSocialMedia") as string)?.trim() || null;
+  const customerCity = (formData.get("customerCity") as string)?.trim().slice(0, 80) || null;
   if (!customerName || !customerPhone) {
     return { error: "O nome e o telefone do cliente são obrigatórios." };
   }
@@ -460,6 +465,7 @@ function parseOrderForm(formData: FormData): ParsedOrderForm | { error: string }
     customerEmail,
     customerPhone,
     customerSocialMedia,
+    customerCity,
     stockLocation,
     paymentMethod,
     shippingType,
@@ -572,6 +578,7 @@ export async function updateOrder(orderId: string, formData: FormData) {
               email: parsed.customerEmail,
               phone: parsed.customerPhone,
               socialMedia: parsed.customerSocialMedia,
+              city: parsed.customerCity,
             },
           });
         } else {
@@ -582,6 +589,7 @@ export async function updateOrder(orderId: string, formData: FormData) {
               phone: parsed.customerPhone,
               ...(parsed.customerEmail ? { email: parsed.customerEmail } : {}),
               ...(parsed.customerSocialMedia ? { socialMedia: parsed.customerSocialMedia } : {}),
+              ...(parsed.customerCity ? { city: parsed.customerCity } : {}),
             },
           });
         }

@@ -3,13 +3,16 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { handleDatabaseError } from "@/lib/error-handler";
+import { requireAdmin } from "@/lib/require-admin";
 
 export async function createCustomer(formData: FormData) {
   try {
+    await requireAdmin();
     const name = formData.get("name") as string;
     const email = formData.get("email") as string;
     const phone = formData.get("phone") as string;
     const socialMedia = formData.get("socialMedia") as string;
+    const city = ((formData.get("city") as string) || "").trim().slice(0, 80);
 
     if (!name || !phone) {
       return { error: "O nome e o telefone do cliente são obrigatórios." };
@@ -32,7 +35,8 @@ export async function createCustomer(formData: FormData) {
         name,
         email: emailValue,
         phone,
-        socialMedia: socialMedia || null
+        socialMedia: socialMedia || null,
+        city: city || null
       }
     });
 
@@ -46,10 +50,12 @@ export async function createCustomer(formData: FormData) {
 
 export async function updateCustomer(id: string, formData: FormData) {
   try {
+    await requireAdmin();
     const name = formData.get("name") as string;
     const email = formData.get("email") as string;
     const phone = formData.get("phone") as string;
     const socialMedia = formData.get("socialMedia") as string;
+    const city = ((formData.get("city") as string) || "").trim().slice(0, 80);
 
     if (!name || !phone) {
       return { error: "O nome e o telefone do cliente são obrigatórios." };
@@ -73,7 +79,8 @@ export async function updateCustomer(id: string, formData: FormData) {
         name,
         email: emailValue,
         phone,
-        socialMedia: socialMedia || null
+        socialMedia: socialMedia || null,
+        city: city || null
       }
     });
 
@@ -87,6 +94,7 @@ export async function updateCustomer(id: string, formData: FormData) {
 
 export async function deleteCustomer(id: string) {
   try {
+    await requireAdmin();
     // Check if customer has orders
     const orders = await prisma.order.count({ where: { customerId: id } });
     if (orders > 0) {

@@ -226,7 +226,7 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
                       </div>
                     </div>
 
-                    {(customer.phone || customer.email) && (
+                    {(customer.phone || customer.email || customer.city) && (
                       <div className="text-[11px] text-slate-500 flex flex-wrap gap-x-3 gap-y-1">
                         {customer.phone && (
                           <span className="flex items-center gap-1 font-mono">
@@ -238,6 +238,12 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
                           <span className="flex items-center gap-1 truncate max-w-[200px]">
                             <span className="material-symbols-outlined text-[12px] text-slate-400">mail</span>
                             {customer.email}
+                          </span>
+                        )}
+                        {customer.city && (
+                          <span className="flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[12px] text-slate-400">location_on</span>
+                            {customer.city}
                           </span>
                         )}
                       </div>
@@ -305,6 +311,7 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
                         <td className="px-6 py-4">
                           <div className="text-sm text-slate-600 dark:text-slate-300 font-medium">{customer.phone}</div>
                           <div className="text-xs text-slate-400">{customer.email || "Sem e-mail"}</div>
+                          {customer.city && <div className="text-xs text-slate-500">{customer.city}</div>}
                         </td>
                         <td className="px-6 py-4 text-center">
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">

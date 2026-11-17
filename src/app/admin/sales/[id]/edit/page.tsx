@@ -61,6 +61,7 @@ export default async function EditOrderPage({ params }: { params: Promise<{ id: 
       phone: formatPhone(order.customer.phone),
       email: order.customer.email ?? "",
       socialMedia: order.customer.socialMedia ?? "",
+      city: order.customer.city ?? "",
     },
     stockLocation: order.stockLocation,
     paymentMethod: (order.paymentMethod ?? "PIX") as PaymentMethod,

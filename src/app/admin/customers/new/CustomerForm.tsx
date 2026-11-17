@@ -110,15 +110,29 @@ export default function CustomerForm({ initialData, embedded = false }: { initia
                 </div>
               </div>
               
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Redes Sociais <span className="text-slate-400 font-normal text-xs">(Opcional)</span></label>
-                <input 
-                  type="text" 
-                  name="socialMedia"
-                  defaultValue={initialData?.socialMedia || ""}
-                  placeholder="Ex: @carlos.silva" 
-                  className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-white text-base sm:text-sm" 
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label htmlFor="customer-city" className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Cidade <span className="text-slate-400 font-normal text-xs">(Opcional)</span></label>
+                  <input
+                    id="customer-city"
+                    type="text"
+                    name="city"
+                    maxLength={80}
+                    defaultValue={initialData?.city || ""}
+                    placeholder="Ex: Goiânia"
+                    className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-white text-base sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Redes Sociais <span className="text-slate-400 font-normal text-xs">(Opcional)</span></label>
+                  <input 
+                    type="text" 
+                    name="socialMedia"
+                    defaultValue={initialData?.socialMedia || ""}
+                    placeholder="Ex: @carlos.silva" 
+                    className="w-full h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-white text-base sm:text-sm" 
+                  />
+                </div>
               </div>
 
               {/* Botão no Rodapé do Card */}
