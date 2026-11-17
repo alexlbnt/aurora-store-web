@@ -3,6 +3,7 @@ import { Hanken_Grotesk, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { SITE_NAME, siteUrl } from "@/lib/site";
+import SiteAnalytics from "@/components/SiteAnalytics";
 
 const hankenGrotesk = Hanken_Grotesk({
   variable: "--font-hanken",
@@ -49,6 +50,7 @@ export default function RootLayout({
         <Providers>
           {children}
         </Providers>
+        <SiteAnalytics />
       </body>
     </html>
   );

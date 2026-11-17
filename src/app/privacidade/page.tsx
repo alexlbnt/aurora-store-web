@@ -43,6 +43,11 @@ const sections: { id: string; title: string; body: React.ReactNode }[] = [
           <strong>No seu navegador:</strong> o carrinho e os favoritos ficam salvos no próprio aparelho, e um
           cookie mantém a sua conta conectada. Não usamos cookies de propaganda nem de rastreamento.
         </li>
+        <li>
+          <strong>Estatísticas de visita:</strong> contamos quantas pessoas visitam cada página da loja, de
+          forma anônima e sem cookies (Vercel Web Analytics). Não entram nessa contagem a sua conta, o
+          resultado do pedido nem o que você digita nos formulários.
+        </li>
       </ul>
     ),
   },
