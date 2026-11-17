@@ -8,3 +8,17 @@ export async function requireAdmin() {
     throw new Error("Sua sessão expirou ou você não tem permissão. Entre de novo no painel.");
   }
 }
+
+export const NOT_ADMIN_MESSAGE = "Sua sessão expirou ou você não tem permissão. Entre de novo no painel.";
+
+/**
+ * Versão que não lança erro, para actions que devolvem { error }:
+ *   const denied = await adminGuard(); if (denied) return denied;
+ */
+export async function adminGuard(): Promise<{ success: false; error: string } | null> {
+  const session = await auth();
+  if ((session?.user as { role?: string } | undefined)?.role !== "ADMIN") {
+    return { success: false, error: NOT_ADMIN_MESSAGE };
+  }
+  return null;
+}

@@ -1,11 +1,14 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { adminGuard } from "@/lib/require-admin";
 import { revalidatePath } from "next/cache";
 import { handleDatabaseError } from "@/lib/error-handler";
 import { slugify, uniqueSlug as findFreeSlug } from "@/lib/slug";
 
 export async function createProduct(formData: FormData) {
+  const denied = await adminGuard();
+  if (denied) return denied;
   // Espaços nas pontas do nome apareciam no título da página e na prévia do link.
   const name = ((formData.get("name") as string) || "").trim();
   const description = formData.get("description") as string;

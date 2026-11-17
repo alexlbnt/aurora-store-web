@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { handleDatabaseError } from "@/lib/error-handler";
-import { requireAdmin } from "@/lib/require-admin";
+import { adminGuard, requireAdmin } from "@/lib/require-admin";
 import { productPath } from "@/lib/slug";
 
 /** Mostra ou esconde o produto da vitrine. Ele continua no painel, nos pedidos e no estoque. */
@@ -27,6 +27,8 @@ export async function setProductVisibility(productId: string, visible: boolean) 
 }
 
 export async function deleteProduct(productId: string) {
+  const denied = await adminGuard();
+  if (denied) return denied;
   try {
     // Check if product is part of any order
     const orderItemsCount = await prisma.orderItem.count({
@@ -64,6 +66,8 @@ export async function deleteProduct(productId: string) {
 }
 
 export async function editProduct(productId: string, formData: FormData) {
+  const denied = await adminGuard();
+  if (denied) return denied;
   const name = ((formData.get("name") as string) || "").trim();
   const description = formData.get("description") as string;
   const price = formData.get("price") as string;
@@ -181,6 +185,8 @@ export async function editProduct(productId: string, formData: FormData) {
 }
 
 export async function quickUpdateCategory(id: string, newName: string) {
+  const denied = await adminGuard();
+  if (denied) return denied;
   if (!newName) return { error: "Nome não pode estar vazio." };
   try {
     const existingCat = await prisma.category.findFirst({
@@ -216,6 +222,8 @@ export async function quickUpdateCategory(id: string, newName: string) {
 }
 
 export async function quickDeleteCategory(id: string) {
+  const denied = await adminGuard();
+  if (denied) return denied;
   try {
     await prisma.category.delete({ where: { id } });
     revalidatePath("/admin/products/new");
@@ -227,6 +235,8 @@ export async function quickDeleteCategory(id: string) {
 }
 
 export async function getProductVariants(productId: string) {
+  const denied = await adminGuard();
+  if (denied) return { error: denied.error };
   try {
     const product = await prisma.product.findUnique({
       where: { id: productId },
@@ -257,6 +267,8 @@ export async function quickUpdateProductVariantStock(
   stockA: number,
   stockV: number
 ) {
+  const denied = await adminGuard();
+  if (denied) return denied;
   try {
     await prisma.variant.update({
       where: { id: variantId },

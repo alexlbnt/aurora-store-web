@@ -1,11 +1,14 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { adminGuard } from "@/lib/require-admin";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { handleDatabaseError } from "@/lib/error-handler";
 
 export async function createCategory(formData: FormData) {
+  const denied = await adminGuard();
+  if (denied) return denied;
   const name = formData.get("name") as string;
   const slug = formData.get("slug") as string;
   const description = formData.get("description") as string;
@@ -28,6 +31,8 @@ export async function createCategory(formData: FormData) {
 }
 
 export async function updateCategory(id: string, formData: FormData) {
+  const denied = await adminGuard();
+  if (denied) return denied;
   const name = formData.get("name") as string;
   const slug = formData.get("slug") as string;
   const description = formData.get("description") as string;
@@ -51,6 +56,8 @@ export async function updateCategory(id: string, formData: FormData) {
 }
 
 export async function deleteCategory(id: string) {
+  const denied = await adminGuard();
+  if (denied) return denied;
   try {
     await prisma.category.delete({ where: { id } });
     revalidatePath("/admin/categories");
