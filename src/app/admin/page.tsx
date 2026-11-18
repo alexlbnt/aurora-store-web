@@ -1,6 +1,7 @@
 import React from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import DashboardCharts from "@/components/admin/DashboardCharts";
 import Link from "next/link";
 import MetricCard from "@/components/admin/ui/MetricCard";
@@ -15,6 +16,25 @@ interface DashboardProps {
     period?: string;
   }>;
 }
+
+const recentOrderSelect = {
+  id: true,
+  orderNumber: true,
+  status: true,
+  stockLocation: true,
+  totalAmount: true,
+  createdAt: true,
+  customer: {
+    select: { name: true },
+  },
+  items: {
+    select: {
+      product: {
+        select: { name: true },
+      },
+    },
+  },
+} satisfies Prisma.OrderSelect;
 
 export default async function Dashboard({ searchParams }: DashboardProps) {
   const resolvedParams = (await searchParams) || {};
@@ -33,7 +53,7 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
   let totalOrdersCount = 0;
   let ticketMedio = 0;
   let customersCount = 0;
-  let recentOrders: any[] = [];
+  let recentOrders: Prisma.OrderGetPayload<{ select: typeof recentOrderSelect }>[] = [];
   let chartData: Array<{ name: string; total: number }> = [];
 
   try {
@@ -68,24 +88,7 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
       prisma.order.findMany({
         take: 5,
         orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          orderNumber: true,
-          status: true,
-          stockLocation: true,
-          totalAmount: true,
-          createdAt: true,
-          customer: {
-            select: { name: true },
-          },
-          items: {
-            select: {
-              product: {
-                select: { name: true },
-              },
-            },
-          },
-        },
+        select: recentOrderSelect,
       }),
       // 5. Lean data for chart only for selected period
       prisma.order.findMany({

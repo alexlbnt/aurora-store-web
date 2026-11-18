@@ -1,6 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useSyncExternalStore } from "react";
+import { createLocalStore, mountedStore } from "@/lib/local-store";
 
 export interface CartItem {
   id: string; // unique identifier (often variantId or slug-color-size)
@@ -29,41 +30,28 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+const EMPTY_CART: CartItem[] = [];
+
+const parseCart = (raw: unknown): CartItem[] =>
+  Array.isArray(raw)
+    ? raw.filter((item): item is CartItem => !!item && typeof item === "object" && "id" in item && !!item.id)
+    : EMPTY_CART;
+
+const cartStore = createLocalStore("aurora_cart", parseCart, EMPTY_CART);
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const items = useSyncExternalStore(cartStore.subscribe, cartStore.getSnapshot, cartStore.getServerSnapshot);
+  const isMounted = useSyncExternalStore(mountedStore.subscribe, mountedStore.getSnapshot, mountedStore.getServerSnapshot);
 
-  useEffect(() => {
-    setIsMounted(true);
-    try {
-      const saved = localStorage.getItem("aurora_cart");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          setItems(parsed.filter((item: any) => item && typeof item === "object" && item.id));
-        }
-      }
-    } catch (e) {
-      console.warn("Aviso ao carregar carrinho:", e);
-    }
-  }, []);
-
-  const saveCart = (newItems: CartItem[]) => {
-    setItems(newItems);
-    try {
-      localStorage.setItem("aurora_cart", JSON.stringify(newItems));
-    } catch (e) {}
-  };
+  const saveCart = (newItems: CartItem[]) => cartStore.set(newItems);
 
   const addToCart = (newItem: CartItem) => {
-    const existingIndex = items.findIndex(i => i.id === newItem.id);
-    if (existingIndex >= 0) {
-      const updated = [...items];
-      updated[existingIndex].qty += newItem.qty;
-      saveCart(updated);
-    } else {
-      saveCart([...items, newItem]);
-    }
+    const existing = items.find((i) => i.id === newItem.id);
+    saveCart(
+      existing
+        ? items.map((i) => (i.id === newItem.id ? { ...i, qty: i.qty + newItem.qty } : i))
+        : [...items, newItem]
+    );
   };
 
   const removeFromCart = (id: string) => {

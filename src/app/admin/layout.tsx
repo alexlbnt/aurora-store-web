@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import ServiceWorkerRegister from "@/components/admin/pwa/ServiceWorkerRegister";
 import SidebarClient from "@/components/admin/SidebarClient";
 import AdminLayoutClient from "@/components/admin/AdminLayoutClient";
+import { isAdminUser } from "@/lib/roles";
 
 // O app instalável (PWA) é só do painel: com o manifesto global, quem instalasse a loja
 // no celular abriria o /admin.
@@ -26,7 +27,7 @@ export default async function AdminRootLayout({
 
   // If not authenticated as admin (such as on /admin/login),
   // render children directly so login renders cleanly without layout shell
-  if (!session?.user || (session.user as any)?.role !== "ADMIN") {
+  if (!session?.user || !isAdminUser(session.user)) {
     return (
       <>
         <ServiceWorkerRegister />

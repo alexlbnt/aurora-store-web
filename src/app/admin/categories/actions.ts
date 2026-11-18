@@ -62,7 +62,7 @@ export async function deleteCategory(id: string) {
     await prisma.category.delete({ where: { id } });
     revalidatePath("/admin/categories");
     return { success: true };
-  } catch (error) {
+  } catch {
     return { error: "Não é possível excluir esta categoria porque ainda existem produtos vinculados a ela. Remova os produtos da categoria primeiro." };
   }
 }

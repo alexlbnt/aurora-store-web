@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { removePushSubscription, savePushSubscription, sendTestPush } from "@/app/admin/settings/push-actions";
 
 type Location = "" | "ESTOQUE_A" | "ESTOQUE_V";
@@ -32,43 +32,51 @@ function writeLocation(v: Location) {
   }
 }
 
+type PushEnv = "checking" | "unsupported" | "ios-install" | "dev" | "supported";
+
+/** O que este aparelho permite (lido do navegador; no servidor fica "checking"). */
+function detectPushEnv(): PushEnv {
+  const supported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  if (!supported) {
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const standalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    // iPhone só aceita aviso com o painel instalado na tela de início.
+    return isIOS && !standalone ? "ios-install" : "unsupported";
+  }
+  return process.env.NODE_ENV !== "production" ? "dev" : "supported";
+}
+
+const noopSubscribe = () => () => {};
+
 /**
  * Ativa, neste aparelho, o aviso de pedido novo do site.
  * Cada vendedora escolhe o estoque que acompanha (A, V ou os dois).
  */
 export default function PushSettingsCard({ publicKey }: { publicKey: string | null }) {
-  const [status, setStatus] = useState<"checking" | "unsupported" | "ios-install" | "dev" | "off" | "on">("checking");
+  const env = useSyncExternalStore(noopSubscribe, detectPushEnv, () => "checking" as const);
+  const [subscription, setSubscription] = useState<"checking" | "off" | "on">("checking");
+  const status = env === "supported" ? subscription : env;
   const [endpoint, setEndpoint] = useState<string | null>(null);
-  const [location, setLocation] = useState<Location>("");
+  const savedLocation = useSyncExternalStore(noopSubscribe, readLocation, () => "" as Location);
+  const [chosenLocation, setLocation] = useState<Location | null>(null);
+  const location = chosenLocation ?? savedLocation;
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
 
+  // Só quando o aparelho aceita aviso: confere se já está inscrito.
   useEffect(() => {
-    setLocation(readLocation());
-    const supported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    const standalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (navigator as Navigator & { standalone?: boolean }).standalone === true;
-
-    if (!supported) {
-      // iPhone só aceita aviso com o painel instalado na tela de início.
-      setStatus(isIOS && !standalone ? "ios-install" : "unsupported");
-      return;
-    }
-    if (process.env.NODE_ENV !== "production") {
-      setStatus("dev");
-      return;
-    }
+    if (env !== "supported") return;
     navigator.serviceWorker
       .getRegistration("/admin")
       .then((reg) => reg?.pushManager.getSubscription())
       .then((sub) => {
         setEndpoint(sub?.endpoint ?? null);
-        setStatus(sub ? "on" : "off");
+        setSubscription(sub ? "on" : "off");
       })
-      .catch(() => setStatus("off"));
-  }, []);
+      .catch(() => setSubscription("off"));
+  }, [env]);
 
   const enable = async () => {
     if (!publicKey) return;
@@ -96,7 +104,7 @@ export default function PushSettingsCard({ publicKey }: { publicKey: string | nu
       }
       writeLocation(location);
       setEndpoint(sub.endpoint);
-      setStatus("on");
+      setSubscription("on");
       setMessage({ tone: "ok", text: "Avisos ativados neste aparelho." });
     } catch (e) {
       console.error(e);
@@ -137,7 +145,7 @@ export default function PushSettingsCard({ publicKey }: { publicKey: string | nu
       await sub?.unsubscribe();
       if (ep) await removePushSubscription(ep);
       setEndpoint(null);
-      setStatus("off");
+      setSubscription("off");
       setMessage({ tone: "ok", text: "Avisos desativados neste aparelho." });
     } finally {
       setBusy(false);

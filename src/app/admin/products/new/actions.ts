@@ -5,6 +5,7 @@ import { adminGuard } from "@/lib/require-admin";
 import { revalidatePath } from "next/cache";
 import { handleDatabaseError } from "@/lib/error-handler";
 import { slugify, uniqueSlug as findFreeSlug } from "@/lib/slug";
+import { toStock, type VariantMatrixRow } from "@/lib/product-input";
 
 export async function createProduct(formData: FormData) {
   const denied = await adminGuard();
@@ -52,7 +53,7 @@ export async function createProduct(formData: FormData) {
   const imagesRaw = formData.get("images") as string;
   let images: string[] = [];
   if (imagesRaw) {
-    try { images = JSON.parse(imagesRaw); } catch(e) {}
+    try { images = JSON.parse(imagesRaw); } catch {}
   }
   
   const hasVariants = formData.get("hasVariants") === "true";
@@ -61,10 +62,10 @@ export async function createProduct(formData: FormData) {
   const detailsRaw = formData.get("details") as string;
   let details: string[] = [];
   if (detailsRaw) {
-    try { details = JSON.parse(detailsRaw); } catch(e) {}
+    try { details = JSON.parse(detailsRaw); } catch {}
   }
   
-  let variantsMatrix: any[] = [];
+  let variantsMatrix: VariantMatrixRow[] = [];
   if (hasVariants && variantsMatrixRaw) {
     variantsMatrix = JSON.parse(variantsMatrixRaw);
   } else {
@@ -105,11 +106,11 @@ export async function createProduct(formData: FormData) {
           }))
         },
         variants: {
-          create: variantsMatrix.map((v: any) => ({
+          create: variantsMatrix.map((v) => ({
             sku: v.sku || `AUR-${v.size}-${v.color}-${Math.random().toString(36).substring(7).toUpperCase()}`,
-            price: v.price ? parseFloat(v.price) : parseFloat(price),
-            stockA: parseInt(v.stockA, 10) || 0,
-            stockV: parseInt(v.stockV, 10) || 0,
+            price: v.price ? parseFloat(String(v.price)) : parseFloat(price),
+            stockA: toStock(v.stockA),
+            stockV: toStock(v.stockV),
             color: v.color,
             size: v.size
           }))
@@ -124,7 +125,7 @@ export async function createProduct(formData: FormData) {
       success: true, 
       productId: product.id 
     };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Prisma Error:", error);
     return { 
       success: false, 

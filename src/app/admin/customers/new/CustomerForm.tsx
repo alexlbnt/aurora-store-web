@@ -7,7 +7,17 @@ import { createCustomer, updateCustomer } from "../actions";
 import { formatPhone } from "@/lib/formatters";
 import { showToast } from "@/components/ui/Toast";
 
-export default function CustomerForm({ initialData, embedded = false }: { initialData?: any; embedded?: boolean }) {
+/** Campos do cliente que o formulário edita (o registro do banco serve direto). */
+export interface CustomerFormData {
+  id: string;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  city?: string | null;
+  socialMedia?: string | null;
+}
+
+export default function CustomerForm({ initialData, embedded = false }: { initialData?: CustomerFormData; embedded?: boolean }) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [phone, setPhone] = useState(initialData?.phone || "");

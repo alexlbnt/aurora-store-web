@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
-export async function updateCustomerProfile(prevState: any, formData: FormData) {
+export async function updateCustomerProfile(_prevState: unknown, formData: FormData) {
   const session = await auth();
   if (!session?.user?.email) {
     return { error: "Não autorizado. Faça login novamente." };
@@ -55,7 +55,7 @@ export async function updateCustomerProfile(prevState: any, formData: FormData) 
     revalidatePath("/account");
     revalidatePath("/account/settings");
     return { success: "Dados atualizados com sucesso!" };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Erro ao atualizar dados:", error);
     return { error: "Falha ao atualizar dados. Tente novamente." };
   }

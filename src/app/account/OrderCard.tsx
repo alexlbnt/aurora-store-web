@@ -2,13 +2,15 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { canOptimizeImage } from "@/lib/image-hosts";
 import { whatsappLink } from "@/lib/contact";
 import { customerOrderStatus, ORDER_STEPS, shippingLabel as describeShipping } from "@/lib/order-status";
 
 interface OrderItemData {
   id: string;
   quantity: number;
-  price: any;
+  price: number | string;
   product: {
     id: string;
     slug?: string | null;
@@ -20,7 +22,7 @@ interface OrderItemData {
 interface OrderData {
   id: string;
   orderNumber: string;
-  createdAt: any;
+  createdAt: string | Date;
   status: string;
   shippingType: string;
   shippingAddress?: string | null;
@@ -28,7 +30,7 @@ interface OrderData {
   shippingState?: string | null;
   shippingCep?: string | null;
   notes?: string | null;
-  totalAmount: any;
+  totalAmount: number | string;
   items: OrderItemData[];
 }
 
@@ -91,11 +93,11 @@ export default function OrderCard({ order }: { order: OrderData }) {
               return (
                 <div
                   key={item.id}
-                  className="w-10 h-10 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center shrink-0 shadow-sm overflow-hidden"
+                  className="relative w-10 h-10 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center shrink-0 shadow-sm overflow-hidden"
                   title={item.product?.name || "Produto"}
                 >
                   {imgUrl ? (
-                    <img src={imgUrl} alt={item.product?.name || "Produto"} className="w-full h-full object-cover" />
+                    <Image src={imgUrl} alt={item.product?.name || "Produto"} fill sizes="40px" unoptimized={!canOptimizeImage(imgUrl)} className="object-cover" />
                   ) : (
                     <span className="material-symbols-outlined text-[16px] text-slate-400">inventory_2</span>
                   )}
@@ -178,9 +180,9 @@ export default function OrderCard({ order }: { order: OrderData }) {
                 return (
                   <div key={item.id} className="flex items-center justify-between gap-4 p-3 bg-white border border-slate-100 rounded-xl">
                     <div className="flex items-center gap-3">
-                      <div className="w-14 h-16 rounded-lg bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
+                      <div className="relative w-14 h-16 rounded-lg bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
                         {imgUrl ? (
-                          <img src={imgUrl} alt={item.product?.name || "Produto"} className="w-full h-full object-cover" />
+                          <Image src={imgUrl} alt={item.product?.name || "Produto"} fill sizes="56px" unoptimized={!canOptimizeImage(imgUrl)} className="object-cover" />
                         ) : (
                           <span className="material-symbols-outlined text-slate-400">image</span>
                         )}

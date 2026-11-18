@@ -37,7 +37,7 @@ async function main() {
   const catRoupoes = await prisma.category.create({
     data: { name: 'Roupões', slug: 'roupoes', description: 'Roupões macios para dias frios' }
   })
-  const catAcessorios = await prisma.category.create({
+  await prisma.category.create({
     data: { name: 'Acessórios', slug: 'acessorios', description: 'Necessaires e presilhas' }
   })
 

@@ -2,6 +2,7 @@ import React from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import ProductsClientTable, { SerializedProduct } from "./ProductsClientTable";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export const revalidate = 0; // Force dynamic fetching to always show the latest products
 
@@ -13,13 +14,34 @@ interface ProductsPageProps {
   }>;
 }
 
+const productListSelect = {
+  id: true,
+  name: true,
+  sku: true,
+  visible: true,
+  description: true,
+  basePrice: true,
+  categoryId: true,
+  category: {
+    select: { id: true, name: true },
+  },
+  variants: {
+    select: { stockA: true, stockV: true },
+  },
+  images: {
+    select: { url: true },
+    orderBy: { order: "asc" },
+    take: 1,
+  },
+} satisfies Prisma.ProductSelect;
+
 export default async function ProductsListPage({ searchParams }: ProductsPageProps) {
   const resolvedParams = (await searchParams) || {};
   const initialQuery = resolvedParams.q?.trim() || "";
   const initialCategory = resolvedParams.categoryId?.trim() || "ALL";
   const initialPage = Math.max(1, parseInt(resolvedParams.page || "1", 10) || 1);
 
-  let products: any[] = [];
+  let products: Prisma.ProductGetPayload<{ select: typeof productListSelect }>[] = [];
   let categories: Array<{ id: string; name: string }> = [];
   const producedBy = new Map<string, number>();
   const soldBy = new Map<string, number>();
@@ -27,26 +49,7 @@ export default async function ProductsListPage({ searchParams }: ProductsPagePro
   try {
     const [fetchedProducts, fetchedCategories, produced, sold] = await Promise.all([
       prisma.product.findMany({
-        select: {
-          id: true,
-          name: true,
-          sku: true,
-          visible: true,
-          description: true,
-          basePrice: true,
-          categoryId: true,
-          category: {
-            select: { id: true, name: true },
-          },
-          variants: {
-            select: { stockA: true, stockV: true },
-          },
-          images: {
-            select: { url: true },
-            orderBy: { order: "asc" },
-            take: 1,
-          },
-        },
+        select: productListSelect,
         orderBy: {
           createdAt: "desc",
         },

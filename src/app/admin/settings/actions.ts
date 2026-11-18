@@ -4,10 +4,11 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { compare, hash } from "bcrypt-ts";
 import { revalidatePath } from "next/cache";
+import { isAdminUser } from "@/lib/roles";
 
-export async function updateAdminProfile(prevState: any, formData: FormData) {
+export async function updateAdminProfile(_prevState: unknown, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.email || (session.user as any)?.role !== "ADMIN") {
+  if (!session?.user?.email || !isAdminUser(session.user)) {
     return { error: "Não autorizado." };
   }
 
@@ -62,7 +63,7 @@ export async function updateAdminProfile(prevState: any, formData: FormData) {
     revalidatePath("/admin/settings");
     revalidatePath("/admin");
     return { success: "Configurações e credenciais salvas com sucesso!" };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Erro ao atualizar configurações de admin:", error);
     return { error: "Falha ao salvar alterações. Tente novamente." };
   }

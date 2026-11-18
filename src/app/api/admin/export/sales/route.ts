@@ -3,8 +3,9 @@ import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import { jsPDF } from "jspdf";
 import autoTableImport from "jspdf-autotable";
+import { isAdminUser } from "@/lib/roles";
 
-const autoTable = (typeof autoTableImport === "function" ? autoTableImport : (autoTableImport as any).default) as typeof autoTableImport;
+const autoTable = (typeof autoTableImport === "function" ? autoTableImport : (autoTableImport as unknown as { default: typeof autoTableImport }).default) as typeof autoTableImport;
 
 export const dynamic = "force-dynamic";
 
@@ -71,7 +72,7 @@ const formatShippingType = (st?: string | null) => {
 
 export async function GET(req: Request) {
   const session = await auth();
-  if (!session?.user || (session.user as any).role !== "ADMIN") {
+  if (!session?.user || !isAdminUser(session.user)) {
     return new NextResponse("Não autorizado", { status: 401 });
   }
 

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { hash } from "bcrypt-ts";
 import { redirect } from "next/navigation";
 
-export async function registerCustomer(prevState: any, formData: FormData) {
+export async function registerCustomer(_prevState: unknown, formData: FormData) {
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;

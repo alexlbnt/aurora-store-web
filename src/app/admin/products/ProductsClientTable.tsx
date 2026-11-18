@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useTransition, useCallback } from "react";
+import React, { useState, useMemo, useTransition, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AdminProductImage from "@/components/admin/AdminProductImage";
@@ -63,9 +63,12 @@ export default function ProductsClientTable({
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [, startTransition] = useTransition();
 
-  useEffect(() => {
+  // Lista nova do servidor (depois de salvar ou filtrar): substitui a local.
+  const [receivedProducts, setReceivedProducts] = useState(initialProducts);
+  if (receivedProducts !== initialProducts) {
+    setReceivedProducts(initialProducts);
     setProducts(initialProducts);
-  }, [initialProducts]);
+  }
 
   const pageSize = 10;
 

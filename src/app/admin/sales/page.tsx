@@ -25,6 +25,18 @@ interface SalesPageProps {
   }>;
 }
 
+const orderListInclude = {
+  customer: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+    },
+  },
+  payments: { select: { amount: true } },
+} satisfies Prisma.OrderInclude;
+
 export default async function Sales({ searchParams }: SalesPageProps) {
   const resolvedParams = (await searchParams) || {};
   const q = resolvedParams.q?.trim() || "";
@@ -67,7 +79,7 @@ export default async function Sales({ searchParams }: SalesPageProps) {
   }
 
   // Fetch paginated orders & total count in parallel with global metrics
-  let orders: any[] = [];
+  let orders: Prisma.OrderGetPayload<{ include: typeof orderListInclude }>[] = [];
   let totalOrdersCount = 0;
   let totalSalesLifetime = 0;
   let pendingCount = 0;
@@ -78,17 +90,7 @@ export default async function Sales({ searchParams }: SalesPageProps) {
     const [fetchedOrders, fetchedTotal, salesAgg, fetchedPending, receivedAgg] = await Promise.all([
       prisma.order.findMany({
         where,
-        include: {
-          customer: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              phone: true,
-            },
-          },
-          payments: { select: { amount: true } },
-        },
+        include: orderListInclude,
         orderBy: {
           createdAt: "desc",
         },

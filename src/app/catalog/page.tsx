@@ -1,6 +1,7 @@
 import StorefrontLayout from "@/components/storefront/StorefrontLayout";
 import ProductCard from "@/components/storefront/ProductCard";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import CatalogFilters from "@/components/storefront/CatalogFilters";
 import Link from "next/link";
 import { availableFirst, filterableColors, paginate, productCardInclude, sortSizes, toProductCard } from "@/lib/storefront";
@@ -15,7 +16,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
   const size = typeof params.size === 'string' ? params.size : undefined;
   const color = typeof params.color === 'string' ? params.color : undefined;
 
-  const where: any = { visible: true };
+  const where: Prisma.ProductWhereInput = { visible: true };
   if (q) {
     where.OR = [
       { name: { contains: q, mode: 'insensitive' } },
@@ -36,7 +37,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
     };
   }
 
-  let orderBy: any = { createdAt: 'desc' };
+  let orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: 'desc' };
   if (sort === 'price_asc') orderBy = { basePrice: 'asc' };
   if (sort === 'price_desc') orderBy = { basePrice: 'desc' };
 

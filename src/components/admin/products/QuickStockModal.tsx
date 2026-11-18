@@ -31,9 +31,16 @@ export default function QuickStockModal({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Abriu (ou trocou de produto): mostra "carregando" já nesta renderização.
+  const loadKey = isOpen && productId ? productId : null;
+  const [startedKey, setStartedKey] = useState<string | null>(null);
+  if (startedKey !== loadKey) {
+    setStartedKey(loadKey);
+    if (loadKey) setLoading(true);
+  }
+
   useEffect(() => {
     if (isOpen && productId) {
-      setLoading(true);
       getProductVariants(productId)
         .then((res) => {
           if (res.product?.variants) {

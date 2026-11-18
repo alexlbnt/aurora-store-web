@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "./actions";
@@ -40,10 +40,12 @@ export default function AdminMobileNav({ user }: { user: { name: string; email: 
   const [moreOpen, setMoreOpen] = useState(false);
   const sheetRef = useRef<HTMLDialogElement>(null);
 
-  // Limpa o destaque "otimista" quando a rota chega
-  useEffect(() => {
+  // Limpa o destaque "otimista" quando a rota chega (ajuste durante a renderização)
+  const [shownPath, setShownPath] = useState(pathname);
+  if (shownPath !== pathname) {
+    setShownPath(pathname);
     setPendingHref(null);
-  }, [pathname]);
+  }
 
   const activePath = pendingHref || pathname;
   const moreItems = mobileMoreItems();

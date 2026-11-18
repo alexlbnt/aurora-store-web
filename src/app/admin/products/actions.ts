@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { handleDatabaseError } from "@/lib/error-handler";
 import { adminGuard, requireAdmin } from "@/lib/require-admin";
 import { productPath } from "@/lib/slug";
+import { toStock, type VariantMatrixRow } from "@/lib/product-input";
 
 /** Mostra ou esconde o produto da vitrine. Ele continua no painel, nos pedidos e no estoque. */
 export async function setProductVisibility(productId: string, visible: boolean) {
@@ -59,7 +60,7 @@ export async function deleteProduct(productId: string) {
 
     revalidatePath("/admin/products");
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Failed to delete product:", error);
     return { success: false, error: handleDatabaseError(error, "Falha ao excluir o produto.") };
   }
@@ -110,7 +111,7 @@ export async function editProduct(productId: string, formData: FormData) {
   
   let images: string[] = [];
   if (imagesRaw) {
-    try { images = JSON.parse(imagesRaw); } catch(e) {}
+    try { images = JSON.parse(imagesRaw); } catch {}
   }
   
   const hasVariants = formData.get("hasVariants") === "true";
@@ -119,10 +120,10 @@ export async function editProduct(productId: string, formData: FormData) {
   const detailsRaw = formData.get("details") as string;
   let details: string[] = [];
   if (detailsRaw) {
-    try { details = JSON.parse(detailsRaw); } catch(e) {}
+    try { details = JSON.parse(detailsRaw); } catch {}
   }
   
-  let variantsMatrix: any[] = [];
+  let variantsMatrix: VariantMatrixRow[] = [];
   if (hasVariants && variantsMatrixRaw) {
     variantsMatrix = JSON.parse(variantsMatrixRaw);
   } else {
@@ -164,11 +165,11 @@ export async function editProduct(productId: string, formData: FormData) {
           }))
         },
         variants: {
-          create: variantsMatrix.map((v: any) => ({
+          create: variantsMatrix.map((v) => ({
             sku: v.sku || `AUR-${v.size}-${v.color}-${Math.random().toString(36).substring(7).toUpperCase()}`,
-            price: v.price ? parseFloat(v.price) : parseFloat(price),
-            stockA: parseInt(v.stockA, 10) || 0,
-            stockV: parseInt(v.stockV, 10) || 0,
+            price: v.price ? parseFloat(String(v.price)) : parseFloat(price),
+            stockA: toStock(v.stockA),
+            stockV: toStock(v.stockV),
             color: v.color,
             size: v.size
           }))
@@ -178,7 +179,7 @@ export async function editProduct(productId: string, formData: FormData) {
 
     revalidatePath("/admin/products");
     return { success: true, productId: product.id };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Failed to edit product:", error);
     return { success: false, error: handleDatabaseError(error, "Falha ao editar produto.") };
   }

@@ -13,7 +13,7 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const userRole = (auth?.user as any)?.role;
+      const userRole = auth?.user?.role;
       // Só o painel (/admin e /admin/...). Arquivos do app instalável, como /admin-sw.js e
       // /admin.webmanifest, ficam públicos: o navegador os busca sem a sessão.
       const isOnAdmin = nextUrl.pathname === '/admin' || nextUrl.pathname.startsWith('/admin/');
@@ -56,14 +56,14 @@ export const authConfig = {
     },
     jwt({ token, user }) {
       if (user) {
-        token.role = (user as any).role;
+        token.role = user.role;
       }
       return token;
     },
     session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.sub as string;
-        (session.user as any).role = token.role;
+        session.user.role = token.role;
       }
       return session;
     }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useTransition, useState, useEffect, Suspense } from "react";
+import React, { useTransition, useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 
@@ -30,9 +30,12 @@ function AdminPaginationInner({
   const startItem = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const endItem = Math.min(currentPage * pageSize, totalItems);
 
-  useEffect(() => {
+  // Página nova chegou: limpa o destaque da página clicada (ajuste durante a renderização).
+  const [shownPage, setShownPage] = useState(currentPage);
+  if (shownPage !== currentPage) {
+    setShownPage(currentPage);
     setTargetPage(null);
-  }, [currentPage]);
+  }
 
   const createPageUrl = (page: number) => {
     const params = new URLSearchParams();

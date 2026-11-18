@@ -1,13 +1,17 @@
 import { Prisma } from '@prisma/client';
 
-export function handleDatabaseError(error: any, defaultMessage: string = "Ocorreu um erro inesperado. Tente novamente."): string {
+// Formato mínimo que lemos de um erro (Prisma ou não) sem confiar no tipo.
+type ErrorLike = { code?: unknown; meta?: { target?: unknown }; message?: unknown };
+
+export function handleDatabaseError(error: unknown, defaultMessage: string = "Ocorreu um erro inesperado. Tente novamente."): string {
   console.error("Action Error Details:", error);
+  const e: ErrorLike = typeof error === "object" && error !== null ? error : {};
 
   // Prisma Errors
-  if (error instanceof Prisma.PrismaClientKnownRequestError || (error && error.code && error.meta)) {
-    switch (error.code) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError || (e.code && e.meta)) {
+    switch (e.code) {
       case 'P2002': {
-        const target = error.meta?.target as string | string[] | undefined;
+        const target = e.meta?.target as string | string[] | undefined;
         let fields = "";
         
         if (Array.isArray(target)) {
@@ -37,7 +41,7 @@ export function handleDatabaseError(error: any, defaultMessage: string = "Ocorre
     }
   }
   
-  if (error instanceof Prisma.PrismaClientValidationError || (error && error.message && error.message.includes('ValidationError'))) {
+  if (error instanceof Prisma.PrismaClientValidationError || (typeof e.message === 'string' && e.message.includes('ValidationError'))) {
     return "Os dados preenchidos estão incorretos ou em formato inválido. Verifique os campos e tente novamente.";
   }
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { Bell, RefreshCw, AlertTriangle, Clock, CheckCircle2, ChevronRight, PackageX } from "lucide-react";
+import { Bell, RefreshCw, Clock, CheckCircle2, ChevronRight, PackageX } from "lucide-react";
 
 interface AlertItem {
   id: string;
@@ -28,6 +28,16 @@ interface NotificationData {
   updatedAt: string;
 }
 
+async function loadNotifications(): Promise<NotificationData | null> {
+  try {
+    const res = await fetch("/api/admin/notifications", { cache: "no-store" });
+    return res.ok ? ((await res.json()) as NotificationData) : null;
+  } catch (err) {
+    console.error("Falha ao buscar alertas:", err);
+    return null;
+  }
+}
+
 export default function AdminNotificationsPopover() {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -40,27 +50,34 @@ export default function AdminNotificationsPopover() {
 
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(
+    () => loadNotifications().then((json) => {
+      if (json) setData(json);
+    }),
+    []
+  );
+
+  // Atualização pedida pelo usuário: mostra o ícone girando enquanto busca.
+  const refreshNow = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const res = await fetch("/api/admin/notifications", { cache: "no-store" });
-      if (res.ok) {
-        const json = await res.json();
-        setData(json);
-      }
-    } catch (err) {
-      console.error("Falha ao buscar alertas:", err);
+      await fetchNotifications();
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchNotifications]);
 
   // Busca inicial e polling a cada 35 segundos para alertas em tempo real
   useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 35000);
+    const poll = () => {
+      loadNotifications().then((json) => {
+        if (json) setData(json);
+      });
+    };
+    poll();
+    const interval = setInterval(poll, 35000);
     return () => clearInterval(interval);
-  }, [fetchNotifications]);
+  }, []);
 
   // Fechar ao clicar fora
   useEffect(() => {
@@ -141,7 +158,7 @@ export default function AdminNotificationsPopover() {
 
             <button
               type="button"
-              onClick={fetchNotifications}
+              onClick={refreshNow}
               disabled={loading}
               title="Atualizar alertas agora"
               className="p-1.5 rounded-lg text-slate-400 hover:text-primary hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-colors disabled:opacity-50 cursor-pointer"

@@ -1,6 +1,7 @@
 import React from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import DashboardCharts from "@/components/admin/DashboardCharts";
 import Link from "next/link";
 import ReportsClientActions from "./ReportsClientActions";
@@ -14,6 +15,36 @@ interface ReportsProps {
   }>;
 }
 
+const reportOrderSelect = {
+  id: true,
+  totalAmount: true,
+  paymentMethod: true,
+  stockLocation: true,
+  createdAt: true,
+  items: {
+    select: {
+      productId: true,
+      quantity: true,
+      price: true,
+      product: {
+        select: {
+          id: true,
+          name: true,
+          categoryId: true,
+          variants: {
+            select: { stockA: true, stockV: true },
+          },
+          images: {
+            orderBy: { order: "asc" },
+            take: 1,
+            select: { url: true },
+          },
+        },
+      },
+    },
+  },
+} satisfies Prisma.OrderSelect;
+
 export default async function Reports({ searchParams }: ReportsProps) {
   const resolvedParams = (await searchParams) || {};
   const periodParam = resolvedParams?.period?.trim().toLowerCase();
@@ -22,7 +53,7 @@ export default async function Reports({ searchParams }: ReportsProps) {
   const is7Days = !is30Days && !is365Days;
 
   // Fetch real data for reports including product images
-  let orders: any[] = [];
+  let orders: Prisma.OrderGetPayload<{ select: typeof reportOrderSelect }>[] = [];
   try {
     const reportStartDate = new Date();
     if (is365Days) {
@@ -39,35 +70,7 @@ export default async function Reports({ searchParams }: ReportsProps) {
         status: { not: "CANCELED" },
         createdAt: { gte: reportStartDate },
       },
-      select: {
-        id: true,
-        totalAmount: true,
-        paymentMethod: true,
-        stockLocation: true,
-        createdAt: true,
-        items: {
-          select: {
-            productId: true,
-            quantity: true,
-            price: true,
-            product: {
-              select: {
-                id: true,
-                name: true,
-                categoryId: true,
-                variants: {
-                  select: { stockA: true, stockV: true },
-                },
-                images: {
-                  orderBy: { order: "asc" },
-                  take: 1,
-                  select: { url: true },
-                },
-              },
-            },
-          },
-        },
-      },
+      select: reportOrderSelect,
       orderBy: { createdAt: "desc" },
     });
   } catch (err) {
@@ -92,12 +95,12 @@ export default async function Reports({ searchParams }: ReportsProps) {
   };
 
   orders.forEach((o) => {
-    const pm = (o as any).paymentMethod || "OTHER";
+    const pm = o.paymentMethod || "OTHER";
     const found = paymentMethodsStats.find((p) => p.key === pm) || paymentMethodsStats[4];
     found.count += 1;
     found.total += Number(o.totalAmount || 0);
 
-    const loc = (o as any).stockLocation === "ESTOQUE_V" ? "ESTOQUE_V" : "ESTOQUE_A";
+    const loc = o.stockLocation === "ESTOQUE_V" ? "ESTOQUE_V" : "ESTOQUE_A";
     stockLocationStats[loc].count += 1;
     stockLocationStats[loc].total += Number(o.totalAmount || 0);
   });
@@ -157,7 +160,7 @@ export default async function Reports({ searchParams }: ReportsProps) {
   > = {};
 
   orders.forEach((order) => {
-    (order.items || []).forEach((item: any) => {
+    (order.items || []).forEach((item) => {
       const pid = item.productId || item.product?.id;
       if (!pid) return;
       if (!productSales[pid]) {
@@ -167,7 +170,7 @@ export default async function Reports({ searchParams }: ReportsProps) {
           quantity: 0,
           revenue: 0,
           stock: (item.product?.variants || []).reduce(
-            (acc: number, v: any) => acc + (v.stockA || 0) + (v.stockV || 0),
+            (acc: number, v) => acc + (v.stockA || 0) + (v.stockV || 0),
             0
           ),
           img: firstImg,

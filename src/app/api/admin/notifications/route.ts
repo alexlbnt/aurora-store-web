@@ -2,12 +2,13 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import { releaseStaleSiteOrders } from "@/lib/stale-orders";
+import { isAdminUser } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   const session = await auth();
-  if (!session?.user || (session.user as any).role !== "ADMIN") {
+  if (!session?.user || !isAdminUser(session.user)) {
     return new NextResponse("Não autorizado", { status: 401 });
   }
 

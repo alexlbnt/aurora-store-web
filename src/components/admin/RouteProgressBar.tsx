@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useTransition } from "react";
+import React, { useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 export default function RouteProgressBar() {
@@ -9,17 +9,27 @@ export default function RouteProgressBar() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  // Complete and hide progress bar when navigation finishes
-  useEffect(() => {
+  // A rota chegou: completa a barra (ajuste durante a renderização) e some logo depois.
+  const routeKey = `${pathname}?${searchParams.toString()}`;
+  const [shownRoute, setShownRoute] = useState(routeKey);
+  const [finishing, setFinishing] = useState(false);
+  if (shownRoute !== routeKey) {
+    setShownRoute(routeKey);
     if (isNavigating) {
       setProgress(100);
-      const timer = setTimeout(() => {
-        setIsNavigating(false);
-        setProgress(0);
-      }, 200);
-      return () => clearTimeout(timer);
+      setFinishing(true);
     }
-  }, [pathname, searchParams]);
+  }
+
+  useEffect(() => {
+    if (!finishing) return;
+    const timer = setTimeout(() => {
+      setIsNavigating(false);
+      setProgress(0);
+      setFinishing(false);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [finishing]);
 
   // Intercept clicks on links to show immediate progress
   useEffect(() => {

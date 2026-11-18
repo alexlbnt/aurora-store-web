@@ -1,13 +1,38 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { createProduct } from "./actions";
 import { quickUpdateCategory, quickDeleteCategory } from "../actions";
 import { showToast } from "@/components/ui/Toast";
 import { useConfirm } from "@/components/admin/ui/ConfirmDialog";
+import {
+  buildVariantMatrix,
+  fromSavedVariant,
+  sameMatrixShape,
+  type SavedVariant,
+  type VariantMatrixItem,
+} from "@/lib/variant-matrix";
 
-export default function ProductForm({ categories, initialData }: { categories: any[], initialData?: any }) {
+/** Produto como a página de edição entrega (preços já convertidos para número). */
+export interface ProductFormInitialData {
+  id: string;
+  name: string;
+  description?: string | null;
+  basePrice: number;
+  categoryId?: string | null;
+  details?: string[];
+  images?: Array<string | { url: string }>;
+  variants: SavedVariant[];
+}
+
+export default function ProductForm({
+  categories,
+  initialData,
+}: {
+  categories: Array<{ id: string; name: string }>;
+  initialData?: ProductFormInitialData;
+}) {
   const confirm = useConfirm();
   const isEditing = !!initialData;
   const [isPending, setIsPending] = useState(false);
@@ -19,10 +44,10 @@ export default function ProductForm({ categories, initialData }: { categories: a
 
   // Derive initial unique sizes and colors from variants if editing
   const initialSizes = initialData 
-    ? Array.from(new Set(initialData.variants.map((v: any) => v.size))) as string[]
+    ? Array.from(new Set(initialData.variants.map((v) => v.size)))
     : ['P', 'M', 'G'];
   const initialColors = initialData
-    ? Array.from(new Set(initialData.variants.map((v: any) => v.color))) as string[]
+    ? Array.from(new Set(initialData.variants.map((v) => v.color)))
     : ['Padrão'];
 
   const [sizes, setSizes] = useState<string[]>(initialSizes);
@@ -34,36 +59,27 @@ export default function ProductForm({ categories, initialData }: { categories: a
   const [details, setDetails] = useState<string[]>(initialDetails);
   const [newDetail, setNewDetail] = useState("");
 
-  const initialImages = initialData?.images ? initialData.images.map((img: any) => typeof img === 'string' ? img : img.url) : [];
+  const initialImages = initialData?.images ? initialData.images.map((img) => typeof img === 'string' ? img : img.url) : [];
   const [images, setImages] = useState<string[]>(initialImages);
   const [newImage, setNewImage] = useState("");
   const [localFiles, setLocalFiles] = useState<{file: File, preview: string}[]>([]);
 
-  const [variantMatrix, setVariantMatrix] = useState<any[]>(initialData?.variants || []);
+  const [variantMatrix, setVariantMatrix] = useState<VariantMatrixItem[]>(
+    () => initialData?.variants.map(fromSavedVariant) ?? []
+  );
 
-  useEffect(() => {
-    if (!hasVariants) return;
-    const newMatrix: any[] = [];
-    sizes.forEach(size => {
-      colors.forEach(color => {
-         const existingId = `${size}-${color}`;
-         const existing = variantMatrix.find(v => v._id === existingId || (v.size === size && v.color === color));
-         newMatrix.push({
-           _id: existingId,
-           size,
-           color,
-           sku: existing?.sku || `AUR-${size.substring(0,3).toUpperCase()}-${color.substring(0,3).toUpperCase()}-${Math.floor(Math.random() * 1000)}`,
-           price: existing?.price || '',
-           stockA: existing?.stockA || 0,
-           stockV: existing?.stockV || 0
-         });
-      });
-    });
-    // Only update if dimensions changed to avoid losing input focus
-    if (newMatrix.length !== variantMatrix.length || !newMatrix.every((m, i) => m._id === variantMatrix[i]?._id)) {
-       setVariantMatrix(newMatrix);
+  // Refaz a grade quando tamanhos/cores mudam (ajuste de estado durante a renderização,
+  // padrão do React no lugar de um efeito). Só troca a grade se as linhas mudaram,
+  // para o campo em edição não perder o foco.
+  const matrixShape = hasVariants ? JSON.stringify([sizes, colors]) : null;
+  const [builtShape, setBuiltShape] = useState<string | null>(null);
+  if (matrixShape !== builtShape) {
+    setBuiltShape(matrixShape);
+    if (matrixShape !== null) {
+      const next = buildVariantMatrix(sizes, colors, variantMatrix);
+      if (!sameMatrixShape(next, variantMatrix)) setVariantMatrix(next);
     }
-  }, [sizes, colors, hasVariants]); // eslint-disable-line react-hooks/exhaustive-deps
+  }
 
   const updateVariantElement = (id: string, field: string, value: string) => {
     setVariantMatrix(prev => prev.map(v => v._id === id ? { ...v, [field]: value } : v));
@@ -227,7 +243,7 @@ export default function ProductForm({ categories, initialData }: { categories: a
         let data;
         try {
           data = JSON.parse(text);
-        } catch (e) {
+        } catch {
           throw new Error(res.ok ? "Erro ao processar resposta do servidor." : `Erro do servidor: ${text.substring(0, 40)}... (Imagem muito grande?)`);
         }
         
@@ -260,9 +276,9 @@ export default function ProductForm({ categories, initialData }: { categories: a
       }
       // Redirect to list
       window.location.href = '/admin/products';
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to create/edit product:", error);
-      const msg = error?.message || (typeof error === 'string' ? error : JSON.stringify(error));
+      const msg = error instanceof Error ? error.message : (typeof error === 'string' ? error : JSON.stringify(error));
       showToast(msg || "Não foi possível salvar o produto. Confira os campos e tente de novo.", "error");
     } finally {
       setIsPending(false);
@@ -320,7 +336,7 @@ export default function ProductForm({ categories, initialData }: { categories: a
                     <textarea 
                       name="description"
                       rows={5} 
-                      defaultValue={initialData?.description}
+                      defaultValue={initialData?.description ?? undefined}
                       placeholder="Descreva os detalhes, materiais e cuidados do produto..." 
                       className="w-full border-none focus:ring-0 dark:bg-slate-800 dark:text-white p-3.5 text-sm resize-y outline-none"
                     />
@@ -726,7 +742,7 @@ export default function ProductForm({ categories, initialData }: { categories: a
                   {hasVariants ? (
                     <input type="number" name="stockA" value={variantMatrix.reduce((acc, v) => acc + (Number(v.stockA) || 0), 0)} readOnly className="w-full rounded-lg border-slate-200 bg-slate-50 opacity-70 cursor-not-allowed dark:bg-slate-800 dark:border-slate-700 dark:text-white text-base sm:text-sm" />
                   ) : (
-                    <input type="number" name="stockA" defaultValue={initialData ? initialData.variants.reduce((acc: number, v: any) => acc + v.stockA, 0) : undefined} required placeholder="0" className="w-full rounded-lg border-primary/20 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white placeholder:text-slate-400 text-base sm:text-sm" />
+                    <input type="number" name="stockA" defaultValue={initialData ? initialData.variants.reduce((acc, v) => acc + v.stockA, 0) : undefined} required placeholder="0" className="w-full rounded-lg border-primary/20 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white placeholder:text-slate-400 text-base sm:text-sm" />
                   )}
                 </div>
                 <div>
@@ -734,7 +750,7 @@ export default function ProductForm({ categories, initialData }: { categories: a
                   {hasVariants ? (
                     <input type="number" name="stockV" value={variantMatrix.reduce((acc, v) => acc + (Number(v.stockV) || 0), 0)} readOnly className="w-full rounded-lg border-slate-200 bg-slate-50 opacity-70 cursor-not-allowed dark:bg-slate-800 dark:border-slate-700 dark:text-white text-base sm:text-sm" />
                   ) : (
-                    <input type="number" name="stockV" defaultValue={initialData ? initialData.variants.reduce((acc: number, v: any) => acc + v.stockV, 0) : undefined} required placeholder="0" className="w-full rounded-lg border-primary/20 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white placeholder:text-slate-400 text-base sm:text-sm" />
+                    <input type="number" name="stockV" defaultValue={initialData ? initialData.variants.reduce((acc, v) => acc + v.stockV, 0) : undefined} required placeholder="0" className="w-full rounded-lg border-primary/20 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white placeholder:text-slate-400 text-base sm:text-sm" />
                   )}
                 </div>
               </div>

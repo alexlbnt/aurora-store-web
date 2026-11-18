@@ -19,6 +19,18 @@ interface CustomersPageProps {
   }>;
 }
 
+const customerListInclude = {
+  orders: {
+    where: { status: { not: "CANCELED" } },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      totalAmount: true,
+      createdAt: true,
+    },
+  },
+} satisfies Prisma.CustomerInclude;
+
 export default async function Customers({ searchParams }: CustomersPageProps) {
   const resolvedParams = (await searchParams) || {};
   const q = resolvedParams.q?.trim() || "";
@@ -35,7 +47,7 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
     ];
   }
 
-  let customers: any[] = [];
+  let customers: Prisma.CustomerGetPayload<{ include: typeof customerListInclude }>[] = [];
   let totalCustomersCount = 0;
   let totalCustomersAll = 0;
   let totalLifetimeSpent = 0;
@@ -52,17 +64,7 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
     ] = await Promise.all([
       prisma.customer.findMany({
         where,
-        include: {
-          orders: {
-            where: { status: { not: "CANCELED" } },
-            orderBy: { createdAt: "desc" },
-            select: {
-              id: true,
-              totalAmount: true,
-              createdAt: true,
-            },
-          },
-        },
+        include: customerListInclude,
         orderBy: { createdAt: "desc" },
         skip: (currentPage - 1) * pageSize,
         take: pageSize,
@@ -93,7 +95,7 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
   }
 
   const totalSpentByCustomer = customers.map((c) => {
-    return (c.orders || []).reduce((acc: number, order: any) => acc + Number(order.totalAmount || 0), 0);
+    return (c.orders || []).reduce((acc: number, order) => acc + Number(order.totalAmount || 0), 0);
   });
 
   return (

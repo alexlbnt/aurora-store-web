@@ -6,6 +6,7 @@ import AnnouncementBar from "./AnnouncementBar";
 import { getLiveAnnouncement } from "@/lib/announcement-data";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { isAdminUser } from "@/lib/roles";
 
 export default async function StorefrontLayout({
   children,
@@ -21,9 +22,9 @@ export default async function StorefrontLayout({
   let isAdmin = false;
   try {
     const session = await auth();
-    isAdmin = (session?.user as any)?.role === "ADMIN";
-  } catch (err: any) {
-    if (err?.digest === "DYNAMIC_SERVER_USAGE") {
+    isAdmin = isAdminUser(session?.user);
+  } catch (err) {
+    if ((err as { digest?: string } | null)?.digest === "DYNAMIC_SERVER_USAGE") {
       throw err;
     }
     console.warn("Aviso ao recuperar sessão em StorefrontLayout:", err);

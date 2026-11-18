@@ -109,7 +109,7 @@ export async function updateOrderStatus(orderId: string, status: "PENDING" | "PA
 
     revalidateFinance(orderId);
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error updating order status:", error);
     return { error: handleDatabaseError(error, "Não foi possível alterar o status deste pedido.") };
   }
@@ -150,7 +150,7 @@ export async function deleteOrder(orderId: string) {
     revalidatePath("/admin/sales");
     revalidatePath("/admin");
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error deleting order:", error);
     return { error: handleDatabaseError(error, "Não foi possível excluir o pedido. Verifique se existem dependências.") };
   }
@@ -332,7 +332,7 @@ export async function createOrder(formData: FormData) {
       shippingType: order.shippingType,
       notes: order.notes
     };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error creating order:", error);
     return { error: handleDatabaseError(error, "Não foi possível criar o pedido manual. Verifique os dados e tente novamente.") };
   }

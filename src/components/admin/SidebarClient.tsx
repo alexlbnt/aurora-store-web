@@ -4,11 +4,12 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "./actions";
+import type { Session } from "next-auth";
 import { useAdminSidebar } from "./AdminSidebarContext";
 import { isNavItemActive, navItemsByGroup, type AdminNavItem } from "@/lib/admin-nav";
 
 interface SidebarClientProps {
-  session: any;
+  session: Session | null;
 }
 
 export default function SidebarClient({ session }: SidebarClientProps) {

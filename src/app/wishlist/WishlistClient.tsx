@@ -46,8 +46,8 @@ export default function WishlistClient() {
               id={product.id}
               name={product.name}
               price={product.price}
-              category={typeof product.category === 'object' ? (product.category as any)?.name : (product.category || 'Aurora')}
-              imageUrl={typeof product.imageUrl === 'string' ? product.imageUrl : ((product.imageUrl as any)?.url || '')}
+              category={product.category || 'Aurora'}
+              imageUrl={product.imageUrl}
             />
           ))}
         </div>

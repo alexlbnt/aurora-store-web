@@ -2,7 +2,6 @@ import React, { cache } from "react";
 import type { Metadata } from "next";
 import StorefrontLayout from "@/components/storefront/StorefrontLayout";
 import Link from "next/link";
-import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { notFound, permanentRedirect } from "next/navigation";
 import { auth } from "@/auth";
@@ -14,6 +13,7 @@ import { SITE_NAME, siteUrl } from "@/lib/site";
 import { productWhatsappMessage } from "@/lib/contact";
 import { isUuid, productPath } from "@/lib/slug";
 import { TROCAS_RESUMO } from "@/lib/policies";
+import { isAdminUser } from "@/lib/roles";
 
 // Mesma consulta para a página e para os metadados: o cache evita ir ao banco duas vezes.
 // O endereço aceita o slug (/product/pijama-cetim) ou o id antigo (links já compartilhados).
@@ -60,7 +60,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   const dbProduct = await getProduct(resolvedParams.id);
 
   const session = await auth();
-  const isAdmin = (session?.user as any)?.role === "ADMIN";
+  const isAdmin = isAdminUser(session?.user);
 
   // Produto oculto na loja: some para o público; o administrador ainda vê para conferir.
   if (!dbProduct || (!dbProduct.visible && !isAdmin)) {
@@ -82,8 +82,8 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   const related = availableFirst(relatedRaw.map(toProductCard)).slice(0, 4);
 
   // Extrair cores únicas e tamanhos únicos das variantes
-  const colors = Array.from(new Set(dbProduct.variants.map((v: any) => v.color)));
-  const sizes = Array.from(new Set(dbProduct.variants.map((v: any) => v.size)));
+  const colors = Array.from(new Set(dbProduct.variants.map((v) => v.color)));
+  const sizes = Array.from(new Set(dbProduct.variants.map((v) => v.size)));
 
   // Preço: a variação pode ter preço próprio; sem ele, vale o preço base do produto.
   const basePrice = Number(dbProduct.basePrice);
