@@ -4,6 +4,8 @@ import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
+import { hasSizeGuide } from "@/lib/size-guide";
+import SizeGuideDialog from "./SizeGuideDialog";
 
 export interface StockVariant {
   color: string;
@@ -49,6 +51,7 @@ export default function AddToCart({ product }: { product: AddToCartProduct }) {
   const [justAdded, setJustAdded] = useState(false);
 
   const liked = isInWishlist(product.id);
+  const showSizeGuide = hasSizeGuide(product.sizes);
 
   const selectedVariant = product.variants.find((v) => v.color === selectedColor && v.size === selectedSize);
   const unitPrice = selectedVariant?.price ?? product.basePrice;
@@ -140,9 +143,7 @@ export default function AddToCart({ product }: { product: AddToCartProduct }) {
           <p className="text-sm font-semibold text-primary dark:text-slate-200">
             Tamanho: <span className="font-normal text-primary/70">{selectedSize}</span>
           </p>
-          <Link href="/faq#tamanhos" className="text-sm text-accent-blue underline underline-offset-4 hover:text-primary">
-            Guia de medidas
-          </Link>
+          {showSizeGuide && <SizeGuideDialog selectedSize={selectedSize} />}
         </div>
         <div className="grid grid-cols-4 gap-2">
           {product.sizes.map((s) => {

@@ -3,6 +3,7 @@ import StorefrontLayout from "@/components/storefront/StorefrontLayout";
 import Link from "next/link";
 import { whatsappLink } from "@/lib/contact";
 import { TROCAS_RESUMO } from "@/lib/policies";
+import SizeGuideTable from "@/components/storefront/SizeGuideTable";
 
 export const metadata = {
   title: "Ajuda & Dúvidas Frequentes | Aurora Sleepwear",
@@ -29,12 +30,6 @@ export default function FAQPage() {
     },
   ];
 
-  const sizeGuide = [
-    { size: "P", busto: "84 - 88 cm", cintura: "66 - 70 cm", quadril: "92 - 96 cm", num: "36 - 38" },
-    { size: "M", busto: "89 - 94 cm", cintura: "71 - 76 cm", quadril: "97 - 102 cm", num: "40 - 42" },
-    { size: "G", busto: "95 - 100 cm", cintura: "77 - 82 cm", quadril: "103 - 108 cm", num: "44 - 46" },
-    { size: "GG", busto: "101 - 108 cm", cintura: "83 - 90 cm", quadril: "109 - 116 cm", num: "48" },
-  ];
 
   return (
     <StorefrontLayout>
@@ -76,32 +71,8 @@ export default function FAQPage() {
           <h2 id="tamanhos" className="text-3xl font-serif text-primary dark:text-slate-100 border-b border-primary/10 pb-3 scroll-mt-24">
             Guia de tamanhos
           </h2>
-          <div className="bg-white dark:bg-slate-900 rounded-lg border border-primary/10 dark:border-slate-800 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-accent-soft dark:bg-slate-800 text-primary font-semibold text-sm">
-                  <tr>
-                    <th className="px-6 py-4">Tamanho</th>
-                    <th className="px-6 py-4">Busto</th>
-                    <th className="px-6 py-4">Cintura</th>
-                    <th className="px-6 py-4">Quadril</th>
-                    <th className="px-6 py-4">Manequim</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {sizeGuide.map((row) => (
-                    <tr key={row.size} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
-                      <td className="px-6 py-4 font-bold text-primary">{row.size}</td>
-                      <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{row.busto}</td>
-                      <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{row.cintura}</td>
-                      <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{row.quadril}</td>
-                      <td className="px-6 py-4 text-slate-600 dark:text-slate-300 font-medium">{row.num}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <p className="text-primary/80 dark:text-slate-400">Medidas do corpo, em centímetros.</p>
+          <SizeGuideTable />
         </div>
 
         {/* Contact Banner */}
