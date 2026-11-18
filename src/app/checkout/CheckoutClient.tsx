@@ -2,6 +2,7 @@
 
 import React, { useActionState, useEffect, useState } from "react";
 import Image from "next/image";
+import { canOptimizeImage } from "@/lib/image-hosts";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { processPaymentAndCreateOrder } from "./actions";
@@ -99,7 +100,7 @@ export default function CheckoutClient({ account }: { account: { email: string; 
               <li key={item.id} className="flex gap-4 items-center">
                 <div className="relative w-16 h-20 bg-accent-soft shrink-0 overflow-hidden">
                   {item.image ? (
-                    <Image src={item.image} alt={item.name} fill sizes="64px" className="object-cover" />
+                    <Image src={item.image} unoptimized={!canOptimizeImage(item.image)} alt={item.name} fill sizes="64px" className="object-cover" />
                   ) : (
                     <span className="material-symbols-outlined absolute inset-0 flex items-center justify-center text-primary/30" aria-hidden="true">checkroom</span>
                   )}

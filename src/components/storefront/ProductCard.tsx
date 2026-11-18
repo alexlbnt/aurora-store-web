@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import { canOptimizeImage } from "@/lib/image-hosts";
 import Link from "next/link";
 import { useWishlist } from "@/context/WishlistContext";
 
@@ -53,6 +54,7 @@ export default function ProductCard({ id, href, name, price, category, imageUrl,
         {showImage && imageUrl ? (
           <Image
             src={imageUrl}
+            unoptimized={!canOptimizeImage(imageUrl)}
             alt={name}
             fill
             sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, 50vw"

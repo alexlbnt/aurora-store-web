@@ -3,12 +3,17 @@ import StorefrontLayout from "@/components/storefront/StorefrontLayout";
 import ProductCard from "@/components/storefront/ProductCard";
 import Link from "next/link";
 import Image from "next/image";
+import { canOptimizeImage } from "@/lib/image-hosts";
 import { prisma } from "@/lib/prisma";
 import HeroSky from "@/components/storefront/HeroSky";
 import { whatsappLink } from "@/lib/contact";
 import { availableFirst, productCardInclude, toProductCard } from "@/lib/storefront";
 
 export const revalidate = 60; // Revalidate page every 60 seconds
+
+/** Foto da categoria: a cadastrada, senão a do primeiro produto visível, senão o banner padrão. */
+const categoryImage = (c: { imageUrl: string | null; products: { images: { url: string }[] }[] }) =>
+  c.imageUrl || c.products[0]?.images[0]?.url || "/promo-banner.jpg";
 
 export default async function Home() {
 
@@ -115,8 +120,9 @@ export default async function Home() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {displayCategories.map(category => (
             <Link key={category.id} href={`/category/${category.slug}`} className="group relative aspect-[4/5] overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
-              <Image 
-                src={category.imageUrl || category.products[0]?.images[0]?.url || "/promo-banner.jpg"} 
+              <Image
+                src={categoryImage(category)}
+                unoptimized={!canOptimizeImage(categoryImage(category))}
                 alt={category.name}
                 fill
                 sizes="(min-width: 1024px) 25vw, 50vw"
@@ -135,7 +141,7 @@ export default async function Home() {
         <section className="py-20">
           <div className="flex flex-col md:flex-row overflow-hidden bg-accent-soft dark:bg-slate-900">
             <div className="md:w-1/2 aspect-square md:aspect-auto relative min-h-[400px]">
-              <Image src={promoCategory.imageUrl || promoCategory.products[0]?.images[0]?.url || "/promo-banner.jpg"} alt={`Coleção ${promoCategory.name}`} fill className="object-cover" />
+              <Image src={categoryImage(promoCategory)} unoptimized={!canOptimizeImage(categoryImage(promoCategory))} alt={`Coleção ${promoCategory.name}`} fill className="object-cover" />
             </div>
             <div className="md:w-1/2 p-8 md:p-16 flex flex-col justify-center gap-6 text-left">
               <h2 className="text-4xl md:text-6xl font-serif text-primary dark:text-slate-100 leading-[1.05] capitalize">

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { OPTIMIZED_IMAGE_HOSTS } from "./src/lib/image-hosts";
 
 const nextConfig: NextConfig = {
   // App instalável do painel: o service worker não pode ficar em cache no navegador,
@@ -18,16 +19,12 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // Origens de foto aceitas pelo otimizador de imagens. Antes era qualquer site (até sem HTTPS),
-  // o que deixava o servidor da loja baixar e redimensionar imagens de qualquer endereço.
-  // Foto de outra origem não quebra a página: o card mostra o espaço neutro no lugar.
+  // Origens de foto aceitas pelo otimizador de imagens (lista em src/lib/image-hosts.ts).
+  // Antes era qualquer site, o que deixava o servidor da loja baixar imagens de qualquer endereço.
   images: {
-    remotePatterns: [
-      { protocol: 'https', hostname: 'i.ibb.co' }, // ImgBB: envio de fotos pelo painel
-      { protocol: 'https', hostname: 'd2qs1z4gndokv4.cloudfront.net' }, // fotos atuais de parte do catálogo
-      { protocol: 'https', hostname: 'images.unsplash.com' }, // produtos de exemplo do banco de testes
-    ],
+    remotePatterns: OPTIMIZED_IMAGE_HOSTS.map((hostname) => ({ protocol: "https" as const, hostname })),
   },
+
 };
 
 export default nextConfig;
