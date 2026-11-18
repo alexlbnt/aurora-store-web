@@ -57,3 +57,32 @@ test("barra inferior: atalhos, Mais com as demais telas e sem menu ☰", async (
   await page.mouse.click(195, 40);
   await expect(sheet).toBeHidden();
 });
+
+test("busca no celular: a lupa procura no assunto da tela", async ({ page, context, baseURL }) => {
+  const f = shop!;
+  await signInAsAdmin(context, baseURL!, { id: f.adminUserId, email: f.adminEmail, name: `E2E Admin ${f.runId}` });
+  await page.goto("/admin/products");
+
+  const lupa = page.getByRole("button", { name: "Buscar produtos" });
+  await expect(lupa).toBeVisible();
+
+  // Esc fecha sem buscar e devolve o foco para a lupa
+  await lupa.click();
+  const campo = page.getByRole("searchbox", { name: "Buscar produtos" }).last();
+  await expect(campo).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("search")).toHaveCount(0);
+  await expect(lupa).toBeFocused();
+
+  // Busca de verdade: vai para a lista filtrada e o campo fecha
+  await lupa.click();
+  await campo.fill(f.productName);
+  await campo.press("Enter");
+  await page.waitForURL(new RegExp(`/admin/products\\?q=`));
+  await expect(page.getByRole("search")).toHaveCount(0);
+  await expect(page.getByText(f.productName).first()).toBeVisible();
+
+  // Em outra tela, a mesma lupa procura pedidos
+  await page.goto("/admin");
+  await expect(page.getByRole("button", { name: "Buscar pedidos" })).toBeVisible();
+});

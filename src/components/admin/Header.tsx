@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { Search, PanelLeftClose, PanelLeft } from "lucide-react";
+import React, { useState, useMemo, useRef } from "react";
+import { Search, PanelLeftClose, PanelLeft, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAdminSidebar } from "./AdminSidebarContext";
 import AdminNotificationsPopover from "./AdminNotificationsPopover";
+import { adminSearchTarget, adminSearchUrl } from "@/lib/admin-search";
 
 export default function Header({
   title = "Visão Geral",
@@ -16,17 +17,22 @@ export default function Header({
   const pathname = usePathname();
   const { isCollapsed, toggleCollapsed } = useAdminSidebar();
 
+  // Celular: a lupa abre um campo na largura do topo.
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const searchButtonRef = useRef<HTMLButtonElement>(null);
+  const { placeholder } = adminSearchTarget(pathname);
+
+  const closeMobileSearch = () => {
+    setMobileSearchOpen(false);
+    searchButtonRef.current?.focus();
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
-    const q = encodeURIComponent(searchQuery.trim());
-    if (pathname.startsWith("/admin/products")) {
-      router.push(`/admin/products?q=${q}`);
-    } else if (pathname.startsWith("/admin/customers")) {
-      router.push(`/admin/customers?q=${q}`);
-    } else {
-      router.push(`/admin/sales?q=${q}`);
-    }
+    const url = adminSearchUrl(pathname, searchQuery);
+    if (!url) return;
+    router.push(url);
+    setMobileSearchOpen(false);
   };
 
   const displayTitle = useMemo(() => {
@@ -50,7 +56,7 @@ export default function Header({
   }, [pathname, title]);
 
   return (
-    <header className="h-16 bg-white dark:bg-background-dark border-b border-primary/10 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-10 w-full transition-colors">
+    <header className="relative h-16 bg-white dark:bg-background-dark border-b border-primary/10 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-10 w-full transition-colors">
       <div className="flex items-center gap-3">
         {/* Botão Desktop para recolher / expandir barra lateral */}
         <button
@@ -78,18 +84,61 @@ export default function Header({
             aria-hidden="true"
           />
           <input
-            type="text"
-            placeholder="Buscar no painel..."
-            aria-label="Campo de busca do painel"
+            type="search"
+            placeholder={placeholder}
+            aria-label={placeholder.replace("…", "")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 pr-4 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 rounded-lg text-sm focus:ring-1 focus:ring-primary focus:border-primary w-56 lg:w-64 outline-none transition-all placeholder:text-slate-400 text-slate-900 dark:text-white"
           />
         </form>
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1 sm:gap-3">
+          <button
+            ref={searchButtonRef}
+            type="button"
+            onClick={() => setMobileSearchOpen(true)}
+            aria-label={placeholder.replace("…", "")}
+            aria-expanded={mobileSearchOpen}
+            aria-controls="admin-mobile-search"
+            className="md:hidden flex size-10 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 cursor-pointer"
+          >
+            <Search className="w-5 h-5" aria-hidden="true" />
+          </button>
           <AdminNotificationsPopover />
         </div>
       </div>
+
+      {mobileSearchOpen && (
+        <form
+          id="admin-mobile-search"
+          role="search"
+          onSubmit={handleSearch}
+          className="md:hidden absolute inset-0 z-20 flex items-center gap-2 bg-white dark:bg-background-dark px-3"
+        >
+          <Search className="w-5 h-5 shrink-0 text-slate-400" aria-hidden="true" />
+          <input
+            type="search"
+            enterKeyHint="search"
+            autoFocus
+            placeholder={placeholder}
+            aria-label={placeholder.replace("…", "")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") closeMobileSearch();
+            }}
+            className="min-w-0 flex-1 border-0 bg-transparent px-1 py-2 text-base [&::-webkit-search-cancel-button]:appearance-none text-slate-900 placeholder:text-slate-400 focus:ring-0 dark:text-white"
+          />
+          <button
+            type="button"
+            onClick={closeMobileSearch}
+            aria-label="Fechar busca"
+            className="flex size-10 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+          >
+            <X className="w-5 h-5" aria-hidden="true" />
+          </button>
+        </form>
+      )}
     </header>
   );
 }
