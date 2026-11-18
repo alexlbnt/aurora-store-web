@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function CartPage() {
   return (
-    <StorefrontLayout>
+    <StorefrontLayout hideWhatsApp>
       <CartClient />
     </StorefrontLayout>
   );

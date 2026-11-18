@@ -14,7 +14,7 @@ export default async function CheckoutPage() {
   const account = session?.user?.email ? { email: session.user.email, name: session.user.name ?? null } : null;
 
   return (
-    <StorefrontLayout>
+    <StorefrontLayout hideWhatsApp>
       <CheckoutClient account={account} />
     </StorefrontLayout>
   );

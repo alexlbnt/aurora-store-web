@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function CheckoutSuccessPage() {
   return (
-    <StorefrontLayout>
+    <StorefrontLayout hideWhatsApp>
       <CheckoutSuccessClient />
     </StorefrontLayout>
   );

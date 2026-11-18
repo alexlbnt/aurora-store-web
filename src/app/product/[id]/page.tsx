@@ -10,7 +10,8 @@ import AddToCart from "@/components/storefront/AddToCart";
 import ProductGallery from "@/components/storefront/ProductGallery";
 import ProductCard from "@/components/storefront/ProductCard";
 import { availableFirst, availableStock, formatBRL, metaDescription, productCardInclude, toProductCard } from "@/lib/storefront";
-import { SITE_NAME } from "@/lib/site";
+import { SITE_NAME, siteUrl } from "@/lib/site";
+import { productWhatsappMessage } from "@/lib/contact";
 import { isUuid, productPath } from "@/lib/slug";
 import { TROCAS_RESUMO } from "@/lib/policies";
 
@@ -116,7 +117,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   };
 
   return (
-    <StorefrontLayout>
+    <StorefrontLayout whatsappMessage={productWhatsappMessage(product.name, `${siteUrl()}${productPath(dbProduct)}`)}>
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-primary/70 dark:text-slate-400 py-6">
         <Link href="/" className="hover:text-primary dark:hover:text-slate-200 transition-colors">Início</Link>
