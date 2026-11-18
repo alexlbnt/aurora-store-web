@@ -38,7 +38,10 @@ export default async function AdminRootLayout({
   return (
     <>
       <ServiceWorkerRegister />
-      <AdminLayoutClient sidebar={<SidebarClient session={session} />}>
+      <AdminLayoutClient
+        sidebar={<SidebarClient session={session} />}
+        user={{ name: session.user.name || "Administrador", email: session.user.email || "" }}
+      >
         {children}
       </AdminLayoutClient>
     </>

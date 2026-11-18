@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { usePathname } from "next/navigation";
+import React from "react";
 import Header from "./Header";
-import { AdminSidebarProvider, useAdminSidebar } from "./AdminSidebarContext";
+import { AdminSidebarProvider } from "./AdminSidebarContext";
 
 import AdminMobileNav from "./AdminMobileNav";
 import RouteProgressBar from "./RouteProgressBar";
@@ -12,23 +11,22 @@ import { ConfirmProvider } from "./ui/ConfirmDialog";
 import ConnectionBanner from "./pwa/ConnectionBanner";
 import InstallAppBanner from "./pwa/InstallAppBanner";
 
+export interface AdminUserSummary {
+  name: string;
+  email: string;
+}
+
 function AdminLayoutInner({
   sidebar,
   pageTitle,
+  user,
   children,
 }: {
   sidebar: React.ReactNode;
   pageTitle?: string;
+  user: AdminUserSummary;
   children: React.ReactNode;
 }) {
-  const { isMobileOpen, closeMobile } = useAdminSidebar();
-  const pathname = usePathname();
-
-  // Fecha o drawer mobile ao navegar
-  useEffect(() => {
-    closeMobile();
-  }, [pathname, closeMobile]);
-
   return (
     <ConfirmProvider>
     {/* overflow-clip (e não hidden): a casca do painel nunca pode ser rolada por foco ou scrollIntoView. */}
@@ -41,23 +39,8 @@ function AdminLayoutInner({
       </a>
       <RouteProgressBar />
       <ToastContainer />
-      {/* Overlay Mobile */}
-      {isMobileOpen && (
-        <div
-          aria-hidden="true"
-          className="fixed inset-0 bg-primary/60 z-40 lg:hidden transition-opacity"
-          onClick={closeMobile}
-        />
-      )}
-
-      {/* Sidebar (Drawer no mobile, retrátil dinâmico no desktop) */}
-      <div
-        className={`fixed inset-y-0 left-0 transform ${
-          isMobileOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out z-50 flex h-full lg:shadow-none shrink-0 ${
-          isMobileOpen ? "shadow-2xl" : ""
-        }`}
-      >
+      {/* Barra lateral: só no computador. No celular a navegação é a barra inferior. */}
+      <div className="hidden lg:flex h-full shrink-0">
         {sidebar}
       </div>
 
@@ -72,7 +55,7 @@ function AdminLayoutInner({
       </main>
 
       {/* Barra de Navegação Inferior Mobile */}
-      <AdminMobileNav />
+      <AdminMobileNav user={user} />
     </div>
     </ConfirmProvider>
   );
@@ -81,15 +64,17 @@ function AdminLayoutInner({
 export default function AdminLayoutClient({
   sidebar,
   pageTitle,
+  user,
   children,
 }: {
   sidebar: React.ReactNode;
   pageTitle?: string;
+  user: AdminUserSummary;
   children: React.ReactNode;
 }) {
   return (
     <AdminSidebarProvider>
-      <AdminLayoutInner sidebar={sidebar} pageTitle={pageTitle}>
+      <AdminLayoutInner sidebar={sidebar} pageTitle={pageTitle} user={user}>
         {children}
       </AdminLayoutInner>
     </AdminSidebarProvider>

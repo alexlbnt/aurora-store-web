@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "./actions";
 import { useAdminSidebar } from "./AdminSidebarContext";
+import { isNavItemActive, navItemsByGroup, type AdminNavItem } from "@/lib/admin-nav";
 
 interface SidebarClientProps {
   session: any;
@@ -12,24 +13,12 @@ interface SidebarClientProps {
 
 export default function SidebarClient({ session }: SidebarClientProps) {
   const pathname = usePathname();
-  const { isCollapsed, toggleCollapsed, closeMobile } = useAdminSidebar();
+  const { isCollapsed } = useAdminSidebar();
 
-  const navItems = [
-    { label: "Dashboard", href: "/admin", icon: "dashboard", exact: true },
-    { label: "Vendas", href: "/admin/sales", icon: "shopping_cart" },
-    { label: "Financeiro", href: "/admin/finance", icon: "account_balance_wallet" },
-    { label: "Produtos", href: "/admin/products", icon: "inventory_2" },
-    { label: "Categorias", href: "/admin/categories", icon: "category" },
-    { label: "Clientes", href: "/admin/customers", icon: "group" },
-    { label: "Relatórios", href: "/admin/reports", icon: "bar_chart" },
-  ];
-
-  const isLinkActive = (item: { href: string; exact?: boolean }) => {
-    if (item.exact) {
-      return pathname === item.href;
-    }
-    return pathname.startsWith(item.href);
-  };
+  const navItems = navItemsByGroup("main");
+  const footerItems = navItemsByGroup("footer");
+  // Na barra lateral "Vendas" continua acesa em "Novo pedido" (não há item próprio para ele aqui).
+  const isLinkActive = (item: AdminNavItem) => isNavItemActive(pathname, { ...item, excludes: undefined });
 
   const userName = session?.user?.name || "Administrador";
   const userEmail = session?.user?.email || "";
@@ -45,7 +34,6 @@ export default function SidebarClient({ session }: SidebarClientProps) {
       <div className={`p-4 flex items-center border-b border-white/10 min-h-[72px] ${isCollapsed ? "justify-center" : "justify-between"}`}>
         <Link
           href="/admin"
-          onClick={closeMobile}
           className="flex items-center gap-3 overflow-hidden group"
           title="Aurora Admin"
         >
@@ -59,15 +47,6 @@ export default function SidebarClient({ session }: SidebarClientProps) {
             </div>
           )}
         </Link>
-
-        {/* Botão de Fechar no Mobile */}
-        <button
-          onClick={closeMobile}
-          className="lg:hidden p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"
-          aria-label="Fechar menu"
-        >
-          <span className="material-symbols-outlined text-lg">close</span>
-        </button>
       </div>
 
       {/* Navegação Principal */}
@@ -80,7 +59,6 @@ export default function SidebarClient({ session }: SidebarClientProps) {
               <Link
                 href={item.href}
                 prefetch={true}
-                onClick={closeMobile}
                 aria-current={active ? "page" : undefined}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                   active
@@ -110,26 +88,31 @@ export default function SidebarClient({ session }: SidebarClientProps) {
 
       {/* Rodapé da Sidebar */}
       <div className="p-3 border-t border-white/10 space-y-1.5">
-        {/* Configurações */}
-        <div className="relative group">
-          <Link
-            href="/admin/settings"
-            onClick={closeMobile}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-300 hover:bg-white/10 hover:text-white transition-colors font-medium ${
-              pathname === "/admin/settings" ? "bg-accent-blue text-white font-semibold" : ""
-            } ${isCollapsed ? "justify-center px-0 w-11 h-11 mx-auto" : ""}`}
-            title={isCollapsed ? "Configurações" : undefined}
-          >
-            <span className="material-symbols-outlined text-[20px] shrink-0">settings</span>
-            {!isCollapsed && <span className="whitespace-nowrap truncate">Configurações</span>}
-          </Link>
+        {/* Configurações e demais itens do rodapé */}
+        {footerItems.map((item) => {
+          const active = isLinkActive(item);
+          return (
+            <div key={item.href} className="relative group">
+              <Link
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-300 hover:bg-white/10 hover:text-white transition-colors font-medium ${
+                  active ? "bg-accent-blue text-white font-semibold" : ""
+                } ${isCollapsed ? "justify-center px-0 w-11 h-11 mx-auto" : ""}`}
+                title={isCollapsed ? item.label : undefined}
+              >
+                <span className="material-symbols-outlined text-[20px] shrink-0">{item.icon}</span>
+                {!isCollapsed && <span className="whitespace-nowrap truncate">{item.label}</span>}
+              </Link>
 
-          {isCollapsed && (
-            <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1 bg-slate-900 text-white text-xs font-semibold rounded-md shadow-xl whitespace-nowrap pointer-events-none opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 z-50 border border-slate-800">
-              Configurações
+              {isCollapsed && (
+                <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1 bg-slate-900 text-white text-xs font-semibold rounded-md shadow-xl whitespace-nowrap pointer-events-none opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 z-50 border border-slate-800">
+                  {item.label}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          );
+        })}
 
         {/* Ver Loja */}
         <div className="relative group">

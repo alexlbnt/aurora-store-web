@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Search, Menu, PanelLeftClose, PanelLeft } from "lucide-react";
+import { Search, PanelLeftClose, PanelLeft } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAdminSidebar } from "./AdminSidebarContext";
 import AdminNotificationsPopover from "./AdminNotificationsPopover";
@@ -14,7 +14,7 @@ export default function Header({
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const pathname = usePathname();
-  const { isCollapsed, toggleCollapsed, toggleMobile } = useAdminSidebar();
+  const { isCollapsed, toggleCollapsed } = useAdminSidebar();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,15 +52,6 @@ export default function Header({
   return (
     <header className="h-16 bg-white dark:bg-background-dark border-b border-primary/10 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-10 w-full transition-colors">
       <div className="flex items-center gap-3">
-        {/* Botão Mobile para abrir gaveta */}
-        <button
-          onClick={toggleMobile}
-          className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 cursor-pointer"
-          aria-label="Abrir menu"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
-
         {/* Botão Desktop para recolher / expandir barra lateral */}
         <button
           onClick={toggleCollapsed}

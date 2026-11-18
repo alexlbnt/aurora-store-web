@@ -6,10 +6,6 @@ interface AdminSidebarContextType {
   isCollapsed: boolean;
   setIsCollapsed: (value: boolean | ((prev: boolean) => boolean)) => void;
   toggleCollapsed: () => void;
-  isMobileOpen: boolean;
-  setIsMobileOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
-  toggleMobile: () => void;
-  closeMobile: () => void;
 }
 
 const AdminSidebarContext = createContext<AdminSidebarContextType | undefined>(undefined);
@@ -17,7 +13,6 @@ const AdminSidebarContext = createContext<AdminSidebarContextType | undefined>(u
 export function AdminSidebarProvider({ children }: { children: React.ReactNode }) {
   // Padrão: barra lateral sempre começa RETRAÍDA ao abrir o site
   const [isCollapsed, setIsCollapsedState] = useState(true);
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   // Mantém a preferência durante a sessão de navegação ativa
   useEffect(() => {
@@ -50,24 +45,12 @@ export function AdminSidebarProvider({ children }: { children: React.ReactNode }
     setIsCollapsed((prev) => !prev);
   }, [setIsCollapsed]);
 
-  const toggleMobile = useCallback(() => {
-    setIsMobileOpen((prev) => !prev);
-  }, []);
-
-  const closeMobile = useCallback(() => {
-    setIsMobileOpen(false);
-  }, []);
-
   return (
     <AdminSidebarContext.Provider
       value={{
         isCollapsed,
         setIsCollapsed,
         toggleCollapsed,
-        isMobileOpen,
-        setIsMobileOpen,
-        toggleMobile,
-        closeMobile,
       }}
     >
       {children}
