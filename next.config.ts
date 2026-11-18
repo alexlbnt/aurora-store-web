@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
 import { OPTIMIZED_IMAGE_HOSTS } from "./src/lib/image-hosts";
+import { ROLLBAR_CLIENT_TOKEN_PATTERN, findEnvToken } from "./src/lib/rollbar-config";
 
 const nextConfig: NextConfig = {
+  // Alerta de erros no navegador (Rollbar): a chave pública e o ambiente entram no código
+  // no momento do build. Ver src/lib/rollbar-client.ts.
+  env: {
+    NEXT_PUBLIC_ROLLBAR_CLIENT_TOKEN: findEnvToken(process.env, ROLLBAR_CLIENT_TOKEN_PATTERN) ?? "",
+    NEXT_PUBLIC_APP_ENV: process.env.VERCEL_ENV ?? "development",
+    NEXT_PUBLIC_APP_VERSION: process.env.VERCEL_GIT_COMMIT_SHA ?? "",
+  },
   // App instalável do painel: o service worker não pode ficar em cache no navegador,
   // senão uma versão nova demora a chegar nos celulares das vendedoras.
   async headers() {

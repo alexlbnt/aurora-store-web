@@ -7,6 +7,7 @@ import PushSettingsCard from "@/components/admin/pwa/PushSettingsCard";
 import { vapidPublicKey } from "@/lib/push";
 import AnnouncementSettingsCard from "@/components/admin/AnnouncementSettingsCard";
 import { listAnnouncementsForAdmin } from "@/lib/announcement-data";
+import ErrorAlertSettingsCard from "@/components/admin/ErrorAlertSettingsCard";
 
 export const revalidate = 0;
 
@@ -69,6 +70,10 @@ export default async function AdminSettingsPage() {
 
         <div className="mb-8">
           <PushSettingsCard publicKey={vapidPublicKey()} />
+        </div>
+
+        <div className="mb-8">
+          <ErrorAlertSettingsCard />
         </div>
 
         <SettingsClientForm initialData={initialData} />

@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { SITE_NAME, siteUrl } from "@/lib/site";
 import SiteAnalytics from "@/components/SiteAnalytics";
+import RollbarInit from "@/components/RollbarInit";
 
 const hankenGrotesk = Hanken_Grotesk({
   variable: "--font-hanken",
@@ -51,6 +52,7 @@ export default function RootLayout({
           {children}
         </Providers>
         <SiteAnalytics />
+        <RollbarInit />
       </body>
     </html>
   );
