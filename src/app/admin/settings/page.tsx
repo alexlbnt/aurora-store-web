@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import SettingsClientForm from "./SettingsClientForm";
 import PushSettingsCard from "@/components/admin/pwa/PushSettingsCard";
 import { vapidPublicKey } from "@/lib/push";
+import AnnouncementSettingsCard from "@/components/admin/AnnouncementSettingsCard";
+import { listAnnouncementsForAdmin } from "@/lib/announcement-data";
 
 export const revalidate = 0;
 
@@ -37,6 +39,11 @@ export default async function AdminSettingsPage() {
     console.error("Erro ao carregar configurações de administrador:", error);
   }
 
+  const announcements = await listAnnouncementsForAdmin().catch((err) => {
+    console.error("Erro ao carregar avisos da loja:", err);
+    return [];
+  });
+
   const initialData = {
     name: adminUser?.name || session?.user?.name || "Administrador",
     email: adminUser?.email || session?.user?.email || "admin@aurora.com.br",
@@ -54,6 +61,10 @@ export default async function AdminSettingsPage() {
           <p className="text-slate-500 text-sm mt-1">
             Gerencie seu perfil de acesso, parâmetros da loja e monitore os serviços integrados.
           </p>
+        </div>
+
+        <div className="mb-8">
+          <AnnouncementSettingsCard announcements={announcements} />
         </div>
 
         <div className="mb-8">

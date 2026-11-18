@@ -175,6 +175,22 @@ model PushSubscription {
   updatedAt DateTime       @updatedAt
 }
 
+/// Faixa de aviso no topo da vitrine (ex.: "Frete grátis acima de R$ 200").
+/// Aparece o aviso ligado e dentro do período mais recente; os antigos ficam como histórico.
+model Announcement {
+  id        String    @id @default(uuid())
+  message   String
+  /// Opcional: caminho da loja ("/catalog") ou endereço https://
+  linkUrl   String?
+  active    Boolean   @default(true)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([active, endsAt])
+}
+
 enum OrderStatus {
   PENDING
   PAID
