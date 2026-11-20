@@ -2,13 +2,14 @@ import React from "react";
 import Link from "next/link";
 import PageHeader from "@/components/admin/ui/PageHeader";
 import MetricCard from "@/components/admin/ui/MetricCard";
-import { formatBRL } from "@/lib/format";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { prisma } from "@/lib/prisma";
 import DeleteCustomerButton from "./DeleteCustomerButton";
 import AdminSearchBar from "@/components/admin/AdminSearchBar";
 import AdminPagination from "@/components/admin/AdminPagination";
 import { Prisma } from "@prisma/client";
+import { INACTIVE_CUSTOMER_DAYS, isInactive, lastPurchaseLabel } from "@/lib/customer-activity";
+import { countInactiveCustomers, customerSearchWhere, loadInactiveCustomerIds } from "./data";
 
 export const revalidate = 0;
 
@@ -16,7 +17,22 @@ interface CustomersPageProps {
   searchParams: Promise<{
     q?: string;
     page?: string;
+    /** "1" = só clientes sem comprar há mais de 60 dias */
+    sumidos?: string;
   }>;
+}
+
+/** Última compra: "há N dias" com a data no título; em âmbar quando a cliente sumiu. */
+function LastPurchase({ date, className }: { date: Date | null; className: string }) {
+  const inactive = isInactive(date);
+  return (
+    <span
+      className={inactive ? `${className} font-semibold text-amber-700` : className}
+      title={date ? date.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : undefined}
+    >
+      {lastPurchaseLabel(date)}
+    </span>
+  );
 }
 
 const customerListInclude = {
@@ -37,44 +53,40 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
   const currentPage = Math.max(1, parseInt(resolvedParams.page || "1", 10) || 1);
   const pageSize = 10;
 
-  const where: Prisma.CustomerWhereInput = {};
-  if (q) {
-    where.OR = [
-      { name: { contains: q, mode: "insensitive" } },
-      { email: { contains: q, mode: "insensitive" } },
-      { phone: { contains: q, mode: "insensitive" } },
-      { city: { contains: q, mode: "insensitive" } },
-    ];
-  }
+  const onlyInactive = resolvedParams.sumidos === "1";
+  const where = customerSearchWhere(q);
 
   let customers: Prisma.CustomerGetPayload<{ include: typeof customerListInclude }>[] = [];
   let totalCustomersCount = 0;
   let totalCustomersAll = 0;
-  let totalLifetimeSpent = 0;
   let activeCustomersCount = 0;
-  let averageLTV = 0;
+  let inactiveCount = 0;
 
   try {
-    const [
-      fetchedCustomers,
-      fetchedCount,
-      countAll,
-      salesAgg,
-      activeCount,
-    ] = await Promise.all([
-      prisma.customer.findMany({
-        where,
-        include: customerListInclude,
-        orderBy: { createdAt: "desc" },
-        skip: (currentPage - 1) * pageSize,
-        take: pageSize,
-      }),
-      prisma.customer.count({ where }),
+    const loadList = async () => {
+      if (!onlyInactive) {
+        const [list, count] = await Promise.all([
+          prisma.customer.findMany({
+            where,
+            include: customerListInclude,
+            orderBy: { createdAt: "desc" },
+            skip: (currentPage - 1) * pageSize,
+            take: pageSize,
+          }),
+          prisma.customer.count({ where }),
+        ]);
+        return { list, count };
+      }
+      // Sumidos: a ordem (quem sumiu há mais tempo primeiro) vem da consulta dos ids.
+      const { ids, total } = await loadInactiveCustomerIds({ q, page: currentPage, pageSize });
+      const found = await prisma.customer.findMany({ where: { id: { in: ids } }, include: customerListInclude });
+      const byId = new Map(found.map((c) => [c.id, c]));
+      return { list: ids.flatMap((id) => byId.get(id) ?? []), count: total };
+    };
+
+    const [{ list, count }, countAll, activeCount, inactive] = await Promise.all([
+      loadList(),
       prisma.customer.count(),
-      prisma.order.aggregate({
-        _sum: { totalAmount: true },
-        where: { status: { not: "CANCELED" } },
-      }),
       prisma.customer.count({
         where: {
           orders: {
@@ -82,14 +94,14 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
           },
         },
       }),
+      countInactiveCustomers(),
     ]);
 
-    customers = fetchedCustomers;
-    totalCustomersCount = fetchedCount;
+    customers = list;
+    totalCustomersCount = count;
     totalCustomersAll = countAll;
-    totalLifetimeSpent = Number(salesAgg._sum.totalAmount || 0);
     activeCustomersCount = activeCount;
-    averageLTV = totalCustomersAll > 0 ? totalLifetimeSpent / totalCustomersAll : 0;
+    inactiveCount = inactive;
   } catch (err) {
     console.error("Error loading customers:", err);
   }
@@ -128,8 +140,26 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
         <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
           <MetricCard label="Clientes cadastrados" value={totalCustomersAll} />
           <MetricCard label="Já compraram" value={activeCustomersCount} hint="Com ao menos um pedido não cancelado" />
-          <MetricCard label="Gasto médio por cliente" value={formatBRL(averageLTV)} hint="Vendas totais ÷ nº de clientes" />
+          <MetricCard
+            label={`Sem comprar há +${INACTIVE_CUSTOMER_DAYS} dias`}
+            value={inactiveCount}
+            hint={`Última compra há mais de ${INACTIVE_CUSTOMER_DAYS} dias`}
+            href="/admin/customers?sumidos=1"
+            attention={inactiveCount > 0}
+          />
         </div>
+
+        {onlyInactive && (
+          <p className="mb-3 text-sm text-primary/80">
+            Mostrando clientes sem comprar há +{INACTIVE_CUSTOMER_DAYS} dias, quem sumiu há mais tempo primeiro ·{" "}
+            <Link
+              href={q ? `/admin/customers?q=${encodeURIComponent(q)}` : "/admin/customers"}
+              className="font-semibold text-primary underline underline-offset-2"
+            >
+              ver todos
+            </Link>
+          </p>
+        )}
 
         <div className="bg-white rounded-lg border border-primary/10 overflow-hidden">
           {/* Search Bar */}
@@ -150,8 +180,8 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
                 const spent = totalSpentByCustomer[i];
                 const lastOrder =
                   customer.orders.length > 0
-                    ? new Date(customer.orders[0].createdAt).toLocaleDateString("pt-BR")
-                    : "N/A";
+                    ? new Date(customer.orders[0].createdAt)
+                    : null;
                 const initials = customer.name
                   .split(" ")
                   .filter(Boolean)
@@ -218,7 +248,7 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
                       </div>
                       <div className="text-center">
                         <span className="text-primary/60 text-xs block">Última compra</span>
-                        <span className="font-medium text-slate-600 dark:text-slate-400">{lastOrder}</span>
+                        <LastPurchase date={lastOrder} className="font-medium text-slate-600 dark:text-slate-400" />
                       </div>
                       <div className="text-right">
                         <span className="text-primary/60 text-xs block">Total gasto</span>
@@ -267,7 +297,7 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
                     Total Pedidos
                   </th>
                   <th className="px-6 py-4 text-sm font-medium text-primary/70">Valor Gasto</th>
-                  <th className="px-6 py-4 text-sm font-medium text-primary/70">Último Pedido</th>
+                  <th className="px-6 py-4 text-sm font-medium text-primary/70">Última compra</th>
                   <th className="px-6 py-4 text-sm font-medium text-primary/70 text-right">
                     Ações
                   </th>
@@ -285,8 +315,8 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
                     const spent = totalSpentByCustomer[i];
                     const lastOrder =
                       customer.orders.length > 0
-                        ? new Date(customer.orders[0].createdAt).toLocaleDateString("pt-BR")
-                        : "N/A";
+                        ? new Date(customer.orders[0].createdAt)
+                        : null;
                     const initials = customer.name
                       .split(" ")
                       .map((n: string) => n[0])
@@ -323,7 +353,7 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
                         <td className="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-white">
                           R$ {spent.toFixed(2).replace(".", ",")}
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-500">{lastOrder}</td>
+                        <td className="px-6 py-4 text-sm"><LastPurchase date={lastOrder} className="text-slate-500" /></td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <Link
@@ -350,7 +380,7 @@ export default async function Customers({ searchParams }: CustomersPageProps) {
             totalItems={totalCustomersCount}
             pageSize={pageSize}
             itemLabel="clientes"
-            searchParams={{ q }}
+            searchParams={{ q, sumidos: onlyInactive ? "1" : undefined }}
           />
         </div>
       </div>
