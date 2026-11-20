@@ -6,7 +6,9 @@ import StatusUpdater from "@/components/admin/sales/StatusUpdater";
 import ShippingUpdater from "@/components/admin/sales/ShippingUpdater";
 import OrderNotesCard from "@/components/admin/sales/OrderNotesCard";
 import PaymentsCard from "@/components/admin/sales/PaymentsCard";
-import { paymentBalance } from "@/lib/finance";
+import InstallmentsList from "@/components/admin/sales/InstallmentsList";
+import { paymentBalance, todayInput } from "@/lib/finance";
+import { allocateInstallments, fromDbDate, suggestedPaymentAmount } from "@/lib/installments";
 import AdminProductImage from "@/components/admin/AdminProductImage";
 import { StockBadge } from "@/components/admin/ui/StatusBadge";
 import { formatBRL, formatDateTime, whatsappToCustomer } from "@/lib/format";
@@ -22,6 +24,7 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
     include: {
       customer: true,
       payments: { orderBy: [{ paidAt: "asc" }, { createdAt: "asc" }] },
+      installments: { orderBy: { number: "asc" } },
       items: {
         include: {
           product: {
@@ -60,6 +63,12 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
     notes: p.notes,
   }));
   const balance = paymentBalance(Number(order.totalAmount), payments);
+  const installmentViews = allocateInstallments(
+    order.installments.map((i) => ({ number: i.number, dueDate: fromDbDate(i.dueDate), amount: Number(i.amount) })),
+    balance.paid,
+    todayInput(),
+    order.status === "CANCELED",
+  );
 
   const discount = Number(order.discountAmount || 0);
   const subtotal = Number(order.totalAmount) + discount;
@@ -186,12 +195,17 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
             </dl>
           </section>
 
+          {installmentViews.length > 0 && (
+            <InstallmentsList views={installmentViews} canceled={order.status === "CANCELED"} />
+          )}
+
           <PaymentsCard
             orderId={order.id}
             status={order.status}
             total={balance.total}
             paid={balance.paid}
             remaining={balance.remaining}
+            suggestedAmount={suggestedPaymentAmount(installmentViews, balance.remaining) ?? undefined}
             defaultMethod={order.paymentMethod ?? "PIX"}
             payments={payments}
           />
@@ -220,6 +234,9 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
                   {order.customer.name}
                 </Link>
                 <p className="truncate text-sm text-primary/70">{order.customer.email || "Sem e-mail cadastrado"}</p>
+                {order.resellerName && (
+                  <p className="truncate text-sm text-primary/70">Revendedora: {order.resellerName}</p>
+                )}
               </div>
             </div>
             {order.customer.phone && (

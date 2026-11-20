@@ -225,6 +225,9 @@ export default async function Sales({ searchParams }: SalesPageProps) {
                   <div className="flex items-start justify-between gap-3 lg:block">
                     <Link href={`/admin/sales/${order.id}`} className="min-w-0 hover:underline">
                       <span className="block truncate font-medium text-primary">{customerName}</span>
+                      {order.resellerName && (
+                        <span className="block truncate text-sm text-primary/60">via {order.resellerName}</span>
+                      )}
                       <span className="block text-sm text-primary/60">
                         {order.orderNumber} · {STOCK_LABEL[order.stockLocation] ?? order.stockLocation}
                       </span>

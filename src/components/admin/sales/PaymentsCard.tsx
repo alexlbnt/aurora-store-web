@@ -26,12 +26,24 @@ interface PaymentsCardProps {
   total: number;
   paid: number;
   remaining: number;
+  /** Venda parcelada: o que falta da parcela mais antiga em aberto (valor do botão principal). */
+  suggestedAmount?: number;
   defaultMethod: Method;
   payments: PaymentRow[];
 }
 
 /** Recebimentos do pedido: baixa parcial ou total, com histórico e estorno. */
-export default function PaymentsCard({ orderId, status, total, paid, remaining, defaultMethod, payments }: PaymentsCardProps) {
+export default function PaymentsCard({
+  orderId,
+  status,
+  total,
+  paid,
+  remaining,
+  suggestedAmount,
+  defaultMethod,
+  payments,
+}: PaymentsCardProps) {
+  const quickAmount = suggestedAmount ?? remaining;
   const router = useRouter();
   const confirm = useConfirm();
   const [open, setOpen] = useState(false);
@@ -124,10 +136,10 @@ export default function PaymentsCard({ orderId, status, total, paid, remaining, 
             </button>
             <button
               type="button"
-              onClick={() => openForm(remaining)}
+              onClick={() => openForm(quickAmount)}
               className="min-h-11 rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-accent-blue"
             >
-              Receber {formatBRL(remaining)}
+              Receber {formatBRL(quickAmount)}
             </button>
           </div>
         )}

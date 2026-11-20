@@ -98,3 +98,9 @@ export function validatePaymentAmount(amount: number, remaining: number): string
   }
   return null;
 }
+
+/**
+ * Total do pedido já em centavos. Tela e servidor usam a mesma conta, e o banco (Decimal 10,2)
+ * guarda exatamente esse valor: sem isso, 45.504999… podia virar 45,51 na tela e 45,50 no banco.
+ */
+export const orderTotal = (subtotal: number, discountAmount: number) => roundMoney(Math.max(0, subtotal - discountAmount));

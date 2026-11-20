@@ -3,6 +3,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import { prisma } from "@/lib/prisma";
 import { formatPhone } from "@/lib/formatters";
 import { toBRLInput } from "@/lib/format";
+import { fromDbDate } from "@/lib/installments";
 import OrderForm, { type EditableOrder } from "../../new/OrderForm";
 import { loadOrderFormData } from "../../new/data";
 import type { DiscountType, OrderLine, PaymentMethod } from "../../new/types";
@@ -11,10 +12,10 @@ export const revalidate = 0;
 
 export default async function EditOrderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [order, { products, customers }] = await Promise.all([
+  const [order, { products, customers, resellerNames }] = await Promise.all([
     prisma.order.findUnique({
       where: { id },
-      include: { customer: true, items: true },
+      include: { customer: true, items: true, installments: { orderBy: { number: "asc" } } },
     }),
     loadOrderFormData(),
   ]);
@@ -74,12 +75,18 @@ export default async function EditOrderPage({ params }: { params: Promise<{ id: 
           ? toBRLInput(Number(order.discountValue))
           : String(Number(order.discountValue)).replace(".", ","),
     notes: order.notes ?? "",
+    resellerName: order.resellerName ?? "",
+    installments: order.installments.map((i) => ({
+      number: i.number,
+      dueDate: fromDbDate(i.dueDate),
+      amount: Number(i.amount),
+    })),
     returnedStock,
   };
 
   return (
     <AdminLayout pageTitle="Editar pedido">
-      <OrderForm products={products} customers={customers} editing={editing} />
+      <OrderForm products={products} customers={customers} resellerNames={resellerNames} editing={editing} />
     </AdminLayout>
   );
 }

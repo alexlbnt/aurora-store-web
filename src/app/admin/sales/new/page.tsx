@@ -11,11 +11,16 @@ interface NewOrderPageProps {
 export default async function NewOrderPage({ searchParams }: NewOrderPageProps) {
   const resolvedParams = (await searchParams) || {};
   const initialCustomerId = resolvedParams.customerId || "";
-  const { products, customers } = await loadOrderFormData();
+  const { products, customers, resellerNames } = await loadOrderFormData();
 
   return (
     <AdminLayout pageTitle="Novo pedido">
-      <OrderForm products={products} customers={customers} initialCustomerId={initialCustomerId} />
+      <OrderForm
+        products={products}
+        customers={customers}
+        resellerNames={resellerNames}
+        initialCustomerId={initialCustomerId}
+      />
     </AdminLayout>
   );
 }

@@ -10,6 +10,7 @@ import {
   todayInput,
   validatePaymentAmount,
   monthLabel,
+  orderTotal,
 } from "./finance";
 
 describe("meses no fuso de Brasília", () => {
@@ -81,5 +82,17 @@ describe("recebimentos", () => {
     expect(validatePaymentAmount(NaN, 10)).toMatch(/Informe/);
     expect(validatePaymentAmount(10.01, 10)).toMatch(/passa/);
     expect(validatePaymentAmount(10, 10)).toBeNull();
+  });
+});
+
+describe("total do pedido", () => {
+  it("sai já arredondado em centavos (como o banco guarda)", () => {
+    // 5% de desconto sobre R$ 47,90 dá 45.504999999999995 em ponto flutuante.
+    const t = orderTotal(47.9, (47.9 * 5) / 100);
+    expect(t).toBe(Number(t.toFixed(2)));
+    expect(t).toBe(45.51); // 47,90 × 0,95 = 45,505 → 45,51 (e é isso que vai para o banco)
+  });
+  it("nunca negativo", () => {
+    expect(orderTotal(10, 15)).toBe(0);
   });
 });

@@ -7,6 +7,16 @@ import { createOrder, updateOrder } from "../actions";
 import { formatPhone } from "@/lib/formatters";
 import { formatBRL, parseBRL, toBRLInput } from "@/lib/format";
 import { ORDER_STATUS, PAYMENT_LABEL, STOCK_LABEL, type OrderStatusKey } from "@/lib/order-meta";
+import { RESELLER_NAME_MAX } from "@/lib/reseller";
+import { orderTotal } from "@/lib/finance";
+import {
+  installmentsLabel,
+  resplitInstallments,
+  validateInstallments,
+  type InstallmentInput,
+} from "@/lib/installments";
+import InstallmentsEditor from "./InstallmentsEditor";
+import { readDraftExtras } from "./draft";
 import { showToast } from "@/components/ui/Toast";
 import ChoiceChips from "@/components/admin/ui/ChoiceChips";
 import AdminProductImage from "@/components/admin/AdminProductImage";
@@ -40,6 +50,9 @@ interface Draft {
   discountValue: string;
   notes: string;
   paid: boolean;
+  /** Rascunhos antigos não têm os campos abaixo: leia com readDraftExtras. */
+  resellerName?: string;
+  installments?: InstallmentInput[];
 }
 
 const EMPTY_CUSTOMER: CustomerDraft = { id: "", name: "", phone: "", email: "", socialMedia: "", city: "" };
@@ -57,6 +70,9 @@ export interface EditableOrder {
   discountType: DiscountType;
   discountValue: string;
   notes: string;
+  resellerName: string;
+  /** Vazio = venda sem parcelas. */
+  installments: InstallmentInput[];
   /** Peças que o pedido devolve ao estoque ao ser salvo (por variação), se não estiver cancelado. */
   returnedStock: Record<string, number>;
 }
@@ -105,11 +121,14 @@ function SectionTitle({ step, children, aside }: { step: number; children: React
 export default function OrderForm({
   products,
   customers = [],
+  resellerNames = [],
   initialCustomerId = "",
   editing,
 }: {
   products: PickerProduct[];
   customers?: PickerCustomer[];
+  /** Nomes de revendedoras já usados, sugeridos no campo. */
+  resellerNames?: string[];
   initialCustomerId?: string;
   /** Quando presente, o formulário edita este pedido em vez de criar um novo. */
   editing?: EditableOrder;
@@ -147,6 +166,8 @@ export default function OrderForm({
   const [discountType, setDiscountType] = useState<DiscountType>(editing?.discountType ?? "NONE");
   const [discountValue, setDiscountValue] = useState(editing?.discountValue ?? "");
   const [notes, setNotes] = useState(editing?.notes ?? "");
+  const [resellerName, setResellerName] = useState(editing?.resellerName ?? "");
+  const [installments, setInstallments] = useState<InstallmentInput[]>(editing?.installments ?? []);
   const [paid, setPaid] = useState(false);
 
   const [touched, setTouched] = useState(false);
@@ -172,9 +193,20 @@ export default function OrderForm({
       writeStorage(DRAFT_KEY, null);
       return;
     }
-    const draft: Draft = { savedAt: Date.now(), lines, customer, shippingType, discountType, discountValue, notes, paid };
+    const draft: Draft = {
+      savedAt: Date.now(),
+      lines,
+      customer,
+      shippingType,
+      discountType,
+      discountValue,
+      notes,
+      paid,
+      resellerName,
+      installments,
+    };
     writeStorage(DRAFT_KEY, JSON.stringify(draft));
-  }, [isEdit, touched, draftHandled, success, formHasContent, lines, customer, shippingType, discountType, discountValue, notes, paid]);
+  }, [isEdit, touched, draftHandled, success, formHasContent, lines, customer, shippingType, discountType, discountValue, notes, paid, resellerName, installments]);
 
   const resumeDraft = () => {
     if (!storedDraft) return;
@@ -186,6 +218,9 @@ export default function OrderForm({
     setDiscountValue(storedDraft.discountValue ?? "");
     setNotes(storedDraft.notes ?? "");
     setPaid(Boolean(storedDraft.paid));
+    const extras = readDraftExtras(storedDraft);
+    setResellerName(extras.resellerName);
+    setInstallments(extras.installments);
     setDraftHandled(true);
   };
   const discardDraft = () => {
@@ -256,8 +291,18 @@ export default function OrderForm({
       : discountType === "PERCENTAGE"
         ? (subtotal * (discountNumber || 0)) / 100
         : 0;
-  const total = Math.max(0, subtotal - discount);
+  const total = orderTotal(subtotal, discount);
   const itemCount = lines.reduce((acc, l) => acc + l.quantity, 0);
+
+  // Total mudou (peças ou desconto) com parcelas montadas: refaz os valores em partes iguais,
+  // mantendo as datas. Ajuste durante a renderização, sem efeito.
+  const totalCents = Math.round(total * 100);
+  const [installmentsTotalCents, setInstallmentsTotalCents] = useState(totalCents);
+  if (installmentsTotalCents !== totalCents) {
+    setInstallmentsTotalCents(totalCents);
+    if (installments.length > 0) setInstallments(resplitInstallments(installments, total));
+  }
+  const installmentsCheck = installments.length > 0 ? validateInstallments(installments, total, { exact: true }) : null;
 
   // ---------- o que falta para registrar ----------
   const missing: string[] = [];
@@ -277,6 +322,7 @@ export default function OrderForm({
     else if (discountType === "PERCENTAGE" && discountNumber > 100) missing.push("O desconto não pode passar de 100%");
     else if (discountType === "FIXED" && discountNumber > subtotal) missing.push("O desconto é maior que o valor das peças");
   }
+  if (installmentsCheck && !installmentsCheck.ok) missing.push(installmentsCheck.error);
   const canSubmit = missing.length === 0 && !isPending;
 
   // ---------- envio ----------
@@ -303,6 +349,8 @@ export default function OrderForm({
     formData.append("paymentMethod", paymentMethod);
     formData.append("shippingType", shippingType);
     formData.append("notes", notes);
+    formData.append("resellerName", resellerName.trim());
+    formData.append("installments", JSON.stringify(installments));
     if (!isEdit) formData.append("paid", paid ? "true" : "false");
     formData.append(
       "items",
@@ -362,6 +410,7 @@ export default function OrderForm({
         total,
         paymentMethod,
         paid,
+        installmentsLabel: installments.length > 0 ? installmentsLabel(installments) : undefined,
         shippingType,
         notes: notes.trim(),
       });
@@ -382,6 +431,8 @@ export default function OrderForm({
     setDiscountType("NONE");
     setDiscountValue("");
     setNotes("");
+    setResellerName("");
+    setInstallments([]);
     setPaid(false);
     setTouched(false);
     setDraftHandled(true);
@@ -613,6 +664,34 @@ export default function OrderForm({
                 setCustomer(c);
               }}
             />
+            <div className="mt-4">
+              <label htmlFor="order-reseller" className="mb-1.5 block text-sm font-semibold text-primary">
+                Revendedora <span className="font-normal text-primary/60">(opcional)</span>
+              </label>
+              <input
+                id="order-reseller"
+                type="text"
+                list="reseller-names"
+                autoComplete="off"
+                autoCapitalize="words"
+                maxLength={RESELLER_NAME_MAX}
+                value={resellerName}
+                onChange={(e) => {
+                  touch();
+                  setResellerName(e.target.value);
+                }}
+                aria-describedby="order-reseller-hint"
+                className="min-h-12 w-full rounded-lg border border-primary/20 bg-accent-cream px-3.5 text-base text-primary placeholder:text-primary/40"
+              />
+              <datalist id="reseller-names">
+                {resellerNames.map((n) => (
+                  <option key={n} value={n} />
+                ))}
+              </datalist>
+              <p id="order-reseller-hint" className="mt-1 text-sm text-primary/60">
+                Preencha só quando a venda foi feita por uma revendedora.
+              </p>
+            </div>
           </section>
 
           {/* 3. Pagamento */}
@@ -636,6 +715,15 @@ export default function OrderForm({
                 }))}
               />
 
+              <InstallmentsEditor
+                total={total}
+                value={installments}
+                onChange={(next) => {
+                  touch();
+                  setInstallments(next);
+                }}
+              />
+
               {editing ? (
                 <p className="rounded-lg border border-primary/15 bg-accent-cream p-3.5 text-sm text-primary/80">
                   Status atual:{" "}
@@ -656,10 +744,21 @@ export default function OrderForm({
                   className="mt-0.5 size-5 rounded border-primary/40 text-primary"
                 />
                 <span>
-                  <span className="block font-semibold text-primary">Pagamento já recebido</span>
-                  <span className="block text-sm text-primary/70">
-                    O pedido entra como pago. Deixe desmarcado se a cliente vai pagar depois.
-                  </span>
+                  {installments.length > 0 ? (
+                    <>
+                      <span className="block font-semibold text-primary">A 1ª parcela já foi paga (entrada)</span>
+                      <span className="block text-sm text-primary/70">
+                        Registra o valor da 1ª parcela como recebido hoje.
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="block font-semibold text-primary">Pagamento já recebido</span>
+                      <span className="block text-sm text-primary/70">
+                        O pedido entra como pago. Deixe desmarcado se a cliente vai pagar depois.
+                      </span>
+                    </>
+                  )}
                 </span>
               </label>
               )}
@@ -784,9 +883,16 @@ export default function OrderForm({
                 <dt>Pagamento</dt>
                 <dd>
                   {PAYMENT_LABEL[paymentMethod]}
-                  {!isEdit && paid ? ", recebido" : ""}
+                  {installments.length > 0 ? ` · ${installmentsLabel(installments)}` : ""}
+                  {!isEdit && paid ? (installments.length > 0 ? ", 1ª recebida" : ", recebido") : ""}
                 </dd>
               </div>
+              {resellerName.trim() && (
+                <div className="flex justify-between gap-3 text-primary/70">
+                  <dt>Revendedora</dt>
+                  <dd className="truncate">{resellerName.trim()}</dd>
+                </div>
+              )}
             </dl>
 
             {missing.length > 0 && (
