@@ -16,6 +16,8 @@ export interface SuccessSnapshot {
   total: number;
   paymentMethod: string;
   paid: boolean;
+  /** "3x de R$ 100,00" quando a venda é parcelada. */
+  installmentsLabel?: string;
   shippingType: string;
   notes: string;
 }
@@ -39,7 +41,9 @@ export default function OrderSuccess({ order, onNewOrder }: { order: SuccessSnap
     lines.push(`Subtotal: ${formatBRL(order.subtotal)}`, `Desconto: − ${formatBRL(order.discount)}`);
   }
   lines.push(`*Total: ${formatBRL(order.total)}*`);
-  lines.push(`Pagamento: ${PAYMENT_LABEL[order.paymentMethod] ?? order.paymentMethod}${order.paid ? " (recebido)" : ""}`);
+  const paidNote = order.paid ? (order.installmentsLabel ? " (1ª recebida)" : " (recebido)") : "";
+  const method = PAYMENT_LABEL[order.paymentMethod] ?? order.paymentMethod;
+  lines.push(`Pagamento: ${method}${order.installmentsLabel ? `, ${order.installmentsLabel}` : ""}${paidNote}`);
   if (order.shippingType !== "SEM_FRETE") lines.push(`Frete: ${SHIPPING_LABEL[order.shippingType]}`);
   if (order.notes) lines.push(`Observações: ${order.notes}`);
 
@@ -55,7 +59,11 @@ export default function OrderSuccess({ order, onNewOrder }: { order: SuccessSnap
       </h2>
       <p className="mb-6 text-primary/80">
         Pedido <strong className="font-semibold text-primary">{order.orderNumber}</strong> de {order.customerName},{" "}
-        {formatBRL(order.total)}. {order.paid ? "Entrou como pago." : "Entrou como pendente: marque como pago quando receber."} As
+        {formatBRL(order.total)}. {order.installmentsLabel
+          ? `Parcelado em ${order.installmentsLabel}${order.paid ? ", com a 1ª já recebida" : ""}.`
+          : order.paid
+            ? "Entrou como pago."
+            : "Entrou como pendente: marque como pago quando receber."} As
         peças já saíram do estoque.
       </p>
 

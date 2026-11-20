@@ -8,6 +8,14 @@ import { formatPhone } from "@/lib/formatters";
 import { formatBRL, parseBRL, toBRLInput } from "@/lib/format";
 import { ORDER_STATUS, PAYMENT_LABEL, STOCK_LABEL, type OrderStatusKey } from "@/lib/order-meta";
 import { RESELLER_NAME_MAX } from "@/lib/reseller";
+import {
+  installmentsLabel,
+  resplitInstallments,
+  validateInstallments,
+  type InstallmentInput,
+} from "@/lib/installments";
+import InstallmentsEditor from "./InstallmentsEditor";
+import { readDraftExtras } from "./draft";
 import { showToast } from "@/components/ui/Toast";
 import ChoiceChips from "@/components/admin/ui/ChoiceChips";
 import AdminProductImage from "@/components/admin/AdminProductImage";
@@ -41,8 +49,9 @@ interface Draft {
   discountValue: string;
   notes: string;
   paid: boolean;
-  /** Rascunhos de antes da v1.9.1 não têm o campo. */
+  /** Rascunhos antigos não têm os campos abaixo: leia com readDraftExtras. */
   resellerName?: string;
+  installments?: InstallmentInput[];
 }
 
 const EMPTY_CUSTOMER: CustomerDraft = { id: "", name: "", phone: "", email: "", socialMedia: "", city: "" };
@@ -61,6 +70,8 @@ export interface EditableOrder {
   discountValue: string;
   notes: string;
   resellerName: string;
+  /** Vazio = venda sem parcelas. */
+  installments: InstallmentInput[];
   /** Peças que o pedido devolve ao estoque ao ser salvo (por variação), se não estiver cancelado. */
   returnedStock: Record<string, number>;
 }
@@ -155,6 +166,7 @@ export default function OrderForm({
   const [discountValue, setDiscountValue] = useState(editing?.discountValue ?? "");
   const [notes, setNotes] = useState(editing?.notes ?? "");
   const [resellerName, setResellerName] = useState(editing?.resellerName ?? "");
+  const [installments, setInstallments] = useState<InstallmentInput[]>(editing?.installments ?? []);
   const [paid, setPaid] = useState(false);
 
   const [touched, setTouched] = useState(false);
@@ -180,9 +192,20 @@ export default function OrderForm({
       writeStorage(DRAFT_KEY, null);
       return;
     }
-    const draft: Draft = { savedAt: Date.now(), lines, customer, shippingType, discountType, discountValue, notes, paid, resellerName };
+    const draft: Draft = {
+      savedAt: Date.now(),
+      lines,
+      customer,
+      shippingType,
+      discountType,
+      discountValue,
+      notes,
+      paid,
+      resellerName,
+      installments,
+    };
     writeStorage(DRAFT_KEY, JSON.stringify(draft));
-  }, [isEdit, touched, draftHandled, success, formHasContent, lines, customer, shippingType, discountType, discountValue, notes, paid, resellerName]);
+  }, [isEdit, touched, draftHandled, success, formHasContent, lines, customer, shippingType, discountType, discountValue, notes, paid, resellerName, installments]);
 
   const resumeDraft = () => {
     if (!storedDraft) return;
@@ -194,7 +217,9 @@ export default function OrderForm({
     setDiscountValue(storedDraft.discountValue ?? "");
     setNotes(storedDraft.notes ?? "");
     setPaid(Boolean(storedDraft.paid));
-    setResellerName(typeof storedDraft.resellerName === "string" ? storedDraft.resellerName : "");
+    const extras = readDraftExtras(storedDraft);
+    setResellerName(extras.resellerName);
+    setInstallments(extras.installments);
     setDraftHandled(true);
   };
   const discardDraft = () => {
@@ -268,6 +293,16 @@ export default function OrderForm({
   const total = Math.max(0, subtotal - discount);
   const itemCount = lines.reduce((acc, l) => acc + l.quantity, 0);
 
+  // Total mudou (peças ou desconto) com parcelas montadas: refaz os valores em partes iguais,
+  // mantendo as datas. Ajuste durante a renderização, sem efeito.
+  const totalCents = Math.round(total * 100);
+  const [installmentsTotalCents, setInstallmentsTotalCents] = useState(totalCents);
+  if (installmentsTotalCents !== totalCents) {
+    setInstallmentsTotalCents(totalCents);
+    if (installments.length > 0) setInstallments(resplitInstallments(installments, total));
+  }
+  const installmentsCheck = installments.length > 0 ? validateInstallments(installments, total) : null;
+
   // ---------- o que falta para registrar ----------
   const missing: string[] = [];
   if (lines.length === 0) missing.push("Adicione ao menos um produto");
@@ -286,6 +321,7 @@ export default function OrderForm({
     else if (discountType === "PERCENTAGE" && discountNumber > 100) missing.push("O desconto não pode passar de 100%");
     else if (discountType === "FIXED" && discountNumber > subtotal) missing.push("O desconto é maior que o valor das peças");
   }
+  if (installmentsCheck && !installmentsCheck.ok) missing.push(installmentsCheck.error);
   const canSubmit = missing.length === 0 && !isPending;
 
   // ---------- envio ----------
@@ -313,6 +349,7 @@ export default function OrderForm({
     formData.append("shippingType", shippingType);
     formData.append("notes", notes);
     formData.append("resellerName", resellerName.trim());
+    formData.append("installments", JSON.stringify(installments));
     if (!isEdit) formData.append("paid", paid ? "true" : "false");
     formData.append(
       "items",
@@ -372,6 +409,7 @@ export default function OrderForm({
         total,
         paymentMethod,
         paid,
+        installmentsLabel: installments.length > 0 ? installmentsLabel(installments) : undefined,
         shippingType,
         notes: notes.trim(),
       });
@@ -393,6 +431,7 @@ export default function OrderForm({
     setDiscountValue("");
     setNotes("");
     setResellerName("");
+    setInstallments([]);
     setPaid(false);
     setTouched(false);
     setDraftHandled(true);
@@ -675,6 +714,15 @@ export default function OrderForm({
                 }))}
               />
 
+              <InstallmentsEditor
+                total={total}
+                value={installments}
+                onChange={(next) => {
+                  touch();
+                  setInstallments(next);
+                }}
+              />
+
               {editing ? (
                 <p className="rounded-lg border border-primary/15 bg-accent-cream p-3.5 text-sm text-primary/80">
                   Status atual:{" "}
@@ -695,10 +743,21 @@ export default function OrderForm({
                   className="mt-0.5 size-5 rounded border-primary/40 text-primary"
                 />
                 <span>
-                  <span className="block font-semibold text-primary">Pagamento já recebido</span>
-                  <span className="block text-sm text-primary/70">
-                    O pedido entra como pago. Deixe desmarcado se a cliente vai pagar depois.
-                  </span>
+                  {installments.length > 0 ? (
+                    <>
+                      <span className="block font-semibold text-primary">A 1ª parcela já foi paga (entrada)</span>
+                      <span className="block text-sm text-primary/70">
+                        Registra o valor da 1ª parcela como recebido hoje.
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="block font-semibold text-primary">Pagamento já recebido</span>
+                      <span className="block text-sm text-primary/70">
+                        O pedido entra como pago. Deixe desmarcado se a cliente vai pagar depois.
+                      </span>
+                    </>
+                  )}
                 </span>
               </label>
               )}
@@ -823,7 +882,8 @@ export default function OrderForm({
                 <dt>Pagamento</dt>
                 <dd>
                   {PAYMENT_LABEL[paymentMethod]}
-                  {!isEdit && paid ? ", recebido" : ""}
+                  {installments.length > 0 ? ` · ${installmentsLabel(installments)}` : ""}
+                  {!isEdit && paid ? (installments.length > 0 ? ", 1ª recebida" : ", recebido") : ""}
                 </dd>
               </div>
               {resellerName.trim() && (

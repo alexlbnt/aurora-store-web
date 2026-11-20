@@ -7,6 +7,7 @@ import {
   buildInstallments,
   defaultFirstDueDate,
   fromDbDate,
+  installmentsLabel,
   toDbDate,
   resplitInstallments,
   splitAmounts,
@@ -160,5 +161,17 @@ describe("data do banco (@db.Date)", () => {
   it("ida e volta sem pular dia", () => {
     expect(fromDbDate(toDbDate("2027-02-28"))).toBe("2027-02-28");
     expect(toDbDate("2027-02-28").toISOString()).toBe("2027-02-28T00:00:00.000Z");
+  });
+});
+
+describe("rótulo do parcelamento", () => {
+  it("parcelas iguais mostram o valor", () => {
+    expect(installmentsLabel(buildInstallments(300, 3, "2026-12-20"))).toBe("3x de R$ 100,00");
+  });
+  it("valores diferentes mostram só a quantidade", () => {
+    expect(installmentsLabel(buildInstallments(100, 3, "2026-12-20"))).toBe("3x");
+  });
+  it("milhar com ponto", () => {
+    expect(installmentsLabel(buildInstallments(2400, 2, "2026-12-20"))).toBe("2x de R$ 1.200,00");
   });
 });

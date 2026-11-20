@@ -130,3 +130,11 @@ export const toDbDate = (s: string): Date => new Date(`${s}T00:00:00Z`);
 
 /** Date lida de uma coluna @db.Date → "AAAA-MM-DD". */
 export const fromDbDate = (d: Date): string => d.toISOString().slice(0, 10);
+
+/** "3x de R$ 100,00" quando as parcelas são iguais; "3x" quando os valores diferem. */
+export function installmentsLabel(installments: InstallmentInput[]): string {
+  const n = installments.length;
+  const first = installments[0]?.amount;
+  const allEqual = installments.every((i) => toCents(i.amount) === toCents(first ?? 0));
+  return allEqual && first !== undefined ? `${n}x de ${brl(first)}` : `${n}x`;
+}
