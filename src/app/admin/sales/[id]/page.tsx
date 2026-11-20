@@ -205,7 +205,7 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
             total={balance.total}
             paid={balance.paid}
             remaining={balance.remaining}
-            suggestedAmount={suggestedPaymentAmount(installmentViews) ?? undefined}
+            suggestedAmount={suggestedPaymentAmount(installmentViews, balance.remaining) ?? undefined}
             defaultMethod={order.paymentMethod ?? "PIX"}
             payments={payments}
           />

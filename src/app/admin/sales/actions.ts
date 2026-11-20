@@ -8,6 +8,7 @@ import {
   parseDateInput,
   paymentBalance,
   roundMoney,
+  orderTotal,
   statusAfterPayments,
   validatePaymentAmount,
 } from "@/lib/finance";
@@ -237,7 +238,7 @@ export async function createOrder(formData: FormData) {
       discountAmount = (subtotal * discountValue) / 100;
     }
 
-    const totalAmount = Math.max(0, subtotal - discountAmount);
+    const totalAmount = orderTotal(subtotal, discountAmount);
 
     const installmentsResult = readInstallments(formData, totalAmount);
     if ("error" in installmentsResult) return { error: installmentsResult.error };
@@ -493,7 +494,7 @@ function parseOrderForm(formData: FormData): ParsedOrderForm | { error: string }
   if (discountType === "PERCENTAGE" && discountValue) discountAmount = (subtotal * discountValue) / 100;
   if (discountAmount > subtotal) return { error: "O desconto é maior que o valor das peças." };
 
-  const totalAmount = Math.max(0, subtotal - discountAmount);
+  const totalAmount = orderTotal(subtotal, discountAmount);
   const installments = readInstallments(formData, totalAmount);
   if ("error" in installments) return { error: installments.error };
 

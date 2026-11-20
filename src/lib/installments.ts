@@ -70,6 +70,7 @@ export function resplitInstallments(current: InstallmentInput[], total: number):
 export function validateInstallments(
   raw: unknown,
   total: number,
+  opts: { exact?: boolean } = {},
 ): { ok: true; data: InstallmentInput[] } | { ok: false; error: string } {
   const fail = (error: string) => ({ ok: false as const, error });
   if (!Array.isArray(raw)) return fail("Não foi possível ler as parcelas. Recarregue a página e tente de novo.");
@@ -86,10 +87,14 @@ export function validateInstallments(
     }
     data.push({ number: item.number, dueDate: item.dueDate, amount: fromCents(toCents(item.amount)) });
   }
+  // O formulário exige soma exata. O servidor tolera 1 centavo de arredondamento e o põe na 1ª parcela,
+  // para que o que fica gravado sempre feche com o total do pedido.
   const sumCents = data.reduce((acc, d) => acc + toCents(d.amount), 0);
-  if (Math.abs(sumCents - toCents(total)) > 1) {
+  const diffCents = toCents(total) - sumCents;
+  if (Math.abs(diffCents) > (opts.exact ? 0 : 1)) {
     return fail(`As parcelas somam ${brl(fromCents(sumCents))}, mas o total é ${brl(total)}.`);
   }
+  if (diffCents !== 0) data[0] = { ...data[0], amount: fromCents(toCents(data[0].amount) + diffCents) };
   return { ok: true, data };
 }
 
@@ -120,9 +125,11 @@ export function allocateInstallments(
     });
 }
 
-/** O que falta da parcela mais antiga ainda não quitada, ou null se tudo foi pago. */
-export function suggestedPaymentAmount(views: InstallmentView[]): number | null {
-  return views.find((v) => v.remaining > 0)?.remaining ?? null;
+/** O que falta da parcela mais antiga ainda não quitada (nunca mais que o restante do pedido), ou null. */
+export function suggestedPaymentAmount(views: InstallmentView[], orderRemaining?: number): number | null {
+  const next = views.find((v) => v.remaining > 0)?.remaining;
+  if (next === undefined) return null;
+  return orderRemaining === undefined ? next : Math.min(next, orderRemaining);
 }
 
 /** "AAAA-MM-DD" → Date para a coluna @db.Date (meia-noite UTC, sem fuso). */

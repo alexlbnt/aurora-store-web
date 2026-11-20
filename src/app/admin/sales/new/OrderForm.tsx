@@ -8,6 +8,7 @@ import { formatPhone } from "@/lib/formatters";
 import { formatBRL, parseBRL, toBRLInput } from "@/lib/format";
 import { ORDER_STATUS, PAYMENT_LABEL, STOCK_LABEL, type OrderStatusKey } from "@/lib/order-meta";
 import { RESELLER_NAME_MAX } from "@/lib/reseller";
+import { orderTotal } from "@/lib/finance";
 import {
   installmentsLabel,
   resplitInstallments,
@@ -290,7 +291,7 @@ export default function OrderForm({
       : discountType === "PERCENTAGE"
         ? (subtotal * (discountNumber || 0)) / 100
         : 0;
-  const total = Math.max(0, subtotal - discount);
+  const total = orderTotal(subtotal, discount);
   const itemCount = lines.reduce((acc, l) => acc + l.quantity, 0);
 
   // Total mudou (peças ou desconto) com parcelas montadas: refaz os valores em partes iguais,
@@ -301,7 +302,7 @@ export default function OrderForm({
     setInstallmentsTotalCents(totalCents);
     if (installments.length > 0) setInstallments(resplitInstallments(installments, total));
   }
-  const installmentsCheck = installments.length > 0 ? validateInstallments(installments, total) : null;
+  const installmentsCheck = installments.length > 0 ? validateInstallments(installments, total, { exact: true }) : null;
 
   // ---------- o que falta para registrar ----------
   const missing: string[] = [];

@@ -106,8 +106,13 @@ describe("validação no servidor", () => {
       error: "As parcelas somam R$ 290,00, mas o total é R$ 300,00.",
     });
   });
-  it("aceita diferença de um centavo (arredondamento)", () => {
-    expect(validateInstallments([ok[0], ok[1], { ...ok[2], amount: 99.99 }], 300).ok).toBe(true);
+  it("aceita diferença de um centavo e acerta a 1ª parcela para fechar o total", () => {
+    const r = validateInstallments([ok[0], ok[1], { ...ok[2], amount: 99.99 }], 300);
+    expect(r).toEqual({ ok: true, data: [{ ...ok[0], amount: 100.01 }, ok[1], { ...ok[2], amount: 99.99 }] });
+  });
+  it("no formulário (exact) a soma tem que ser igual ao total", () => {
+    const r = validateInstallments([ok[0], ok[1], { ...ok[2], amount: 100.01 }], 300, { exact: true });
+    expect(r).toEqual({ ok: false, error: "As parcelas somam R$ 300,01, mas o total é R$ 300,00." });
   });
 });
 
@@ -173,5 +178,12 @@ describe("rótulo do parcelamento", () => {
   });
   it("milhar com ponto", () => {
     expect(installmentsLabel(buildInstallments(2400, 2, "2026-12-20"))).toBe("2x de R$ 1.200,00");
+  });
+});
+
+describe("valor sugerido nunca passa do que falta no pedido", () => {
+  it("limita ao restante do pedido", () => {
+    const three = buildInstallments(300, 3, "2026-12-20");
+    expect(suggestedPaymentAmount(allocateInstallments(three, 200, "2027-01-25", false), 99.99)).toBe(99.99);
   });
 });
