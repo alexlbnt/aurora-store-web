@@ -11,8 +11,9 @@ export const uniquePhone = () => `119${String(Date.now()).slice(-8)}`;
 export async function startNewOrder(page: Page, f: ShopFixture, opts: { customerName: string; quantity?: number }) {
   await page.goto("/admin/sales/new");
   await page.getByLabel("Buscar produto por nome ou código").fill(f.productName);
-  const add = page.getByRole("button", { name: new RegExp(f.productName) });
-  for (let i = 0; i < (opts.quantity ?? 1); i++) await add.click();
+  await page.getByRole("button", { name: new RegExp(f.productName) }).first().click();
+  const more = page.getByRole("button", { name: `Aumentar quantidade de ${f.productName}` }).filter({ visible: true }).first();
+  for (let i = 1; i < (opts.quantity ?? 1); i++) await more.click();
   await page.getByLabel("Nome", { exact: true }).fill(opts.customerName);
   await page.getByLabel("Telefone ou WhatsApp").fill(uniquePhone());
 }
