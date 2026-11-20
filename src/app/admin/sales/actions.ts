@@ -12,6 +12,7 @@ import {
   validatePaymentAmount,
 } from "@/lib/finance";
 import { parseBRL } from "@/lib/format";
+import { parseResellerName } from "@/lib/reseller";
 
 const PAYMENT_METHODS = ["CREDIT_CARD", "DEBIT_CARD", "PIX", "BOLETO", "CASH"] as const;
 type PaymentMethodValue = (typeof PAYMENT_METHODS)[number];
@@ -299,6 +300,7 @@ export async function createOrder(formData: FormData) {
           status: markAsPaid ? "PAID" : "PENDING",
           shippingType,
           notes,
+          resellerName: parseResellerName(formData.get("resellerName")),
           discountType,
           discountValue,
           discountAmount,
@@ -389,6 +391,7 @@ interface ParsedOrderForm {
   paymentMethod: PaymentMethodKey;
   shippingType: ShippingTypeKey;
   notes: string | null;
+  resellerName: string | null;
   discountType: "FIXED" | "PERCENTAGE" | null;
   discountValue: number | null;
   discountAmount: number;
@@ -470,6 +473,7 @@ function parseOrderForm(formData: FormData): ParsedOrderForm | { error: string }
     paymentMethod,
     shippingType,
     notes,
+    resellerName: parseResellerName(formData.get("resellerName")),
     discountType,
     discountValue: discountType ? discountValue : null,
     discountAmount,
@@ -605,6 +609,7 @@ export async function updateOrder(orderId: string, formData: FormData) {
             paymentMethod: parsed.paymentMethod,
             shippingType: parsed.shippingType,
             notes: parsed.notes,
+            resellerName: parsed.resellerName,
             discountType: parsed.discountType,
             discountValue: parsed.discountValue,
             discountAmount: parsed.discountAmount,

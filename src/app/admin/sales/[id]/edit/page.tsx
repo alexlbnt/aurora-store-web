@@ -11,7 +11,7 @@ export const revalidate = 0;
 
 export default async function EditOrderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [order, { products, customers }] = await Promise.all([
+  const [order, { products, customers, resellerNames }] = await Promise.all([
     prisma.order.findUnique({
       where: { id },
       include: { customer: true, items: true },
@@ -74,12 +74,13 @@ export default async function EditOrderPage({ params }: { params: Promise<{ id: 
           ? toBRLInput(Number(order.discountValue))
           : String(Number(order.discountValue)).replace(".", ","),
     notes: order.notes ?? "",
+    resellerName: order.resellerName ?? "",
     returnedStock,
   };
 
   return (
     <AdminLayout pageTitle="Editar pedido">
-      <OrderForm products={products} customers={customers} editing={editing} />
+      <OrderForm products={products} customers={customers} resellerNames={resellerNames} editing={editing} />
     </AdminLayout>
   );
 }

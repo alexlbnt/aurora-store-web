@@ -220,6 +220,9 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
                   {order.customer.name}
                 </Link>
                 <p className="truncate text-sm text-primary/70">{order.customer.email || "Sem e-mail cadastrado"}</p>
+                {order.resellerName && (
+                  <p className="truncate text-sm text-primary/70">Revendedora: {order.resellerName}</p>
+                )}
               </div>
             </div>
             {order.customer.phone && (

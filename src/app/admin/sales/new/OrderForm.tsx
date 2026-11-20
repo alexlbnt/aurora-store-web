@@ -7,6 +7,7 @@ import { createOrder, updateOrder } from "../actions";
 import { formatPhone } from "@/lib/formatters";
 import { formatBRL, parseBRL, toBRLInput } from "@/lib/format";
 import { ORDER_STATUS, PAYMENT_LABEL, STOCK_LABEL, type OrderStatusKey } from "@/lib/order-meta";
+import { RESELLER_NAME_MAX } from "@/lib/reseller";
 import { showToast } from "@/components/ui/Toast";
 import ChoiceChips from "@/components/admin/ui/ChoiceChips";
 import AdminProductImage from "@/components/admin/AdminProductImage";
@@ -40,6 +41,8 @@ interface Draft {
   discountValue: string;
   notes: string;
   paid: boolean;
+  /** Rascunhos de antes da v1.9.1 não têm o campo. */
+  resellerName?: string;
 }
 
 const EMPTY_CUSTOMER: CustomerDraft = { id: "", name: "", phone: "", email: "", socialMedia: "", city: "" };
@@ -57,6 +60,7 @@ export interface EditableOrder {
   discountType: DiscountType;
   discountValue: string;
   notes: string;
+  resellerName: string;
   /** Peças que o pedido devolve ao estoque ao ser salvo (por variação), se não estiver cancelado. */
   returnedStock: Record<string, number>;
 }
@@ -105,11 +109,14 @@ function SectionTitle({ step, children, aside }: { step: number; children: React
 export default function OrderForm({
   products,
   customers = [],
+  resellerNames = [],
   initialCustomerId = "",
   editing,
 }: {
   products: PickerProduct[];
   customers?: PickerCustomer[];
+  /** Nomes de revendedoras já usados, sugeridos no campo. */
+  resellerNames?: string[];
   initialCustomerId?: string;
   /** Quando presente, o formulário edita este pedido em vez de criar um novo. */
   editing?: EditableOrder;
@@ -147,6 +154,7 @@ export default function OrderForm({
   const [discountType, setDiscountType] = useState<DiscountType>(editing?.discountType ?? "NONE");
   const [discountValue, setDiscountValue] = useState(editing?.discountValue ?? "");
   const [notes, setNotes] = useState(editing?.notes ?? "");
+  const [resellerName, setResellerName] = useState(editing?.resellerName ?? "");
   const [paid, setPaid] = useState(false);
 
   const [touched, setTouched] = useState(false);
@@ -172,9 +180,9 @@ export default function OrderForm({
       writeStorage(DRAFT_KEY, null);
       return;
     }
-    const draft: Draft = { savedAt: Date.now(), lines, customer, shippingType, discountType, discountValue, notes, paid };
+    const draft: Draft = { savedAt: Date.now(), lines, customer, shippingType, discountType, discountValue, notes, paid, resellerName };
     writeStorage(DRAFT_KEY, JSON.stringify(draft));
-  }, [isEdit, touched, draftHandled, success, formHasContent, lines, customer, shippingType, discountType, discountValue, notes, paid]);
+  }, [isEdit, touched, draftHandled, success, formHasContent, lines, customer, shippingType, discountType, discountValue, notes, paid, resellerName]);
 
   const resumeDraft = () => {
     if (!storedDraft) return;
@@ -186,6 +194,7 @@ export default function OrderForm({
     setDiscountValue(storedDraft.discountValue ?? "");
     setNotes(storedDraft.notes ?? "");
     setPaid(Boolean(storedDraft.paid));
+    setResellerName(typeof storedDraft.resellerName === "string" ? storedDraft.resellerName : "");
     setDraftHandled(true);
   };
   const discardDraft = () => {
@@ -303,6 +312,7 @@ export default function OrderForm({
     formData.append("paymentMethod", paymentMethod);
     formData.append("shippingType", shippingType);
     formData.append("notes", notes);
+    formData.append("resellerName", resellerName.trim());
     if (!isEdit) formData.append("paid", paid ? "true" : "false");
     formData.append(
       "items",
@@ -382,6 +392,7 @@ export default function OrderForm({
     setDiscountType("NONE");
     setDiscountValue("");
     setNotes("");
+    setResellerName("");
     setPaid(false);
     setTouched(false);
     setDraftHandled(true);
@@ -613,6 +624,34 @@ export default function OrderForm({
                 setCustomer(c);
               }}
             />
+            <div className="mt-4">
+              <label htmlFor="order-reseller" className="mb-1.5 block text-sm font-semibold text-primary">
+                Revendedora <span className="font-normal text-primary/60">(opcional)</span>
+              </label>
+              <input
+                id="order-reseller"
+                type="text"
+                list="reseller-names"
+                autoComplete="off"
+                autoCapitalize="words"
+                maxLength={RESELLER_NAME_MAX}
+                value={resellerName}
+                onChange={(e) => {
+                  touch();
+                  setResellerName(e.target.value);
+                }}
+                aria-describedby="order-reseller-hint"
+                className="min-h-12 w-full rounded-lg border border-primary/20 bg-accent-cream px-3.5 text-base text-primary placeholder:text-primary/40"
+              />
+              <datalist id="reseller-names">
+                {resellerNames.map((n) => (
+                  <option key={n} value={n} />
+                ))}
+              </datalist>
+              <p id="order-reseller-hint" className="mt-1 text-sm text-primary/60">
+                Preencha só quando a venda foi feita por uma revendedora.
+              </p>
+            </div>
           </section>
 
           {/* 3. Pagamento */}
@@ -787,6 +826,12 @@ export default function OrderForm({
                   {!isEdit && paid ? ", recebido" : ""}
                 </dd>
               </div>
+              {resellerName.trim() && (
+                <div className="flex justify-between gap-3 text-primary/70">
+                  <dt>Revendedora</dt>
+                  <dd className="truncate">{resellerName.trim()}</dd>
+                </div>
+              )}
             </dl>
 
             {missing.length > 0 && (

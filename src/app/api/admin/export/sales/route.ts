@@ -287,7 +287,7 @@ export async function GET(req: Request) {
 
   // 2. Export in Spreadsheet (.CSV) Format (Default)
   const header =
-    "Numero_Pedido;Data_Hora;Cliente;Telefone;Email;Status;Metodo_Pagamento;Tipo_Frete;Endereco_Entrega;Cidade;Estado;CEP;Qtd_Itens;Desconto_R$;Total_R$;Observacoes\n";
+    "Numero_Pedido;Data_Hora;Cliente;Revendedora;Telefone;Email;Status;Metodo_Pagamento;Tipo_Frete;Endereco_Entrega;Cidade;Estado;CEP;Qtd_Itens;Desconto_R$;Total_R$;Observacoes\n";
 
   const rows = orders.map((o) => {
     const date = new Date(o.createdAt).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
@@ -297,13 +297,14 @@ export async function GET(req: Request) {
     const notes = (o.notes || "").replace(/"/g, '""');
     const address = (o.shippingAddress || "").replace(/"/g, '""');
     const customerName = (o.customer?.name || "Cliente").replace(/"/g, '""');
+    const reseller = (o.resellerName || "").replace(/"/g, '""');
     const customerPhone = (o.customer?.phone || "").replace(/"/g, '""');
     const customerEmail = (o.customer?.email || "").replace(/"/g, '""');
     const city = (o.shippingCity || o.customer?.city || "").replace(/"/g, '""');
     const state = (o.shippingState || o.customer?.state || "").replace(/"/g, '""');
     const cep = (o.shippingCep || o.customer?.cep || "").replace(/"/g, '""');
 
-    return `"${o.orderNumber}";"${date}";"${customerName}";"${customerPhone}";"${customerEmail}";"${formatStatus(
+    return `"${o.orderNumber}";"${date}";"${customerName}";"${reseller}";"${customerPhone}";"${customerEmail}";"${formatStatus(
       o.status
     )}";"${formatPaymentMethod(o.paymentMethod)}";"${formatShippingType(
       o.shippingType
