@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createProduct } from "./actions";
 import { quickUpdateCategory, quickDeleteCategory } from "../actions";
 import { showToast } from "@/components/ui/Toast";
@@ -35,6 +36,7 @@ export default function ProductForm({
 }) {
   const confirm = useConfirm();
   const isEditing = !!initialData;
+  const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [hasVariants, setHasVariants] = useState(initialData ? initialData.variants.length > 0 : true);
   const [isNewCategory, setIsNewCategory] = useState(false);
@@ -274,8 +276,8 @@ export default function ProductForm({
           throw new Error(result.error || "Erro ao criar produto.");
         }
       }
-      // Redirect to list
-      window.location.href = '/admin/products';
+      // Volta para a lista sem recarregar o site; as actions já invalidam a lista de produtos.
+      router.push('/admin/products');
     } catch (error) {
       console.error("Failed to create/edit product:", error);
       const msg = error instanceof Error ? error.message : (typeof error === 'string' ? error : JSON.stringify(error));

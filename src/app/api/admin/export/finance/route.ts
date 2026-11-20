@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { isAdminUser } from "@/lib/roles";
 import { NextResponse } from "next/server";
 import { loadMonthlyClosing } from "@/app/admin/finance/data";
 import { monthLabel, normalizeMonthKey } from "@/lib/finance";
@@ -12,7 +13,7 @@ const text = (s: string) => `"${s.replace(/"/g, '""')}"`;
 
 export async function GET(request: Request) {
   const session = await auth();
-  if (!session?.user || (session.user as { role?: string }).role !== "ADMIN") {
+  if (!session?.user || !isAdminUser(session.user)) {
     return new NextResponse("Não autorizado", { status: 401 });
   }
 

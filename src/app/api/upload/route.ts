@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs/promises';
 import { auth } from '@/auth';
+import { isAdminUser } from '@/lib/roles';
 
 // SVG fica de fora: pode carregar script e ser usado para atacar quem abre a imagem.
 const EXTENSION_BY_MIME: Record<string, string> = {
@@ -15,7 +16,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 export async function POST(request: Request) {
   try {
     const session = await auth();
-    if (!session?.user || (session.user as { role?: string }).role !== "ADMIN") {
+    if (!session?.user || !isAdminUser(session.user)) {
       return NextResponse.json({ error: "Acesso não autorizado. Apenas administradores podem fazer upload." }, { status: 401 });
     }
 

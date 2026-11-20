@@ -13,7 +13,8 @@ export default function DashboardCharts({ data }: { data: ChartDataPoint[] }) {
   }
 
   return (
-    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={240}>
+    // No servidor não há tela para medir: começa com um tamanho provisório (o navegador corrige na hora).
+    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={240} initialDimension={{ width: 1, height: 240 }}>
       <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
         <defs>
           <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
