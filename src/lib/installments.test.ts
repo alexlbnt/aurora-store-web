@@ -6,6 +6,8 @@ import {
   allocateInstallments,
   buildInstallments,
   defaultFirstDueDate,
+  fromDbDate,
+  toDbDate,
   resplitInstallments,
   splitAmounts,
   suggestedPaymentAmount,
@@ -151,5 +153,12 @@ describe("valor sugerido para a próxima baixa", () => {
   });
   it("nada a sugerir quando tudo foi pago", () => {
     expect(suggestedPaymentAmount(allocateInstallments(three, 300, "2027-01-25", false))).toBeNull();
+  });
+});
+
+describe("data do banco (@db.Date)", () => {
+  it("ida e volta sem pular dia", () => {
+    expect(fromDbDate(toDbDate("2027-02-28"))).toBe("2027-02-28");
+    expect(toDbDate("2027-02-28").toISOString()).toBe("2027-02-28T00:00:00.000Z");
   });
 });

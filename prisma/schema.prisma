@@ -102,28 +102,29 @@ model Customer {
 }
 
 model Order {
-  id              String         @id @default(uuid())
-  orderNumber     String         @unique
+  id              String             @id @default(uuid())
+  orderNumber     String             @unique
   customerId      String
-  stockLocation   StockLocation  @default(ESTOQUE_A)
-  status          OrderStatus    @default(PENDING)
-  shippingType    ShippingType   @default(SEM_FRETE)
+  stockLocation   StockLocation      @default(ESTOQUE_A)
+  status          OrderStatus        @default(PENDING)
+  shippingType    ShippingType       @default(SEM_FRETE)
   shippingAddress String?
   shippingCity    String?
   shippingState   String?
   shippingCep     String?
   notes           String?
-  resellerName    String?        // revendedora que fez a venda (só anotação)
+  resellerName    String? // revendedora que fez a venda (só anotação)
   discountType    String?
-  discountValue   Decimal?       @db.Decimal(10, 2)
-  discountAmount  Decimal        @default(0) @db.Decimal(10, 2)
-  totalAmount     Decimal        @db.Decimal(10, 2)
+  discountValue   Decimal?           @db.Decimal(10, 2)
+  discountAmount  Decimal            @default(0) @db.Decimal(10, 2)
+  totalAmount     Decimal            @db.Decimal(10, 2)
   paymentMethod   PaymentMethod?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  customer        Customer       @relation(fields: [customerId], references: [id])
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  customer        Customer           @relation(fields: [customerId], references: [id])
   items           OrderItem[]
   payments        OrderPayment[]
+  installments    OrderInstallment[]
 }
 
 /// Recebimento de um pedido. Vários por pedido permitem pagamento parcial (baixa aos poucos).
@@ -139,6 +140,18 @@ model OrderPayment {
 
   @@index([orderId])
   @@index([paidAt])
+}
+
+model OrderInstallment {
+  id      String   @id @default(uuid())
+  orderId String
+  number  Int // 1, 2, 3...
+  dueDate DateTime @db.Date
+  amount  Decimal  @db.Decimal(10, 2)
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, number])
+  @@index([dueDate])
 }
 
 model OrderItem {

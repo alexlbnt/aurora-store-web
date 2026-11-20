@@ -124,3 +124,9 @@ export function allocateInstallments(
 export function suggestedPaymentAmount(views: InstallmentView[]): number | null {
   return views.find((v) => v.remaining > 0)?.remaining ?? null;
 }
+
+/** "AAAA-MM-DD" → Date para a coluna @db.Date (meia-noite UTC, sem fuso). */
+export const toDbDate = (s: string): Date => new Date(`${s}T00:00:00Z`);
+
+/** Date lida de uma coluna @db.Date → "AAAA-MM-DD". */
+export const fromDbDate = (d: Date): string => d.toISOString().slice(0, 10);

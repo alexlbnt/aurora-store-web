@@ -13,9 +13,30 @@ import {
 } from "@/lib/finance";
 import { parseBRL } from "@/lib/format";
 import { parseResellerName } from "@/lib/reseller";
+import { toDbDate, validateInstallments, type InstallmentInput } from "@/lib/installments";
 
 const PAYMENT_METHODS = ["CREDIT_CARD", "DEBIT_CARD", "PIX", "BOLETO", "CASH"] as const;
 type PaymentMethodValue = (typeof PAYMENT_METHODS)[number];
+
+/**
+ * Parcelas enviadas pelo formulário (JSON). Ausente ou lista vazia = venda sem parcelas.
+ * A soma é conferida contra o total calculado aqui no servidor.
+ */
+function readInstallments(formData: FormData, total: number): { data: InstallmentInput[] } | { error: string } {
+  const raw = String(formData.get("installments") ?? "").trim();
+  if (!raw || raw === "[]") return { data: [] };
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { error: "Não foi possível ler as parcelas. Recarregue a página e tente de novo." };
+  }
+  if (Array.isArray(parsed) && parsed.length === 0) return { data: [] };
+  const result = validateInstallments(parsed, total);
+  return result.ok ? { data: result.data } : { error: result.error };
+}
+
+const toInstallmentRow = (i: InstallmentInput) => ({ number: i.number, dueDate: toDbDate(i.dueDate), amount: i.amount });
 
 function revalidateFinance(orderId?: string) {
   if (orderId) revalidatePath(`/admin/sales/${orderId}`);
@@ -218,6 +239,15 @@ export async function createOrder(formData: FormData) {
 
     const totalAmount = Math.max(0, subtotal - discountAmount);
 
+    const installmentsResult = readInstallments(formData, totalAmount);
+    if ("error" in installmentsResult) return { error: installmentsResult.error };
+    const installments = installmentsResult.data;
+    // Parcelado: "já foi pago" quer dizer entrada = valor da 1ª parcela. Sem parcelas: valor cheio.
+    const upfront = !markAsPaid ? 0 : installments.length > 0 ? installments[0].amount : roundMoney(totalAmount);
+    const initialStatus = markAsPaid
+      ? statusAfterPayments("PENDING", paymentBalance(totalAmount, [{ amount: upfront }]))
+      : "PENDING";
+
     const orderNumber = `PED-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 90 + 10)}`;
 
     const order = await prisma.$transaction(async (tx) => {
@@ -297,7 +327,7 @@ export async function createOrder(formData: FormData) {
           orderNumber,
           customerId: customer.id,
           stockLocation,
-          status: markAsPaid ? "PAID" : "PENDING",
+          status: initialStatus,
           shippingType,
           notes,
           resellerName: parseResellerName(formData.get("resellerName")),
@@ -314,10 +344,9 @@ export async function createOrder(formData: FormData) {
               price: item.price
             }))
           },
-          // Pago na hora: o recebimento entra junto, com o valor cheio.
-          ...(markAsPaid && totalAmount > 0
-            ? { payments: { create: { amount: roundMoney(totalAmount), method: paymentMethod } } }
-            : {})
+          ...(installments.length > 0 ? { installments: { create: installments.map(toInstallmentRow) } } : {}),
+          // Pago na hora: o recebimento entra junto (valor cheio, ou a 1ª parcela como entrada).
+          ...(upfront > 0 ? { payments: { create: { amount: upfront, method: paymentMethod } } } : {})
         }
       });
 
@@ -397,6 +426,8 @@ interface ParsedOrderForm {
   discountAmount: number;
   totalAmount: number;
   items: { productId: string; variantId: string | null; quantity: number; price: number }[];
+  /** Vazio = venda sem parcelas. */
+  installments: InstallmentInput[];
 }
 
 function parseOrderForm(formData: FormData): ParsedOrderForm | { error: string } {
@@ -462,6 +493,10 @@ function parseOrderForm(formData: FormData): ParsedOrderForm | { error: string }
   if (discountType === "PERCENTAGE" && discountValue) discountAmount = (subtotal * discountValue) / 100;
   if (discountAmount > subtotal) return { error: "O desconto é maior que o valor das peças." };
 
+  const totalAmount = Math.max(0, subtotal - discountAmount);
+  const installments = readInstallments(formData, totalAmount);
+  if ("error" in installments) return { error: installments.error };
+
   return {
     customerId,
     customerName,
@@ -477,8 +512,9 @@ function parseOrderForm(formData: FormData): ParsedOrderForm | { error: string }
     discountType,
     discountValue: discountType ? discountValue : null,
     discountAmount,
-    totalAmount: Math.max(0, subtotal - discountAmount),
+    totalAmount,
     items,
+    installments: installments.data,
   };
 }
 
@@ -598,8 +634,14 @@ export async function updateOrder(orderId: string, formData: FormData) {
           });
         }
 
-        // 4. Troca os itens e os dados do pedido.
+        // 4. Troca os itens, as parcelas e os dados do pedido. As baixas não mudam.
         await tx.orderItem.deleteMany({ where: { orderId } });
+        await tx.orderInstallment.deleteMany({ where: { orderId } });
+        if (parsed.installments.length > 0) {
+          await tx.orderInstallment.createMany({
+            data: parsed.installments.map((i) => ({ orderId, ...toInstallmentRow(i) })),
+          });
+        }
         await tx.order.update({
           where: { id: orderId },
           data: {
