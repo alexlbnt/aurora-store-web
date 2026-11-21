@@ -1,14 +1,19 @@
 // Uso único (v1.9.4): preenche o "Produzido" dos produtos que ainda não têm nenhum lançamento de
 // produção, com estoque atual + vendido (pedidos não cancelados), por variação e por estoque.
-// Os lançamentos ficam com a data de cadastro do produto e NÃO mexem no estoque.
+// Os lançamentos NÃO mexem no estoque. Data: a de cadastro do produto, ou a de --data=AAAA-MM-DD.
 // Pode rodar de novo sem duplicar: produto que já tem produção é pulado.
 //   npx tsx scripts/backfill-production.ts          -> mostra o que faria
 //   npx tsx scripts/backfill-production.ts --apply  -> grava
+//   --data=2026-11-01                                -> todos os lançamentos nessa data (meio-dia, Brasília)
 import { PrismaClient } from "@prisma/client";
 import { BACKFILL_NOTE, backfillEntries, type StockLocation } from "../src/lib/production-seed";
+import { parseDateInput } from "../src/lib/finance";
 
 const prisma = new PrismaClient();
 const apply = process.argv.includes("--apply");
+const dateArg = process.argv.find((a) => a.startsWith("--data="))?.slice("--data=".length);
+const fixedDate = dateArg ? parseDateInput(dateArg) : null;
+if (dateArg && !fixedDate) throw new Error(`Data inválida em --data: ${dateArg} (use AAAA-MM-DD).`);
 
 /** Host, banco e schema do DATABASE_URL em uso, sem a senha: para conferir dev x produção. */
 function describeDatabase(): string {
@@ -23,6 +28,7 @@ function describeDatabase(): string {
 async function main() {
   console.log(`Banco: ${describeDatabase()}`);
   console.log("Rode um de cada vez: duas execuções ao mesmo tempo podem duplicar lançamentos.");
+  console.log(`Data dos lançamentos: ${fixedDate ? fixedDate.toISOString() : "a de cadastro de cada produto"}`);
 
   const skippedProducts = await prisma.product.findMany({
     where: { productions: { some: {} } },
@@ -48,7 +54,8 @@ async function main() {
       id: true,
       name: true,
       createdAt: true,
-      variants: { select: { id: true, stockA: true, stockV: true } },
+      // Ordem fixa: vendas sem variação vão para a 1ª desta lista.
+      variants: { select: { id: true, stockA: true, stockV: true }, orderBy: [{ size: "asc" }, { color: "asc" }] },
     },
     orderBy: { name: "asc" },
   });
@@ -100,7 +107,7 @@ async function main() {
       // Confere de novo dentro da transação: outro lançamento pode ter entrado no meio.
       if ((await tx.productionEntry.count({ where: { productId: product.id } })) > 0) return;
       const r = await tx.productionEntry.createMany({
-        data: entries.map((e) => ({ ...e, productId: product.id, producedAt: product.createdAt, notes: BACKFILL_NOTE })),
+        data: entries.map((e) => ({ ...e, productId: product.id, producedAt: fixedDate ?? product.createdAt, notes: BACKFILL_NOTE })),
       });
       created += r.count;
     });

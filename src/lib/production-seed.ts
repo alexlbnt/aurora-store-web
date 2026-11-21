@@ -45,20 +45,21 @@ export function initialStockEntries(variants: VariantStock[]): SeedEntry[] {
 
 /**
  * Carga inicial: estoque atual + vendido de cada estoque. Item vendido sem variação, ou de variação que
- * não existe mais, conta na variação única do produto; com várias variações fica em `unattributed`.
+ * não existe mais, conta na 1ª variação da lista (quem chama define a ordem), para o total do produto
+ * fechar com estoque + vendido. Só fica em `unattributed` quando o produto não tem nenhuma variação.
  */
 export function backfillEntries(
   variants: VariantStock[],
   sold: SoldLine[],
 ): { entries: SeedEntry[]; unattributed: number } {
   const ids = new Set(variants.map((v) => v.id));
-  const only = variants.length === 1 ? variants[0].id : null;
+  const fallback = variants[0]?.id ?? null;
   const soldBy = new Map<string, { a: number; v: number }>();
   let unattributed = 0;
   for (const line of sold) {
     // Sem variação, ou variação que não existe mais (edições antigas recriavam as variações):
-    // vai para a variação única do produto, se houver só uma.
-    const id = line.variantId !== null && ids.has(line.variantId) ? line.variantId : only;
+    // vai para a 1ª variação do produto (decisão do Alexandre em 21/11/2026).
+    const id = line.variantId !== null && ids.has(line.variantId) ? line.variantId : fallback;
     if (!id) {
       unattributed += line.quantity;
       continue;
