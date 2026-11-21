@@ -6,6 +6,7 @@ import { handleDatabaseError } from "@/lib/error-handler";
 import { requireAdmin } from "@/lib/require-admin";
 import { parseDateInput } from "@/lib/finance";
 import { entryAffectsStock } from "@/lib/production-seed";
+import { parseProductionEntries } from "@/lib/production-form";
 
 type Location = "ESTOQUE_A" | "ESTOQUE_V";
 
@@ -86,32 +87,22 @@ export async function getProductionOverview(productId: string) {
 }
 
 /**
- * Lança a produção de várias cores/tamanhos de uma vez. Cada lançamento soma no estoque escolhido.
- * `entries` chega como JSON: [{ variantId, quantity }].
+ * Lança a produção de várias cores/tamanhos de uma vez, cada item no seu estoque (A ou V).
+ * `entries` chega como JSON: [{ variantId, quantity, stockLocation }].
  */
 export async function addProduction(productId: string, formData: FormData) {
   try {
     await requireAdmin();
-    const stockLocation: Location = formData.get("stockLocation") === "ESTOQUE_V" ? "ESTOQUE_V" : "ESTOQUE_A";
+    const fallbackLocation: Location = formData.get("stockLocation") === "ESTOQUE_V" ? "ESTOQUE_V" : "ESTOQUE_A";
     const producedAt = parseDateInput(String(formData.get("producedAt") ?? "")) ?? new Date();
     if (producedAt.getTime() > Date.now() + 24 * 60 * 60 * 1000) {
       return { error: "A data da produção não pode ser no futuro." };
     }
     const notes = String(formData.get("notes") ?? "").trim() || null;
 
-    let entries: { variantId: string; quantity: number }[];
-    try {
-      const raw = JSON.parse(String(formData.get("entries") ?? "[]")) as { variantId?: unknown; quantity?: unknown }[];
-      entries = raw
-        .map((e) => ({ variantId: String(e.variantId ?? ""), quantity: Number(e.quantity) }))
-        .filter((e) => e.variantId && e.quantity !== 0);
-    } catch {
-      return { error: "Não foi possível ler as quantidades. Recarregue a página e tente de novo." };
-    }
-    if (entries.length === 0) return { error: "Informe a quantidade produzida de pelo menos uma cor/tamanho." };
-    if (entries.some((e) => !Number.isInteger(e.quantity) || e.quantity < 1 || e.quantity > 10000)) {
-      return { error: "As quantidades precisam ser números inteiros a partir de 1." };
-    }
+    const parsed = parseProductionEntries(String(formData.get("entries") ?? "[]"), fallbackLocation);
+    if ("error" in parsed) return { error: parsed.error };
+    const entries = parsed.entries;
 
     const total = await prisma.$transaction(async (tx) => {
       const variants = await tx.variant.findMany({
@@ -123,18 +114,19 @@ export async function addProduction(productId: string, formData: FormData) {
       }
       for (const e of entries) {
         await tx.productionEntry.create({
-          data: { productId, variantId: e.variantId, quantity: e.quantity, stockLocation, producedAt, notes },
+          data: { productId, variantId: e.variantId, quantity: e.quantity, stockLocation: e.stockLocation, producedAt, notes },
         });
         await tx.variant.update({
           where: { id: e.variantId },
-          data: stockLocation === "ESTOQUE_A" ? { stockA: { increment: e.quantity } } : { stockV: { increment: e.quantity } },
+          data: e.stockLocation === "ESTOQUE_A" ? { stockA: { increment: e.quantity } } : { stockV: { increment: e.quantity } },
         });
       }
       return entries.reduce((acc, e) => acc + e.quantity, 0);
     });
 
+    const inA = entries.filter((e) => e.stockLocation === "ESTOQUE_A").reduce((acc, e) => acc + e.quantity, 0);
     revalidateProduction();
-    return { success: true, total };
+    return { success: true, total, inA, inV: total - inA };
   } catch (error) {
     console.error("Error adding production:", error);
     return { error: handleDatabaseError(error, "Não foi possível lançar a produção.") };
