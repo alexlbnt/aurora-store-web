@@ -57,3 +57,21 @@ test("editar produto: nova cor entra na grade sem perder o que já existia", asy
     { color: "Rosa", size: "M", stockA: 4 },
   ]);
 });
+
+test("editar produto mantém a variação e a produção já lançada", async ({ page }) => {
+  const f = shop!;
+  const before = await prisma.variant.findFirstOrThrow({ where: { productId: f.productId, color: "Azul", size: "M" } });
+  await prisma.productionEntry.create({
+    data: { productId: f.productId, variantId: before.id, quantity: 2, stockLocation: "ESTOQUE_A", notes: "E2E produção" },
+  });
+
+  await page.goto(`/admin/products/${f.productId}/edit`);
+  await page.locator('textarea[name="description"]').fill(`Descrição editada ${f.runId}`);
+  await page.getByRole("button", { name: "Salvar Alterações" }).click();
+  await page.waitForURL(/\/admin\/products$/);
+
+  // A variação continua a mesma (pedidos antigos apontam para ela) e a produção não some.
+  const azul = await prisma.variant.findFirst({ where: { productId: f.productId, color: "Azul", size: "M" } });
+  expect(azul?.id).toBe(before.id);
+  expect(await prisma.productionEntry.count({ where: { productId: f.productId, notes: "E2E produção" } })).toBe(1);
+});

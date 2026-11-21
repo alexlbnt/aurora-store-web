@@ -44,8 +44,8 @@ export function initialStockEntries(variants: VariantStock[]): SeedEntry[] {
 }
 
 /**
- * Carga inicial: estoque atual + vendido de cada estoque. Item vendido sem variação conta na variação
- * única do produto; com várias variações (ou variação que não existe mais) fica em `unattributed`.
+ * Carga inicial: estoque atual + vendido de cada estoque. Item vendido sem variação, ou de variação que
+ * não existe mais, conta na variação única do produto; com várias variações fica em `unattributed`.
  */
 export function backfillEntries(
   variants: VariantStock[],
@@ -56,7 +56,9 @@ export function backfillEntries(
   const soldBy = new Map<string, { a: number; v: number }>();
   let unattributed = 0;
   for (const line of sold) {
-    const id = line.variantId === null ? only : ids.has(line.variantId) ? line.variantId : null;
+    // Sem variação, ou variação que não existe mais (edições antigas recriavam as variações):
+    // vai para a variação única do produto, se houver só uma.
+    const id = line.variantId !== null && ids.has(line.variantId) ? line.variantId : only;
     if (!id) {
       unattributed += line.quantity;
       continue;
@@ -67,4 +69,12 @@ export function backfillEntries(
     soldBy.set(id, acc);
   }
   return { entries: toEntries(variants, soldBy), unattributed };
+}
+
+/**
+ * Lançamentos automáticos (cadastro e carga inicial) não somaram peças no estoque; desfazê-los também
+ * não deve tirar. Reconhecidos pela observação, que só esses caminhos gravam.
+ */
+export function entryAffectsStock(notes: string | null): boolean {
+  return notes !== INITIAL_STOCK_NOTE && notes !== BACKFILL_NOTE;
 }

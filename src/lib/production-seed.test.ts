@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BACKFILL_NOTE, INITIAL_STOCK_NOTE, backfillEntries, initialStockEntries } from "./production-seed";
+import { BACKFILL_NOTE, INITIAL_STOCK_NOTE, backfillEntries, entryAffectsStock, initialStockEntries } from "./production-seed";
 
 describe("estoque do cadastro vira produzido", () => {
   it("um lançamento por variação e estoque, sem zeros", () => {
@@ -67,9 +67,34 @@ describe("carga inicial: estoque + vendido", () => {
     expect(r).toEqual({ entries: [{ variantId: "v1", stockLocation: "ESTOQUE_A", quantity: 1 }], unattributed: 2 });
   });
 
-  it("item de variação que não existe mais fica de fora", () => {
+  it("item de variação que não existe mais fica de fora quando há várias variações", () => {
     expect(
-      backfillEntries([{ id: "v1", stockA: 0, stockV: 0 }], [{ variantId: "apagada", stockLocation: "ESTOQUE_V", quantity: 5 }]),
+      backfillEntries(
+        [
+          { id: "v1", stockA: 0, stockV: 0 },
+          { id: "v2", stockA: 0, stockV: 0 },
+        ],
+        [{ variantId: "apagada", stockLocation: "ESTOQUE_V", quantity: 5 }],
+      ),
     ).toEqual({ entries: [], unattributed: 5 });
+  });
+});
+
+describe("venda de variação que não existe mais (produto editado)", () => {
+  it("conta na variação única do produto", () => {
+    expect(
+      backfillEntries([{ id: "nova", stockA: 2, stockV: 0 }], [{ variantId: "antiga", stockLocation: "ESTOQUE_A", quantity: 3 }]),
+    ).toEqual({ entries: [{ variantId: "nova", stockLocation: "ESTOQUE_A", quantity: 5 }], unattributed: 0 });
+  });
+});
+
+describe("lançamentos automáticos não mexem no estoque ao desfazer", () => {
+  it("cadastro e carga inicial não tiram peças do estoque", () => {
+    expect(entryAffectsStock("Estoque inicial do cadastro")).toBe(false);
+    expect(entryAffectsStock("Carga inicial (estoque + vendido)")).toBe(false);
+  });
+  it("produção lançada à mão continua tirando do estoque", () => {
+    expect(entryAffectsStock(null)).toBe(true);
+    expect(entryAffectsStock("Lote de março")).toBe(true);
   });
 });

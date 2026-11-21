@@ -142,39 +142,58 @@ export async function editProduct(productId: string, formData: FormData) {
   }
 
   try {
-    // 1. Delete old variants to simply recreate them, or update them.
-    // Easiest is to delete and recreate due to complex changing rules for variants.
-    await prisma.variant.deleteMany({
-      where: { productId }
-    });
+    const product = await prisma.$transaction(async (tx) => {
+      // Variações são atualizadas no lugar (mesma cor + tamanho = mesma variação). Antes eram apagadas
+      // e recriadas a cada edição, o que levava junto a produção lançada e deixava os pedidos antigos
+      // apontando para variações que não existiam mais. Só sai a variação que saiu da grade.
+      const existing = await tx.variant.findMany({ where: { productId }, select: { id: true, color: true, size: true } });
+      const key = (color: string, size: string) => `${color}\u0000${size}`;
+      const byKey = new Map(existing.map((v) => [key(v.color, v.size), v.id]));
+      const kept = new Set<string>();
 
-    const product = await prisma.product.update({
-      where: { id: productId },
-      data: {
-        name,
-        description: description || "",
-        basePrice: parseFloat(price),
-        categoryId,
-        details,
-        images: {
-          deleteMany: {},
-          create: images.map((url, i) => ({
-            url,
-            order: i,
-            isDisplay: i === 0
-          }))
-        },
-        variants: {
-          create: variantsMatrix.map((v) => ({
-            sku: v.sku || `AUR-${v.size}-${v.color}-${Math.random().toString(36).substring(7).toUpperCase()}`,
-            price: v.price ? parseFloat(String(v.price)) : parseFloat(price),
-            stockA: toStock(v.stockA),
-            stockV: toStock(v.stockV),
-            color: v.color,
-            size: v.size
-          }))
+      for (const v of variantsMatrix) {
+        const data = {
+          price: v.price ? parseFloat(String(v.price)) : parseFloat(price),
+          stockA: toStock(v.stockA),
+          stockV: toStock(v.stockV),
+        };
+        const id = byKey.get(key(v.color, v.size));
+        if (id) {
+          kept.add(id);
+          await tx.variant.update({ where: { id }, data: { ...data, ...(v.sku ? { sku: v.sku } : {}) } });
+        } else {
+          await tx.variant.create({
+            data: {
+              ...data,
+              productId,
+              color: v.color,
+              size: v.size,
+              sku: v.sku || `AUR-${v.size}-${v.color}-${Math.random().toString(36).substring(7).toUpperCase()}`,
+            },
+          });
         }
       }
+      const removed = existing.filter((v) => !kept.has(v.id)).map((v) => v.id);
+      if (removed.length > 0) await tx.variant.deleteMany({ where: { id: { in: removed } } });
+
+      return tx.product.update({
+        where: { id: productId },
+        data: {
+          name,
+          description: description || "",
+          basePrice: parseFloat(price),
+          categoryId,
+          details,
+          images: {
+            deleteMany: {},
+            create: images.map((url, i) => ({
+              url,
+              order: i,
+              isDisplay: i === 0
+            }))
+          },
+        }
+      });
     });
 
     revalidatePath("/admin/products");

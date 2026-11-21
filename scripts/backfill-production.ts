@@ -10,8 +10,38 @@ import { BACKFILL_NOTE, backfillEntries, type StockLocation } from "../src/lib/p
 const prisma = new PrismaClient();
 const apply = process.argv.includes("--apply");
 
+/** Host, banco e schema do DATABASE_URL em uso, sem a senha: para conferir dev x produção. */
+function describeDatabase(): string {
+  try {
+    const url = new URL(process.env.DATABASE_URL ?? "");
+    return `${url.host}${url.pathname} (schema ${url.searchParams.get("schema") ?? "public"})`;
+  } catch {
+    return "DATABASE_URL inválido ou ausente";
+  }
+}
+
 async function main() {
-  const skipped = await prisma.product.count({ where: { productions: { some: {} } } });
+  console.log(`Banco: ${describeDatabase()}`);
+  console.log("Rode um de cada vez: duas execuções ao mesmo tempo podem duplicar lançamentos.");
+
+  const skippedProducts = await prisma.product.findMany({
+    where: { productions: { some: {} } },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  });
+  const [skippedProduced, skippedSold] = await Promise.all([
+    prisma.productionEntry.groupBy({
+      by: ["productId"],
+      where: { productId: { in: skippedProducts.map((p) => p.id) } },
+      _sum: { quantity: true },
+    }),
+    prisma.orderItem.groupBy({
+      by: ["productId"],
+      where: { productId: { in: skippedProducts.map((p) => p.id) }, order: { status: { not: "CANCELED" } } },
+      _sum: { quantity: true },
+    }),
+  ]);
+  const skipped = skippedProducts.length;
   const products = await prisma.product.findMany({
     where: { productions: { none: {} } },
     select: {
@@ -27,7 +57,15 @@ async function main() {
     select: { productId: true, variantId: true, quantity: true, order: { select: { stockLocation: true } } },
   });
 
-  console.log(`${products.length} produto(s) sem produção; ${skipped} já com produção (pulados).`);
+  console.log(`${skipped} produto(s) já com produção (pulados):`);
+  const producedOf = new Map(skippedProduced.map((g) => [g.productId, g._sum.quantity ?? 0]));
+  const soldOf = new Map(skippedSold.map((g) => [g.productId, g._sum.quantity ?? 0]));
+  for (const p of skippedProducts) {
+    const produced = producedOf.get(p.id) ?? 0;
+    const soldQty = soldOf.get(p.id) ?? 0;
+    console.log(`  ${p.name} — produzido ${produced} / vendido ${soldQty}${produced < soldQty ? "  ⚠ produzido menor que vendido: ajustar à mão" : ""}`);
+  }
+  console.log(`${products.length} produto(s) sem produção:`);
   let totalProduced = 0;
   let totalUnattributed = 0;
   const plans = products.map((p) => {
