@@ -83,7 +83,6 @@ export default async function Sales({ searchParams }: SalesPageProps) {
   let totalOrdersCount = 0;
   let totalSalesLifetime = 0;
   let pendingCount = 0;
-  let ticketMedio = 0;
   let toReceive = 0;
 
   try {
@@ -100,7 +99,6 @@ export default async function Sales({ searchParams }: SalesPageProps) {
       prisma.order.count({ where }),
       prisma.order.aggregate({
         _sum: { totalAmount: true },
-        _count: { _all: true },
         where: { status: { not: "CANCELED" } },
       }),
       prisma.order.count({ where: { status: "PENDING" } }),
@@ -113,8 +111,6 @@ export default async function Sales({ searchParams }: SalesPageProps) {
     orders = fetchedOrders;
     totalOrdersCount = fetchedTotal;
     totalSalesLifetime = Number(salesAgg._sum.totalAmount || 0);
-    const nonCanceledCount = salesAgg._count._all || 0;
-    ticketMedio = nonCanceledCount > 0 ? totalSalesLifetime / nonCanceledCount : 0;
     pendingCount = fetchedPending;
     toReceive = Math.max(0, totalSalesLifetime - Number(receivedAgg._sum.amount || 0));
   } catch (err) {
@@ -148,14 +144,13 @@ export default async function Sales({ searchParams }: SalesPageProps) {
         }
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
         <MetricCard label="Vendas totais" value={formatBRL(totalSalesLifetime)} hint="Sem pedidos cancelados" />
         <MetricCard
           label={hasFilters ? "Pedidos encontrados" : "Pedidos"}
           value={totalOrdersCount}
           hint={hasFilters ? "Com os filtros aplicados" : "Todos, desde o início"}
         />
-        <MetricCard label="Ticket médio" value={formatBRL(ticketMedio)} hint="Vendas totais ÷ nº de pedidos" />
         <MetricCard
           label="Pendentes"
           value={pendingCount}
