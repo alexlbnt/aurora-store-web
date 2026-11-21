@@ -56,7 +56,7 @@ describe("carga inicial: estoque + vendido", () => {
     ).toEqual({ entries: [{ variantId: "v1", stockLocation: "ESTOQUE_A", quantity: 3 }], unattributed: 0 });
   });
 
-  it("item sem variação fica de fora quando há várias variações", () => {
+  it("item sem variação, com várias variações, vai para a 1ª variação (decisão do Alexandre)", () => {
     const r = backfillEntries(
       [
         { id: "v1", stockA: 1, stockV: 0 },
@@ -64,10 +64,10 @@ describe("carga inicial: estoque + vendido", () => {
       ],
       [{ variantId: null, stockLocation: "ESTOQUE_A", quantity: 2 }],
     );
-    expect(r).toEqual({ entries: [{ variantId: "v1", stockLocation: "ESTOQUE_A", quantity: 1 }], unattributed: 2 });
+    expect(r).toEqual({ entries: [{ variantId: "v1", stockLocation: "ESTOQUE_A", quantity: 3 }], unattributed: 0 });
   });
 
-  it("item de variação que não existe mais fica de fora quando há várias variações", () => {
+  it("item de variação que não existe mais, com várias variações, vai para a 1ª variação", () => {
     expect(
       backfillEntries(
         [
@@ -76,7 +76,7 @@ describe("carga inicial: estoque + vendido", () => {
         ],
         [{ variantId: "apagada", stockLocation: "ESTOQUE_V", quantity: 5 }],
       ),
-    ).toEqual({ entries: [], unattributed: 5 });
+    ).toEqual({ entries: [{ variantId: "v1", stockLocation: "ESTOQUE_V", quantity: 5 }], unattributed: 0 });
   });
 });
 
@@ -96,5 +96,14 @@ describe("lançamentos automáticos não mexem no estoque ao desfazer", () => {
   it("produção lançada à mão continua tirando do estoque", () => {
     expect(entryAffectsStock(null)).toBe(true);
     expect(entryAffectsStock("Lote de março")).toBe(true);
+  });
+});
+
+describe("produto sem nenhuma variação", () => {
+  it("vendas ficam fora da conta (não há onde lançar)", () => {
+    expect(backfillEntries([], [{ variantId: null, stockLocation: "ESTOQUE_A", quantity: 2 }])).toEqual({
+      entries: [],
+      unattributed: 2,
+    });
   });
 });
