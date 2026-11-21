@@ -7,6 +7,7 @@ import ChoiceChips from "@/components/admin/ui/ChoiceChips";
 import { useConfirm } from "@/components/admin/ui/ConfirmDialog";
 import { formatDate } from "@/lib/format";
 import { todayInput } from "@/lib/finance";
+import { entryAffectsStock } from "@/lib/production-seed";
 
 type Location = "ESTOQUE_A" | "ESTOQUE_V";
 
@@ -133,9 +134,11 @@ function ProductionModalBody({ onClose, productId, productName, onSaved }: Produ
   const handleUndo = async (row: HistoryRow) => {
     const ok = await confirm({
       title: "Desfazer este lançamento?",
-      description: `${row.quantity} peça(s) de ${row.variantLabel} saem do ${
-        row.stockLocation === "ESTOQUE_A" ? "Estoque A" : "Estoque V"
-      } e o lançamento some do histórico.`,
+      description: entryAffectsStock(row.notes)
+        ? `${row.quantity} peça(s) de ${row.variantLabel} saem do ${
+            row.stockLocation === "ESTOQUE_A" ? "Estoque A" : "Estoque V"
+          } e o lançamento some do histórico.`
+        : `O lançamento some do histórico e o produzido diminui ${row.quantity}. O estoque fica como está.`,
       confirmLabel: "Desfazer lançamento",
       tone: "danger",
     });

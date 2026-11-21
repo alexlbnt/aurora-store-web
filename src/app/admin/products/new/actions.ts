@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { handleDatabaseError } from "@/lib/error-handler";
 import { slugify, uniqueSlug as findFreeSlug } from "@/lib/slug";
 import { toStock, type VariantMatrixRow } from "@/lib/product-input";
+import { INITIAL_STOCK_NOTE, initialStockEntries } from "@/lib/production-seed";
 
 export async function createProduct(formData: FormData) {
   const denied = await adminGuard();
@@ -88,34 +89,45 @@ export async function createProduct(formData: FormData) {
     const slug = await findFreeSlug(slugify(name), async (s) =>
       !!(await prisma.product.findUnique({ where: { slug: s }, select: { id: true } }))
     );
-    const product = await prisma.product.create({
-      data: {
-        name,
-        slug,
-        description: description || "",
-        basePrice: parseFloat(price),
-        categoryId,
-        details,
-        isFeatured: false,
-        sku: `AUR-${Math.random().toString(36).substring(7).toUpperCase()}`,
-        images: {
-          create: images.map((url, i) => ({
-            url,
-            order: i,
-            isDisplay: i === 0
-          }))
-        },
-        variants: {
-          create: variantsMatrix.map((v) => ({
-            sku: v.sku || `AUR-${v.size}-${v.color}-${Math.random().toString(36).substring(7).toUpperCase()}`,
-            price: v.price ? parseFloat(String(v.price)) : parseFloat(price),
-            stockA: toStock(v.stockA),
-            stockV: toStock(v.stockV),
-            color: v.color,
-            size: v.size
-          }))
+    const product = await prisma.$transaction(async (tx) => {
+      const created = await tx.product.create({
+        include: { variants: { select: { id: true, stockA: true, stockV: true } } },
+        data: {
+          name,
+          slug,
+          description: description || "",
+          basePrice: parseFloat(price),
+          categoryId,
+          details,
+          isFeatured: false,
+          sku: `AUR-${Math.random().toString(36).substring(7).toUpperCase()}`,
+          images: {
+            create: images.map((url, i) => ({
+              url,
+              order: i,
+              isDisplay: i === 0
+            }))
+          },
+          variants: {
+            create: variantsMatrix.map((v) => ({
+              sku: v.sku || `AUR-${v.size}-${v.color}-${Math.random().toString(36).substring(7).toUpperCase()}`,
+              price: v.price ? parseFloat(String(v.price)) : parseFloat(price),
+              stockA: toStock(v.stockA),
+              stockV: toStock(v.stockV),
+              color: v.color,
+              size: v.size
+            }))
+          }
         }
+      });
+      // O estoque do cadastro conta como produzido. Só o lançamento: as peças já estão no estoque.
+      const entries = initialStockEntries(created.variants);
+      if (entries.length > 0) {
+        await tx.productionEntry.createMany({
+          data: entries.map((e) => ({ ...e, productId: created.id, notes: INITIAL_STOCK_NOTE })),
+        });
       }
+      return created;
     });
 
     revalidatePath("/admin/products");

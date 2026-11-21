@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { handleDatabaseError } from "@/lib/error-handler";
 import { requireAdmin } from "@/lib/require-admin";
 import { parseDateInput } from "@/lib/finance";
+import { entryAffectsStock } from "@/lib/production-seed";
 
 type Location = "ESTOQUE_A" | "ESTOQUE_V";
 
@@ -140,7 +141,10 @@ export async function addProduction(productId: string, formData: FormData) {
   }
 }
 
-/** Desfaz um lançamento de produção: tira as peças do estoque de novo, se elas ainda estiverem lá. */
+/**
+ * Desfaz um lançamento de produção: tira as peças do estoque de novo, se elas ainda estiverem lá.
+ * Lançamentos automáticos (cadastro e carga inicial) saem só do produzido, sem mexer no estoque.
+ */
 export async function deleteProduction(entryId: string) {
   try {
     await requireAdmin();
@@ -150,6 +154,12 @@ export async function deleteProduction(entryId: string) {
         include: { variant: { select: { stockA: true, stockV: true, size: true, color: true } } },
       });
       if (!entry) throw new Error("Lançamento não encontrado. Ele pode já ter sido excluído.");
+
+      // Cadastro e carga inicial não somaram peças no estoque: desfazer só tira o lançamento.
+      if (!entryAffectsStock(entry.notes)) {
+        await tx.productionEntry.delete({ where: { id: entryId } });
+        return;
+      }
 
       const field = entry.stockLocation === "ESTOQUE_A" ? "stockA" : "stockV";
       const result = await tx.variant.updateMany({
