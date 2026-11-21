@@ -75,3 +75,37 @@ test("editar produto mantém a variação e a produção já lançada", async ({
   expect(azul?.id).toBe(before.id);
   expect(await prisma.productionEntry.count({ where: { productId: f.productId, notes: "E2E produção" } })).toBe(1);
 });
+
+test("lançar produção: quantidades do Estoque A e do Estoque V são independentes", async ({ page }) => {
+  const f = shop!;
+  const variant = await prisma.variant.findFirstOrThrow({ where: { productId: f.productId, color: "Azul", size: "M" } });
+
+  await page.goto(`/admin/products?q=${encodeURIComponent(f.productName)}`);
+  await page.getByRole("button", { name: "Ações do produto" }).first().click();
+  await page.getByRole("button", { name: "Lançar produção" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText("Peças prontas")).toBeVisible();
+
+  const field = dialog.getByLabel(/Quantidade produzida de M · Azul/);
+  await field.fill("2"); // Estoque A (padrão)
+  await dialog.getByText("Estoque V", { exact: true }).click();
+  await expect(field).toHaveValue(""); // não copia o valor do A
+  await field.fill("3");
+  await dialog.getByText("Estoque A", { exact: true }).click();
+  await expect(field).toHaveValue("2"); // o A continua com 2
+  await expect(dialog.getByText("5 peças a lançar: 2 no A · 3 no V")).toBeVisible();
+
+  await dialog.getByRole("button", { name: "Lançar produção" }).click();
+  await expect
+    .poll(async () =>
+      (await prisma.productionEntry.findMany({ where: { variantId: variant.id, notes: null }, orderBy: { stockLocation: "asc" } })).map(
+        (e) => [e.stockLocation, e.quantity],
+      ),
+    )
+    .toEqual([
+      ["ESTOQUE_A", 2],
+      ["ESTOQUE_V", 3],
+    ]);
+  const after = await prisma.variant.findUniqueOrThrow({ where: { id: variant.id } });
+  expect([after.stockA - variant.stockA, after.stockV - variant.stockV]).toEqual([2, 3]);
+});

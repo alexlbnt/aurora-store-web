@@ -8,6 +8,7 @@ import { useConfirm } from "@/components/admin/ui/ConfirmDialog";
 import { formatDate } from "@/lib/format";
 import { todayInput } from "@/lib/finance";
 import { entryAffectsStock } from "@/lib/production-seed";
+import { productionEntriesFromForm, qtyKey, readQty } from "@/lib/production-form";
 
 type Location = "ESTOQUE_A" | "ESTOQUE_V";
 
@@ -83,13 +84,14 @@ function ProductionModalBody({ onClose, productId, productName, onSaved }: Produ
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const qty = (id: string) => {
-    const n = parseInt(quantities[id] ?? "", 10);
-    return Number.isFinite(n) && n > 0 ? n : 0;
-  };
+  // Uma quantidade por variação E por estoque: trocar A/V mostra os números daquele estoque, sem copiar.
+  const qty = (id: string) => readQty(quantities, qtyKey(id, stockLocation));
   const setQty = (id: string, value: number) =>
-    setQuantities((prev) => ({ ...prev, [id]: value > 0 ? String(value) : "" }));
-  const totalPieces = variants.reduce((acc, v) => acc + qty(v.id), 0);
+    setQuantities((prev) => ({ ...prev, [qtyKey(id, stockLocation)]: value > 0 ? String(value) : "" }));
+  const toLaunch = productionEntriesFromForm(quantities, variants.map((v) => v.id));
+  const piecesIn = (loc: Location) =>
+    toLaunch.filter((e) => e.stockLocation === loc).reduce((acc, e) => acc + e.quantity, 0);
+  const totalPieces = piecesIn("ESTOQUE_A") + piecesIn("ESTOQUE_V");
 
   const totals = variants.reduce(
     (acc, v) => ({ produced: acc.produced + v.produced, sold: acc.sold + v.sold }),
@@ -106,10 +108,7 @@ function ProductionModalBody({ onClose, productId, productName, onSaved }: Produ
     formData.append("stockLocation", stockLocation);
     formData.append("producedAt", producedAt);
     formData.append("notes", notes);
-    formData.append(
-      "entries",
-      JSON.stringify(variants.filter((v) => qty(v.id) > 0).map((v) => ({ variantId: v.id, quantity: qty(v.id) })))
-    );
+    formData.append("entries", JSON.stringify(toLaunch));
     try {
       const res = await addProduction(productId, formData);
       if (res.error) {
@@ -117,7 +116,7 @@ function ProductionModalBody({ onClose, productId, productName, onSaved }: Produ
         return;
       }
       showToast(
-        `${res.total} ${res.total === 1 ? "peça lançada" : "peças lançadas"} no ${stockLocation === "ESTOQUE_A" ? "Estoque A" : "Estoque V"}.`,
+        `${res.total} ${res.total === 1 ? "peça lançada" : "peças lançadas"}: ${res.inA ?? 0} no Estoque A e ${res.inV ?? 0} no Estoque V.`,
         "success"
       );
       setQuantities({});
@@ -262,11 +261,14 @@ function ProductionModalBody({ onClose, productId, productName, onSaved }: Produ
                           <input
                             type="text"
                             inputMode="numeric"
-                            aria-label={`Quantidade produzida de ${label}`}
-                            value={quantities[v.id] ?? ""}
+                            aria-label={`Quantidade produzida de ${label} no ${stockLocation === "ESTOQUE_A" ? "Estoque A" : "Estoque V"}`}
+                            value={quantities[qtyKey(v.id, stockLocation)] ?? ""}
                             placeholder="0"
                             onChange={(e) =>
-                              setQuantities((prev) => ({ ...prev, [v.id]: e.target.value.replace(/\D/g, "").slice(0, 5) }))
+                              setQuantities((prev) => ({
+                                ...prev,
+                                [qtyKey(v.id, stockLocation)]: e.target.value.replace(/\D/g, "").slice(0, 5),
+                              }))
                             }
                             className="w-12 border-0 bg-transparent p-0 text-center text-base font-semibold text-primary placeholder:text-primary/30 focus:ring-0"
                           />
@@ -336,7 +338,9 @@ function ProductionModalBody({ onClose, productId, productName, onSaved }: Produ
 
         <div className="flex items-center justify-between gap-3 border-t border-primary/10 p-4 sm:p-5">
           <p className="text-sm text-primary/70">
-            {totalPieces > 0 ? `${totalPieces} ${totalPieces === 1 ? "peça" : "peças"} a lançar` : "Nada a lançar ainda"}
+            {totalPieces > 0
+              ? `${totalPieces} ${totalPieces === 1 ? "peça" : "peças"} a lançar: ${piecesIn("ESTOQUE_A")} no A · ${piecesIn("ESTOQUE_V")} no V`
+              : "Nada a lançar ainda"}
           </p>
           <button
             type="button"
